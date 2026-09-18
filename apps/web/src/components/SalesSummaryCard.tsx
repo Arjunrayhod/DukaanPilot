@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, Landmark, ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, Landmark, ArrowUpRight, CheckCircle2, Wallet, CreditCard } from 'lucide-react';
 import { Lang, translations } from '../i18n/translations';
 
 interface SalesSummaryCardProps {
@@ -10,67 +10,77 @@ export function SalesSummaryCard({ lang }: SalesSummaryCardProps) {
   const t = translations[lang];
 
   return (
-    <section className="rounded-2xl bg-white border border-slate-200/90 p-5 shadow-sm space-y-4">
-      <div className="flex items-start justify-between">
+    <section className="rounded-3xl bg-white border border-slate-200/90 p-6 sm:p-7 shadow-sm hover:shadow-md transition-all space-y-5">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 font-mono">
             {t.totalCollection}
           </span>
-          <div className="flex items-baseline gap-2.5 mt-1">
-            <span className="text-3xl font-extrabold text-slate-900 tracking-tight">₹8,450.00</span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
-              <TrendingUp className="w-3.5 h-3.5" />
-              +14%
+          <div className="flex items-baseline gap-3 mt-1.5 flex-wrap">
+            <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight font-display font-mono">
+              ₹8,450.00
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black">
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+              <span>+14.2%</span>
             </span>
           </div>
         </div>
-        <div className="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700 shadow-sm">
-          <Landmark className="w-5 h-5" />
+        <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100/80 flex items-center justify-center text-blue-700 shadow-sm shrink-0">
+          <Landmark className="w-6 h-6" />
         </div>
       </div>
 
-      <div className="p-4 rounded-xl bg-[#eff4ff] border border-blue-100/60 flex items-center justify-between gap-4">
-        <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
-          <svg className="w-16 h-16 -rotate-90" viewBox="0 0 40 40">
-            <circle cx="20" cy="20" fill="none" r="15.9" stroke="#dce9ff" strokeWidth="4.2"></circle>
-            <circle cx="20" cy="20" fill="none" r="15.9" stroke="#00563a" strokeDasharray="27 73" strokeDashoffset="0" strokeWidth="4.2"></circle>
-            <circle cx="20" cy="20" fill="none" r="15.9" stroke="#0051d5" strokeDasharray="73 27" strokeDashoffset="-27" strokeLinecap="round" strokeWidth="4.2"></circle>
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-xs font-extrabold text-slate-900 leading-none">60</span>
-            <span className="text-[9px] font-bold text-slate-500 leading-none mt-0.5">{t.bills}</span>
+      {/* Breakdown Strip with Smooth Doughnut & Stats */}
+      <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200/70 flex flex-col sm:flex-row items-center justify-between gap-5">
+        <div className="flex items-center gap-4">
+          <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
+            <svg className="w-16 h-16 -rotate-90" viewBox="0 0 40 40">
+              <circle cx="20" cy="20" fill="none" r="15.9" stroke="#e2e8f0" strokeWidth="4.2"></circle>
+              <circle cx="20" cy="20" fill="none" r="15.9" stroke="#10b981" strokeDasharray="27 73" strokeDashoffset="0" strokeWidth="4.2"></circle>
+              <circle cx="20" cy="20" fill="none" r="15.9" stroke="#2563eb" strokeDasharray="73 27" strokeDashoffset="-27" strokeLinecap="round" strokeWidth="4.2"></circle>
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-sm font-black text-slate-900 leading-none font-mono">60</span>
+              <span className="text-[9px] font-bold text-slate-400 leading-none mt-0.5">{t.bills}</span>
+            </div>
+          </div>
+
+          <div className="text-xs text-slate-500 font-medium">
+            <span className="font-bold text-slate-900 block text-sm">60 {lang === 'hi' ? 'कुल बिल' : 'Total Bills'}</span>
+            <span>{lang === 'hi' ? 'आज सुबह 8:00 AM से' : 'Since 8:00 AM today'}</span>
           </div>
         </div>
 
-        <div className="flex-1 grid grid-cols-2 gap-3">
-          <div className="space-y-0.5">
+        <div className="w-full sm:w-auto flex-1 grid grid-cols-2 gap-4 border-t sm:border-t-0 sm:border-l border-slate-200/80 pt-4 sm:pt-0 sm:pl-6">
+          <div className="space-y-1">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-              <span className="text-xs font-bold text-slate-600">{t.upiShare}</span>
+              <span className="text-xs font-bold text-slate-700">{t.upiShare}</span>
             </div>
-            <div className="text-base font-extrabold text-slate-900">₹6,200</div>
-            <span className="text-[11px] text-slate-500 font-medium">42 {t.transactions}</span>
+            <div className="text-lg font-black text-slate-900 font-mono">₹6,200</div>
+            <span className="text-[11px] text-slate-400 font-medium">42 {t.transactions}</span>
           </div>
 
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-700"></span>
-              <span className="text-xs font-bold text-slate-600">{t.cashShare}</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <span className="text-xs font-bold text-slate-700">{t.cashShare}</span>
             </div>
-            <div className="text-base font-extrabold text-slate-900">₹2,250</div>
-            <span className="text-[11px] text-slate-500 font-medium">18 {t.transactions}</span>
+            <div className="text-lg font-black text-slate-900 font-mono">₹2,250</div>
+            <span className="text-[11px] text-slate-400 font-medium">18 {t.transactions}</span>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-1 text-xs text-slate-600">
-        <div className="flex items-center gap-1.5 truncate font-medium">
+      <div className="flex items-center justify-between pt-1 text-xs text-slate-500">
+        <div className="flex items-center gap-2 truncate font-medium">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span className="truncate">{t.autoSettles}</span>
         </div>
-        <button className="shrink-0 text-blue-700 font-bold hover:underline flex items-center gap-0.5" type="button">
+        <button className="shrink-0 text-blue-700 font-bold hover:underline flex items-center gap-0.5 cursor-pointer" type="button">
           <span>{t.settlement}</span>
-          <ArrowUpRight className="w-3 h-3" />
+          <ArrowUpRight className="w-3.5 h-3.5" />
         </button>
       </div>
     </section>

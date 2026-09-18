@@ -17,7 +17,7 @@ export function LowStockAlerts({ lang }: LowStockAlertsProps) {
       remaining: `4 ${t.packetsLeft}`,
       minThreshold: `(${t.minText} 25)`,
       supplier: `${t.supplier}: ${lang === 'hi' ? 'बालाजी एजेंसीज़' : 'Balaji Agencies'}`,
-      orderQty: `50 ${t.packetsLeft} ${t.orderBtn}`,
+      orderQty: `50 ${t.packetsLeft}`,
     },
     {
       id: 2,
@@ -25,7 +25,7 @@ export function LowStockAlerts({ lang }: LowStockAlertsProps) {
       remaining: `2 ${t.bottlesLeft}`,
       minThreshold: `(${t.minText} 12)`,
       supplier: `${t.supplier}: ${lang === 'hi' ? 'मेट्रो होलसेल' : 'Metro Wholesale'}`,
-      orderQty: `24 ${t.bottlesLeft} ${t.orderBtn}`,
+      orderQty: `24 ${t.bottlesLeft}`,
     },
     {
       id: 3,
@@ -33,45 +33,45 @@ export function LowStockAlerts({ lang }: LowStockAlertsProps) {
       remaining: `3 ${t.bagsLeft}`,
       minThreshold: `(${t.minText} 15)`,
       supplier: `${t.supplier}: ${lang === 'hi' ? 'आईटीसी डायरेक्ट' : 'ITC Direct'}`,
-      orderQty: `20 ${t.bagsLeft} ${t.orderBtn}`,
+      orderQty: `20 ${t.bagsLeft}`,
     },
   ];
 
   const handleOrder = (id: number, title: string, qty: string) => {
     setOrderedItems((prev) => [...prev, id]);
-    alert(`Order sent to supplier: ${title} (${qty})`);
+    alert(lang === 'hi' ? `सप्लायर को ऑर्डर भेजा गया: ${title} (${qty})` : `Order sent to supplier: ${title} (${qty})`);
   };
 
   return (
-    <section className="rounded-2xl bg-white border border-slate-200/90 p-5 shadow-sm space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 shrink-0">
+    <section className="rounded-3xl bg-white border border-slate-200/90 p-6 sm:p-7 shadow-sm hover:shadow-md transition-all space-y-5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="w-11 h-11 rounded-2xl bg-rose-50 border border-rose-200/80 flex items-center justify-center text-rose-600 shrink-0 shadow-sm">
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div className="truncate">
-            <h3 className="text-base font-bold text-slate-900 truncate">{t.lowStockTitle}</h3>
-            <span className="text-xs text-slate-500 font-medium">{t.lowStockSub}</span>
+            <h3 className="text-base font-extrabold text-slate-900 truncate font-display tracking-tight">{t.lowStockTitle}</h3>
+            <span className="text-xs text-slate-400 font-medium">{t.lowStockSub}</span>
           </div>
         </div>
-        <span className="px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-extrabold">
+        <span className="px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-black font-mono">
           {t.itemsLow}
         </span>
       </div>
 
-      <div className="space-y-2.5 pt-1">
+      <div className="space-y-3 pt-1">
         {stockAlerts.map((item) => {
           const isOrdered = orderedItems.includes(item.id);
           return (
             <div
               key={item.id}
-              className="p-3 rounded-xl bg-slate-50/80 border border-slate-200/70 flex items-center justify-between gap-3 hover:bg-slate-100/70 transition-colors"
+              className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/70 flex items-center justify-between gap-4 hover:bg-slate-50 transition-all shadow-xs"
             >
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-bold text-slate-900 truncate">{item.title}</div>
-                <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium mt-0.5">
-                  <span className="text-rose-600 font-bold">{item.remaining}</span>
-                  <span>{item.minThreshold}</span>
+                <div className="text-sm font-bold text-slate-900 truncate font-display">{item.title}</div>
+                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium mt-0.5">
+                  <span className="text-rose-600 font-black font-mono">{item.remaining}</span>
+                  <span className="text-slate-400">{item.minThreshold}</span>
                 </div>
                 <span className="text-[11px] text-slate-400 font-medium block mt-0.5">
                   {item.supplier}
@@ -80,22 +80,23 @@ export function LowStockAlerts({ lang }: LowStockAlertsProps) {
 
               <button
                 onClick={() => handleOrder(item.id, item.title, item.orderQty)}
-                className={`h-9 px-3.5 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all shrink-0 ${
+                className={`h-9 px-4 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all shrink-0 cursor-pointer ${
                   isOrdered
-                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                    : 'bg-blue-900 hover:bg-blue-800 text-white active:scale-95'
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
+                    : 'bg-slate-900/85 hover:bg-slate-900 text-white backdrop-blur-xl border border-white/15 active:scale-95'
                 }`}
                 type="button"
               >
                 {isOrdered ? (
                   <>
-                    <Check className="w-3.5 h-3.5" />
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
                     <span>{t.orderedBtn}</span>
                   </>
                 ) : (
                   <>
-                    <Truck className="w-3.5 h-3.5" />
-                    <span>{item.orderQty}</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                    <Truck className="w-3.5 h-3.5 text-emerald-300" />
+                    <span>{item.orderQty} {t.orderBtn}</span>
                   </>
                 )}
               </button>
