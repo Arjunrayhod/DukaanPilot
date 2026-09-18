@@ -74,7 +74,7 @@ describe('Product & Catalog API Tests', () => {
         },
         body: JSON.stringify({
           name: 'Haldiram Soan Papdi 500g',
-          nameHindi: '???????? ??? ??????',
+          nameHindi: 'हल्दीराम सोन पापड़ी 500g',
           sellingPrice: 160,
           costPrice: 125,
           currentStock: 15,

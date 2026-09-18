@@ -76,7 +76,7 @@ const auth_service_1 = require("../src/services/auth.service");
                 },
                 body: JSON.stringify({
                     name: 'Haldiram Soan Papdi 500g',
-                    nameHindi: '???????? ??? ??????',
+                    nameHindi: 'हल्दीराम सोन पापड़ी 500g',
                     sellingPrice: 160,
                     costPrice: 125,
                     currentStock: 15,
