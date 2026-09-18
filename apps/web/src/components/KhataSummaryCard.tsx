@@ -17,7 +17,7 @@ export const KhataSummaryCard: React.FC = () => {
           </div>
           <div>
             <h3 className="font-display font-bold text-slate-900 text-sm">
-              Digital Khata Ledger • ?????? ???? ???????
+              Digital Khata Ledger ï¿½ ?????? ???? ???????
             </h3>
             <span className="text-xs text-slate-500">18 Customers with outstanding credit</span>
           </div>
@@ -38,12 +38,12 @@ export const KhataSummaryCard: React.FC = () => {
             <div>
               <span className="text-xs font-bold text-slate-800 block">{debtor.name}</span>
               <span className="text-[10px] text-slate-400">
-                {debtor.phone} • {debtor.days}
+                {debtor.phone} ï¿½ {debtor.days}
               </span>
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-xs font-bold text-slate-900">{debtor.pending}</span>
-              <button className="p-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors title='Send WhatsApp Reminder'">
+              <button className="p-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors" title="Send WhatsApp Reminder">
                 <MessageCircle className="w-3.5 h-3.5" />
               </button>
             </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, Send, PackageX, CheckCircle } from 'lucide-react';
+import { AlertTriangle, Send } from 'lucide-react';
 
 export const LowStockAlerts: React.FC = () => {
   const alerts = [
@@ -32,7 +32,7 @@ export const LowStockAlerts: React.FC = () => {
           </div>
           <div>
             <h3 className="font-display font-bold text-slate-900 text-sm">
-              Low Stock Alerts • ?? ????? ???????
+              Low Stock Alerts ï¿½ ?? ????? ???????
             </h3>
             <span className="text-xs text-amber-700 font-medium">2 items urgent reorder required</span>
           </div>
@@ -55,7 +55,7 @@ export const LowStockAlerts: React.FC = () => {
               </div>
               <div className="flex items-center space-x-2 text-[11px] text-slate-600 mt-0.5">
                 <span className="text-red-600 font-bold">Only {item.remaining} left</span>
-                <span>•</span>
+                <span>ï¿½</span>
                 <span>Supplier: {item.supplier}</span>
               </div>
             </div>

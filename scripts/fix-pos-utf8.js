@@ -1,4 +1,8 @@
-import React, { useState } from 'react';
+const fs = require('fs');
+const path = require('path');
+const root = path.resolve(__dirname, '..');
+
+const posBillingContent = `import React, { useState } from 'react';
 import {
   Search,
   Barcode,
@@ -123,11 +127,11 @@ export const PosBillingView: React.FC = () => {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
+                className={\`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors \${
                   selectedCategory === cat
                     ? 'bg-emerald-700 text-white'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
+                }\`}
               >
                 {cat}
               </button>
@@ -167,7 +171,7 @@ export const PosBillingView: React.FC = () => {
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <span className="text-xs font-bold text-slate-900 block">Current Bill #2048</span>
-              <span className="text-[10px] text-slate-400">Counter #1 ï¿½ Fast POS</span>
+              <span className="text-[10px] text-slate-400">Counter #1 • Fast POS</span>
             </div>
             <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
               Cart Active
@@ -252,3 +256,7 @@ export const PosBillingView: React.FC = () => {
     </div>
   );
 };
+`;
+
+fs.writeFileSync(path.join(root, 'apps/web/src/components/PosBillingView.tsx'), posBillingContent, 'utf8');
+console.log('Successfully saved UTF-8: apps/web/src/components/PosBillingView.tsx');

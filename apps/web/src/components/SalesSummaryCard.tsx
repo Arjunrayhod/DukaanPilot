@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, QrCode, Banknote, ReceiptText, PlusCircle, ArrowUpRight } from 'lucide-react';
+import { TrendingUp, QrCode, Banknote, ReceiptText, PlusCircle } from 'lucide-react';
 
 export const SalesSummaryCard: React.FC = () => {
   return (
@@ -7,7 +7,7 @@ export const SalesSummaryCard: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Today\'s Business • ?? ?? ??? ??????
+            Today's Business ï¿½ ?? ?? ??? ??????
           </span>
           <div className="flex items-baseline space-x-3 mt-1">
             <h3 className="text-3xl font-extrabold font-display text-slate-900">
@@ -15,7 +15,7 @@ export const SalesSummaryCard: React.FC = () => {
             </h3>
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
               <TrendingUp className="w-3.5 h-3.5 mr-1 text-emerald-600" />
-              +12% vs y\'day
+              +12% vs y'day
             </span>
           </div>
         </div>

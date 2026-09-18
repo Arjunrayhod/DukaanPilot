@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingBag, Clock, CheckCircle, Truck, Package } from 'lucide-react';
+import { ShoppingBag, Clock } from 'lucide-react';
 
 export const ActiveOrdersFeed: React.FC = () => {
   const orders = [
@@ -9,7 +9,7 @@ export const ActiveOrdersFeed: React.FC = () => {
       items: '4 items (?420)',
       type: 'Delivery in 15 mins',
       status: 'Ready for Dispatch',
-      badgeColor: 'bg-green-100 text-green-800',
+      badgeColor: 'bg-emerald-100 text-emerald-800',
     },
     {
       id: '#1041',
@@ -38,7 +38,7 @@ export const ActiveOrdersFeed: React.FC = () => {
           </div>
           <div>
             <h3 className="font-display font-bold text-slate-900 text-sm">
-              Active Customer Orders • ?????? ???????
+              Active Customer Orders ï¿½ ?????? ???????
             </h3>
             <span className="text-xs text-slate-500">3 pending orders for store pickup & delivery</span>
           </div>
@@ -56,14 +56,14 @@ export const ActiveOrdersFeed: React.FC = () => {
           >
             <div className="space-y-0.5">
               <div className="flex items-center space-x-2">
-                <span className="font-bold text-xs text-slate-900">{order.id} • {order.customer}</span>
+                <span className="font-bold text-xs text-slate-900">{order.id} ï¿½ {order.customer}</span>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${order.badgeColor}`}>
                   {order.status}
                 </span>
               </div>
               <div className="flex items-center space-x-2 text-[11px] text-slate-500">
                 <span>{order.items}</span>
-                <span>•</span>
+                <span>ï¿½</span>
                 <span className="flex items-center text-slate-700 font-medium">
                   <Clock className="w-3 h-3 mr-1 text-slate-400" />
                   {order.type}
