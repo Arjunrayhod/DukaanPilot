@@ -89,6 +89,25 @@ export const translations = {
     shopQrTitle: 'दुकान UPI QR कोड',
     download: 'डाउनलोड',
     shareQr: 'WhatsApp शेयर',
+
+    // Customer Portal
+    merchantRole: 'दुकानदार',
+    customerRole: 'ग्राहक',
+    customerGreeting: 'नमस्ते',
+    customerSubtitle: 'आपका व्यक्तिगत खाता और ऑर्डर पोर्टल',
+    myKhataBalance: 'मेरा बकाया खाता (My Khata Due)',
+    khataDueNotice: 'कृपया दुकान पर आते समय या UPI QR से चुकता करें',
+    payNowViaUpi: 'दुकान UPI QR से तुरंत भुगतान करें',
+    customerCatalogTitle: 'दुकान का सामान (Order Online)',
+    customerCatalogSub: 'सामान चुनें और WhatsApp पर सीधा ऑर्डर भेजें',
+    myBillsTitle: 'मेरे पुराने बिल और रसीदें',
+    myBillsSub: 'Previous Purchase History',
+    itemsInCart: 'सामान कार्ट में',
+    sendOrderWhatsApp: 'WhatsApp पर ऑर्डर भेजें',
+    callShop: 'दुकानदार को कॉल करें',
+    billReceipt: 'रसीद देखें',
+    paidStatus: 'पूर्ण भुगतान',
+    dueStatus: 'उधार (Khata)',
   },
   en: {
     // Header
@@ -98,6 +117,8 @@ export const translations = {
     mobileView: 'Mobile',
     posView: 'Counter POS',
     account: 'Account',
+    merchantRole: 'Shopkeeper',
+    customerRole: 'Customer',
     
     // Voice Hero Banner
     instantVoicePos: 'Instant AI Voice POS',
@@ -178,5 +199,22 @@ export const translations = {
     shopQrTitle: 'Store UPI QR Code',
     download: 'Download',
     shareQr: 'Share WhatsApp',
+
+    // Customer Portal
+    customerGreeting: 'Hello',
+    customerSubtitle: 'Your Personal Ledger & Order Portal',
+    myKhataBalance: 'My Khata Balance (Due with Store)',
+    khataDueNotice: 'Please clear during your next store visit or via UPI QR',
+    payNowViaUpi: 'Pay Instantly via Store UPI QR',
+    customerCatalogTitle: 'Store Catalog (Order Online)',
+    customerCatalogSub: 'Pick items and send instant WhatsApp grocery order',
+    myBillsTitle: 'My Bills & Digital Receipts',
+    myBillsSub: 'Previous Purchase History',
+    itemsInCart: 'items in cart',
+    sendOrderWhatsApp: 'Send Order on WhatsApp',
+    callShop: 'Call Shopkeeper',
+    billReceipt: 'View Receipt',
+    paidStatus: 'Paid in Full',
+    dueStatus: 'Khata Credit',
   }
 };

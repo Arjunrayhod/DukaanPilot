@@ -95,6 +95,25 @@ export const translations = {
     shopQrTitle: 'दुकान UPI QR कोड',
     download: 'डाउनलोड',
     shareQr: 'WhatsApp शेयर',
+
+    // Customer Portal
+    merchantRole: 'दुकानदार',
+    customerRole: 'ग्राहक',
+    customerGreeting: 'नमस्ते',
+    customerSubtitle: 'आपका व्यक्तिगत खाता और ऑर्डर पोर्टल',
+    myKhataBalance: 'मेरा बकाया खाता (My Khata Due)',
+    khataDueNotice: 'कृपया दुकान पर आते समय या UPI QR से चुकता करें',
+    payNowViaUpi: 'दुकान UPI QR से तुरंत भुगतान करें',
+    customerCatalogTitle: 'दुकान का सामान (Order Online)',
+    customerCatalogSub: 'सामान चुनें और WhatsApp पर सीधा ऑर्डर भेजें',
+    myBillsTitle: 'मेरे पुराने बिल और रसीदें',
+    myBillsSub: 'Previous Purchase History',
+    itemsInCart: 'सामान कार्ट में',
+    sendOrderWhatsApp: 'WhatsApp पर ऑर्डर भेजें',
+    callShop: 'दुकानदार को कॉल करें',
+    billReceipt: 'रसीद देखें',
+    paidStatus: 'पूर्ण भुगतान',
+    dueStatus: 'उधार (Khata)',
   },
   en: {
     // Header
@@ -104,6 +123,8 @@ export const translations = {
     mobileView: 'Mobile',
     posView: 'Counter POS',
     account: 'Account',
+    merchantRole: 'Shopkeeper',
+    customerRole: 'Customer',
     
     // Voice Hero Banner
     instantVoicePos: 'Instant AI Voice POS',
@@ -184,6 +205,23 @@ export const translations = {
     shopQrTitle: 'Store UPI QR Code',
     download: 'Download',
     shareQr: 'Share WhatsApp',
+
+    // Customer Portal
+    customerGreeting: 'Hello',
+    customerSubtitle: 'Your Personal Ledger & Order Portal',
+    myKhataBalance: 'My Khata Balance (Due with Store)',
+    khataDueNotice: 'Please clear during your next store visit or via UPI QR',
+    payNowViaUpi: 'Pay Instantly via Store UPI QR',
+    customerCatalogTitle: 'Store Catalog (Order Online)',
+    customerCatalogSub: 'Pick items and send instant WhatsApp grocery order',
+    myBillsTitle: 'My Bills & Digital Receipts',
+    myBillsSub: 'Previous Purchase History',
+    itemsInCart: 'items in cart',
+    sendOrderWhatsApp: 'Send Order on WhatsApp',
+    callShop: 'Call Shopkeeper',
+    billReceipt: 'View Receipt',
+    paidStatus: 'Paid in Full',
+    dueStatus: 'Khata Credit',
   }
 };
 `;
@@ -191,7 +229,7 @@ fs.writeFileSync('apps/web/src/i18n/translations.ts', translationsCode, 'utf8');
 
 // 1. Header.tsx
 const headerCode = `import React from 'react';
-import { Store, ShieldCheck, Languages, User } from 'lucide-react';
+import { Store, ShieldCheck, Languages, User, ArrowLeftRight } from 'lucide-react';
 import { Lang, translations } from '../i18n/translations';
 
 interface HeaderProps {
@@ -203,6 +241,9 @@ interface HeaderProps {
   activeView: 'mobile' | 'pos';
   onToggleView: (view: 'mobile' | 'pos') => void;
   onOpenAuth: () => void;
+  userRole?: 'OWNER' | 'CUSTOMER';
+  userName?: string;
+  onQuickToggleRole?: () => void;
 }
 
 export function Header({
@@ -214,13 +255,16 @@ export function Header({
   activeView,
   onToggleView,
   onOpenAuth,
+  userRole = 'OWNER',
+  userName = 'Ramesh Ganesh',
+  onQuickToggleRole,
 }: HeaderProps) {
   const t = translations[lang];
 
   return (
     <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-slate-200/80 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
       <div className="max-w-7xl mx-auto h-16 px-4 flex items-center justify-between gap-3">
-        {/* Store Title & Status */}
+        {/* Store Title & Role Status */}
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 to-blue-500 text-white flex items-center justify-center shadow-md shrink-0">
             <Store className="w-5 h-5" />
@@ -236,34 +280,54 @@ export function Header({
             </div>
             <div className="flex items-center gap-1.5 text-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
-              <span className="font-semibold text-slate-500 uppercase tracking-wider text-[11px]">{t.posOnline}</span>
+              <span className="font-semibold text-slate-500 uppercase tracking-wider text-[11px]">
+                {userRole === 'OWNER' ? t.posOnline : (lang === 'hi' ? 'ग्राहक पोर्टल' : 'Customer Portal')}
+              </span>
               <span className="text-slate-300">&bull;</span>
-              <span className="font-medium text-blue-700 text-[11px] truncate">{t.dashboard}</span>
+              <span className="font-bold text-blue-700 text-[11px] truncate">
+                {userRole === 'OWNER' ? '🏪 ' + (lang === 'hi' ? 'दुकानदार' : 'Shopkeeper') : '👤 ' + userName}
+              </span>
             </div>
           </div>
         </div>
 
         {/* View Switcher & Action Controls */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Mobile / Counter POS Switcher */}
-          <div className="hidden sm:flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-semibold">
+          {/* Quick Role Switcher Button */}
+          {onQuickToggleRole && (
             <button
-              onClick={() => onToggleView('mobile')}
-              className={\`px-3 py-1.5 rounded-md transition-all \${
-                activeView === 'mobile' ? 'bg-white text-blue-800 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
-              }\`}
+              onClick={onQuickToggleRole}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all bg-slate-50 hover:bg-blue-50 border-slate-200 text-slate-700 hover:text-blue-900 shadow-xs cursor-pointer active:scale-95"
+              title="Switch between Shopkeeper & Customer view"
             >
-              {t.mobileView}
+              <ArrowLeftRight className="w-3.5 h-3.5 text-blue-700" />
+              <span className="hidden sm:inline">
+                {userRole === 'OWNER' ? (lang === 'hi' ? 'ग्राहक मोड' : 'Customer Mode') : (lang === 'hi' ? 'दुकानदार मोड' : 'Shopkeeper Mode')}
+              </span>
             </button>
-            <button
-              onClick={() => onToggleView('pos')}
-              className={\`px-3 py-1.5 rounded-md transition-all \${
-                activeView === 'pos' ? 'bg-white text-blue-800 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
-              }\`}
-            >
-              {t.posView}
-            </button>
-          </div>
+          )}
+
+          {/* Mobile / Counter POS Switcher (Shopkeeper Only) */}
+          {userRole === 'OWNER' && (
+            <div className="hidden sm:flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-semibold">
+              <button
+                onClick={() => onToggleView('mobile')}
+                className={\`px-3 py-1.5 rounded-md transition-all \${
+                  activeView === 'mobile' ? 'bg-white text-blue-800 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
+                }\`}
+              >
+                {t.mobileView}
+              </button>
+              <button
+                onClick={() => onToggleView('pos')}
+                className={\`px-3 py-1.5 rounded-md transition-all \${
+                  activeView === 'pos' ? 'bg-white text-blue-800 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
+                }\`}
+              >
+                {t.posView}
+              </button>
+            </div>
+          )}
 
           {/* Language Toggle Button */}
           <button
@@ -281,11 +345,14 @@ export function Header({
           {/* User Account / Login */}
           <button
             onClick={onOpenAuth}
-            className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 flex items-center justify-center text-slate-700 transition-colors shadow-sm"
+            className="h-9 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 flex items-center gap-1.5 text-slate-700 transition-colors shadow-sm cursor-pointer"
             type="button"
-            title="User Profile"
+            title="Switch User / Account"
           >
             <User className="w-4 h-4 text-blue-800" />
+            <span className="hidden md:inline text-xs font-bold text-slate-800">
+              {userRole === 'OWNER' ? 'Shop' : 'Customer'}
+            </span>
           </button>
         </div>
       </div>
@@ -1149,6 +1216,453 @@ export function QrModal({ lang, isOpen, onClose, shopName, upiId }: QrModalProps
 `;
 fs.writeFileSync('apps/web/src/components/QrModal.tsx', qrModalCode, 'utf8');
 
+// 10.5 CustomerPortal.tsx
+const customerPortalCode = `import React, { useState } from 'react';
+import {
+  Store,
+  QrCode,
+  Receipt,
+  ShoppingCart,
+  Phone,
+  MessageSquare,
+  ChevronRight,
+  Plus,
+  Minus,
+  CheckCircle2,
+  Clock,
+  ArrowUpRight,
+  ShieldCheck,
+  ShoppingBag,
+  Info,
+} from 'lucide-react';
+import { Lang, translations } from '../i18n/translations';
+
+interface CustomerPortalProps {
+  lang: Lang;
+  customer: {
+    name: string;
+    phone: string;
+    khataDue: number;
+    shopName: string;
+    upiId: string;
+  };
+  onOpenQr: () => void;
+}
+
+export const CustomerPortal: React.FC<CustomerPortalProps> = ({
+  lang,
+  customer,
+  onOpenQr,
+}) => {
+  const t = translations[lang];
+  const [activeTab, setActiveTab] = useState<'overview' | 'catalog' | 'bills'>('overview');
+
+  // Customer Catalog
+  const [catalog, setCatalog] = useState([
+    { id: 1, name: 'Aashirvaad Shudh Chakki Atta 10kg', hindi: 'आशीर्वाद शुद्ध चक्की आटा 10kg', price: 420, unit: '10 kg bag', category: 'Atta' },
+    { id: 2, name: 'Madhur Pure & Hygienic Sugar 1kg', hindi: 'मधुर शुद्ध चीनी 1kg', price: 48, unit: '1 kg packet', category: 'Grocery' },
+    { id: 3, name: 'Amul Taaza Fresh Toned Milk 500ml', hindi: 'अमूल ताजा दूध 500ml', price: 27, unit: '500 ml pouch', category: 'Dairy' },
+    { id: 4, name: 'Fortune Sunlite Refined Sunflower Oil 1L', hindi: 'फॉर्च्यून रिफाइंड तेल 1L', price: 138, unit: '1 L pouch', category: 'Oils' },
+    { id: 5, name: 'Tata Salt Vacuum Evaporated 1kg', hindi: 'टाटा नमक 1kg', price: 28, unit: '1 kg packet', category: 'Grocery' },
+    { id: 6, name: 'Tata Tea Gold Premium Blend 500g', hindi: 'टाटा टी गोल्ड 500g', price: 280, unit: '500 g pack', category: 'Beverages' },
+    { id: 7, name: 'Parle-G Gold Glucose Biscuits 1kg', hindi: 'पार्ले-जी गोल्ड बिस्कुट 1kg', price: 110, unit: '1 kg family pack', category: 'Snacks' },
+    { id: 8, name: 'Everest Garam Masala 100g', hindi: 'एवरेस्ट गरम मसाला 100g', price: 82, unit: '100 g box', category: 'Spices' },
+  ]);
+
+  const [cart, setCart] = useState<Record<number, number>>({});
+
+  const addToCart = (id: number) => {
+    setCart((prev) => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
+  };
+
+  const removeFromCart = (id: number) => {
+    setCart((prev) => {
+      const updated = { ...prev };
+      if (updated[id] > 1) {
+        updated[id] -= 1;
+      } else {
+        delete updated[id];
+      }
+      return updated;
+    });
+  };
+
+  const cartTotalCount = Object.values(cart).reduce((sum, count) => sum + count, 0);
+  const cartTotalPrice = Object.entries(cart).reduce((sum, [id, count]) => {
+    const item = catalog.find((c) => c.id === Number(id));
+    return sum + (item ? item.price * count : 0);
+  }, 0);
+
+  const handleSendWhatsAppOrder = () => {
+    const itemsList = Object.entries(cart)
+      .map(([id, count]) => {
+        const item = catalog.find((c) => c.id === Number(id));
+        return \`- \${count}x \${item?.name} (₹\${(item?.price || 0) * count})\`;
+      })
+      .join('\\n');
+
+    const message = encodeURIComponent(
+      \`नमस्ते! मैं \${customer.name} (Phone: \${customer.phone}) श्री गणेश किराना से यह सामान ऑर्डर करना चाहता हूँ:\\n\\n\${itemsList}\\n\\nकुल राशि: ₹\${cartTotalPrice}\\nकृपया तैयार रखें या डिलीवर करें। धन्यवाद!\`
+    );
+
+    window.open(\`https://wa.me/919876543210?text=\${message}\`, '_blank');
+  };
+
+  // Previous bills
+  const bills = [
+    {
+      id: 'INV-2026-0842',
+      date: '16 Sep 2026, 06:30 PM',
+      items: '2x Amul Milk, 1x Madhur Sugar 1kg, 1x Tata Salt',
+      total: 130,
+      mode: 'UPI',
+      status: 'paid',
+    },
+    {
+      id: 'INV-2026-0791',
+      date: '12 Sep 2026, 11:15 AM',
+      items: '1x Aashirvaad Atta 10kg, 1x Fortune Oil 1L',
+      total: 558,
+      mode: 'Khata Credit (उधार)',
+      status: 'due',
+    },
+    {
+      id: 'INV-2026-0610',
+      date: '04 Sep 2026, 08:45 PM',
+      items: '1x Tata Tea Gold 500g, 2x Parle-G Gold',
+      total: 500,
+      mode: 'Cash (नकद)',
+      status: 'paid',
+    },
+  ];
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-4">
+      {/* 1. Customer Welcome & Shop Connected Card */}
+      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 rounded-3xl p-5 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="flex items-center justify-between gap-3 relative z-10">
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-[11px] font-bold text-blue-200 mb-2 border border-white/10">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{lang === 'hi' ? 'सत्यापित ग्राहक खाता' : 'Verified Customer Profile'}</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black font-display tracking-tight">
+              {t.customerGreeting}, {customer.name}
+            </h2>
+            <p className="text-xs text-blue-200 mt-0.5">
+              {t.customerSubtitle} &bull; {customer.phone}
+            </p>
+          </div>
+
+          <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white shrink-0 shadow-inner">
+            <Store className="w-6 h-6 text-blue-300" />
+          </div>
+        </div>
+
+        {/* Connected Shop Strip */}
+        <div className="mt-4 pt-3.5 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-blue-300 font-medium">{lang === 'hi' ? 'दुकान:' : 'Shop:'}</span>
+            <span className="font-bold text-white">{customer.shopName}</span>
+            <span className="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded-full font-bold border border-emerald-500/30">
+              Open Now
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <a
+              href="tel:9876543210"
+              className="inline-flex items-center gap-1 text-[11px] font-bold bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-lg transition-colors"
+            >
+              <Phone className="w-3 h-3 text-emerald-300" />
+              <span>{t.callShop}</span>
+            </a>
+            <button
+              onClick={onOpenQr}
+              className="inline-flex items-center gap-1 text-[11px] font-bold bg-emerald-500 text-slate-950 px-2.5 py-1 rounded-lg hover:bg-emerald-400 transition-colors shadow-sm cursor-pointer"
+            >
+              <QrCode className="w-3 h-3" />
+              <span>{lang === 'hi' ? 'दुकान QR' : 'Shop QR'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Customer Navigation Tabs */}
+      <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/80">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={\`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer \${
+            activeTab === 'overview'
+              ? 'bg-white text-blue-900 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
+          }\`}
+        >
+          <Receipt className="w-4 h-4 text-blue-600" />
+          <span>{lang === 'hi' ? 'मेरा खाता व समरी' : 'My Khata & Ledger'}</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('catalog')}
+          className={\`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer \${
+            activeTab === 'catalog'
+              ? 'bg-white text-blue-900 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
+          }\`}
+        >
+          <ShoppingBag className="w-4 h-4 text-emerald-600" />
+          <span>{lang === 'hi' ? 'दुकान का सामान' : 'Store Catalog'}</span>
+          {cartTotalCount > 0 && (
+            <span className="bg-emerald-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-black">
+              {cartTotalCount}
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('bills')}
+          className={\`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer \${
+            activeTab === 'bills'
+              ? 'bg-white text-blue-900 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
+          }\`}
+        >
+          <Clock className="w-4 h-4 text-amber-600" />
+          <span>{lang === 'hi' ? 'पुराने बिल' : 'My Bills'}</span>
+        </button>
+      </div>
+
+      {/* 3. TAB 1: Overview & Personal Khata Balance */}
+      {activeTab === 'overview' && (
+        <div className="space-y-4">
+          {/* Khata Balance Card */}
+          <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  {t.myKhataBalance}
+                </span>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-3xl font-black font-display text-rose-600">
+                    ₹{customer.khataDue.toLocaleString('en-IN')}
+                  </span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                    {lang === 'hi' ? 'देय बकाया' : 'Outstanding Due'}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={onOpenQr}
+                className="flex items-center gap-1.5 bg-blue-900 hover:bg-blue-800 text-white px-4 py-2.5 rounded-2xl text-xs font-bold shadow-md transition-all active:scale-95 cursor-pointer"
+              >
+                <QrCode className="w-4 h-4 text-emerald-300" />
+                <span>{t.payNowViaUpi}</span>
+              </button>
+            </div>
+
+            <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-2xl flex items-center gap-2.5 text-xs text-amber-900">
+              <Info className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>{t.khataDueNotice}</span>
+            </div>
+
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-2 gap-3 pt-1 text-xs">
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                <span className="text-slate-500 block text-[11px]">{lang === 'hi' ? 'अंतिम बिल' : 'Last Bill'}</span>
+                <span className="font-bold text-slate-900 text-sm">₹130 (16 Sep)</span>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                <span className="text-slate-500 block text-[11px]">{lang === 'hi' ? 'कुल बिल काउंट' : 'Total Orders'}</span>
+                <span className="font-bold text-slate-900 text-sm">8 {lang === 'hi' ? 'बिल' : 'bills'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Ledger History Preview */}
+          <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-900">
+                {lang === 'hi' ? 'हालिया लेन-देन (Recent Ledger History)' : 'Recent Ledger History'}
+              </h3>
+              <button
+                onClick={() => setActiveTab('bills')}
+                className="text-xs text-blue-700 font-bold hover:underline flex items-center gap-0.5 cursor-pointer"
+              >
+                <span>{lang === 'hi' ? 'सभी देखें' : 'View All'}</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="divide-y divide-slate-100">
+              {bills.map((b) => (
+                <div key={b.id} className="py-3 flex items-center justify-between gap-2 text-xs">
+                  <div>
+                    <div className="font-bold text-slate-900">{b.id}</div>
+                    <div className="text-slate-500 text-[11px] truncate max-w-[200px] sm:max-w-md">{b.items}</div>
+                    <div className="text-slate-400 text-[10px]">{b.date}</div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <div className="font-mono font-bold text-slate-900 text-sm">₹{b.total}</div>
+                    <span
+                      className={\`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full \${
+                        b.status === 'paid'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-rose-50 text-rose-700 border border-rose-200'
+                      }\`}
+                    >
+                      {b.status === 'paid' ? t.paidStatus : t.dueStatus}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. TAB 2: Store Catalog & WhatsApp Order */}
+      {activeTab === 'catalog' && (
+        <div className="space-y-4">
+          <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">{t.customerCatalogTitle}</h3>
+                <p className="text-xs text-slate-500">{t.customerCatalogSub}</p>
+              </div>
+              <div className="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-xl border border-blue-200">
+                {catalog.length} {lang === 'hi' ? 'आइटम उपलब्ध' : 'Items Available'}
+              </div>
+            </div>
+
+            {/* Catalog Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {catalog.map((item) => {
+                const qtyInCart = cart[item.id] || 0;
+                return (
+                  <div
+                    key={item.id}
+                    className="p-3.5 rounded-2xl border border-slate-100 bg-slate-50/70 hover:bg-white hover:border-blue-200 hover:shadow-sm transition-all flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-xs text-slate-900 truncate">
+                        {lang === 'hi' ? item.hindi : item.name}
+                      </div>
+                      <div className="text-[11px] text-slate-500">{item.unit}</div>
+                      <div className="text-sm font-black font-display text-blue-900 mt-1">₹{item.price}</div>
+                    </div>
+
+                    <div className="shrink-0">
+                      {qtyInCart === 0 ? (
+                        <button
+                          onClick={() => addToCart(item.id)}
+                          className="h-8 px-3 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold flex items-center gap-1 transition-colors shadow-sm cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>{lang === 'hi' ? 'जोड़ें' : 'Add'}</span>
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 p-1 rounded-xl">
+                          <button
+                            onClick={() => removeFromCart(item.id)}
+                            className="w-6 h-6 rounded-lg bg-white text-blue-900 font-bold flex items-center justify-center hover:bg-rose-50 hover:text-rose-600 shadow-xs cursor-pointer"
+                          >
+                            <Minus className="w-3 h-3" />
+                          </button>
+                          <span className="font-mono font-bold text-xs text-blue-950 px-1">{qtyInCart}</span>
+                          <button
+                            onClick={() => addToCart(item.id)}
+                            className="w-6 h-6 rounded-lg bg-blue-900 text-white font-bold flex items-center justify-center hover:bg-blue-800 shadow-xs cursor-pointer"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Cart Floating / Docked Strip */}
+            {cartTotalCount > 0 && (
+              <div className="mt-5 p-4 rounded-2xl bg-emerald-950 text-white flex items-center justify-between gap-3 shadow-xl animate-in slide-in-from-bottom-2">
+                <div>
+                  <div className="text-xs font-bold text-emerald-300">
+                    {cartTotalCount} {t.itemsInCart}
+                  </div>
+                  <div className="text-lg font-black font-display text-white">
+                    ₹{cartTotalPrice.toLocaleString('en-IN')}
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleSendWhatsAppOrder}
+                  className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 transition-all shadow-md active:scale-95 cursor-pointer"
+                >
+                  <MessageSquare className="w-4 h-4 text-slate-950 fill-slate-950" />
+                  <span>{t.sendOrderWhatsApp}</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 5. TAB 3: My Bills */}
+      {activeTab === 'bills' && (
+        <div className="space-y-3">
+          <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
+            <div>
+              <h3 className="text-base font-bold text-slate-900">{t.myBillsTitle}</h3>
+              <p className="text-xs text-slate-500">{t.myBillsSub}</p>
+            </div>
+
+            <div className="space-y-3">
+              {bills.map((b) => (
+                <div key={b.id} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-slate-900">{b.id}</span>
+                      <span
+                        className={\`text-[10px] font-bold px-2 py-0.5 rounded-full \${
+                          b.status === 'paid'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-rose-100 text-rose-800'
+                        }\`}
+                      >
+                        {b.status === 'paid' ? t.paidStatus : t.dueStatus}
+                      </span>
+                    </div>
+                    <span className="font-mono font-black text-base text-slate-900">₹{b.total}</span>
+                  </div>
+
+                  <div className="text-slate-600 text-xs">{b.items}</div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-[11px] text-slate-400">
+                    <span>{b.date} &bull; Mode: {b.mode}</span>
+                    <button
+                      onClick={() => alert(\`Receipt for \${b.id}\\nTotal: ₹\${b.total}\\nItems: \${b.items}\`)}
+                      className="text-blue-700 font-bold hover:underline cursor-pointer"
+                    >
+                      {t.billReceipt}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+`;
+fs.writeFileSync('apps/web/src/components/CustomerPortal.tsx', customerPortalCode, 'utf8');
+
 // 11. App.tsx
 const appCode = `import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
@@ -1163,6 +1677,7 @@ import { BottomNavBar } from './components/BottomNavBar';
 import { QrModal } from './components/QrModal';
 import { PosBillingView } from './components/PosBillingView';
 import { InventoryView } from './components/InventoryView';
+import { CustomerPortal } from './components/CustomerPortal';
 import { AuthModal } from './components/AuthModal';
 import { checkHealth } from './services/api';
 import { Lang } from './i18n/translations';
@@ -1174,11 +1689,16 @@ export function App() {
   const [systemHealth, setSystemHealth] = useState('Checking...');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
+  
+  // Dual User State: Shopkeeper vs Customer
   const [currentUser, setCurrentUser] = useState<any>({
+    id: 'usr_owner_01',
     name: 'Ramesh Ganesh',
     shopName: 'Shree Ganesh Kirana',
     phone: '9876543210',
     upiId: 'shreeganesh@sbi',
+    role: 'OWNER', // 'OWNER' | 'CUSTOMER'
+    khataDue: 0,
   });
 
   useEffect(() => {
@@ -1197,6 +1717,32 @@ export function App() {
     setLang((prev) => (prev === 'hi' ? 'en' : 'hi'));
   };
 
+  const handleQuickToggleRole = () => {
+    if (currentUser.role === 'OWNER') {
+      // Switch to Customer mode
+      setCurrentUser({
+        id: 'usr_cust_01',
+        name: 'रमेश कुमार (Ramesh Kumar)',
+        shopName: 'Shree Ganesh Kirana',
+        phone: '9823456789',
+        upiId: 'shreeganesh@sbi',
+        role: 'CUSTOMER',
+        khataDue: 1250,
+      });
+    } else {
+      // Switch to Shopkeeper mode
+      setCurrentUser({
+        id: 'usr_owner_01',
+        name: 'Ramesh Ganesh',
+        shopName: 'Shree Ganesh Kirana',
+        phone: '9876543210',
+        upiId: 'shreeganesh@sbi',
+        role: 'OWNER',
+        khataDue: 0,
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f8f9ff] text-[#0b1c30] flex flex-col font-sans pb-36 md:pb-24">
       {/* Top Universal Header */}
@@ -1209,64 +1755,87 @@ export function App() {
         activeView={activeView}
         onToggleView={setActiveView}
         onOpenAuth={() => setIsAuthOpen(true)}
+        userRole={currentUser.role}
+        userName={currentUser.name}
+        onQuickToggleRole={handleQuickToggleRole}
       />
 
       {/* Main Content Workspace */}
       <main className="max-w-7xl mx-auto px-3.5 sm:px-6 py-4 w-full flex-1">
-        {activeTab === 'inventory' ? (
-          <InventoryView lang={lang} />
-        ) : activeTab === 'khata' ? (
-          <div className="max-w-4xl mx-auto space-y-4">
-            <KhataSummaryCard lang={lang} />
-          </div>
-        ) : activeView === 'pos' ? (
-          <PosBillingView lang={lang} />
+        {currentUser.role === 'CUSTOMER' ? (
+          /* ================= CUSTOMER PORTAL ================= */
+          <CustomerPortal
+            lang={lang}
+            customer={{
+              name: currentUser.name,
+              phone: currentUser.phone,
+              khataDue: currentUser.khataDue || 1250,
+              shopName: currentUser.shopName || 'Shree Ganesh Kirana',
+              upiId: currentUser.upiId || 'shreeganesh@sbi',
+            }}
+            onOpenQr={() => setIsQrOpen(true)}
+          />
         ) : (
-          <div className="max-w-4xl mx-auto space-y-4">
-            {/* 1. Voice AI POS Hero Banner */}
-            <VoiceHeroBanner lang={lang} onCommandTrigger={(cmd) => console.log('Voice Command:', cmd)} />
+          /* ================= SHOPKEEPER MERCHANT OS ================= */
+          activeTab === 'inventory' ? (
+            <InventoryView lang={lang} />
+          ) : activeTab === 'khata' ? (
+            <div className="max-w-4xl mx-auto space-y-4">
+              <KhataSummaryCard lang={lang} />
+            </div>
+          ) : activeView === 'pos' ? (
+            <PosBillingView lang={lang} />
+          ) : (
+            <div className="max-w-4xl mx-auto space-y-4">
+              {/* 1. Voice AI POS Hero Banner */}
+              <VoiceHeroBanner lang={lang} onCommandTrigger={(cmd) => console.log('Voice Command:', cmd)} />
 
-            {/* 2. Dual Primary Fast Counter POS Actions & Shortcuts */}
-            <QuickActionTiles
-              lang={lang}
-              onNewBill={() => setActiveView('pos')}
-              onScanBarcode={() => alert(lang === 'hi' ? 'बारकोड कैमरा स्कैन शुरू किया गया' : 'Barcode scanner camera activated')}
-              onShowQr={() => setIsQrOpen(true)}
-              onAddProduct={() => setActiveTab('inventory')}
-              onDailyReport={() => alert(lang === 'hi' ? 'डेली Z-रिपोर्ट: आज की कुल सेल ₹8,450 | 60 ट्रांजैक्शन' : 'Daily Z-Report: Today\\'s Total Sale ₹8,450 | 60 Transactions')}
-            />
+              {/* 2. Dual Primary Fast Counter POS Actions & Shortcuts */}
+              <QuickActionTiles
+                lang={lang}
+                onNewBill={() => setActiveView('pos')}
+                onScanBarcode={() => alert(lang === 'hi' ? 'बारकोड कैमरा स्कैन शुरू किया गया' : 'Barcode scanner camera activated')}
+                onShowQr={() => setIsQrOpen(true)}
+                onAddProduct={() => setActiveTab('inventory')}
+                onDailyReport={() => alert(lang === 'hi' ? 'डेली Z-रिपोर्ट: आज की कुल सेल ₹8,450 | 60 ट्रांजैक्शन' : 'Daily Z-Report: Today\\'s Total Sale ₹8,450 | 60 Transactions')}
+              />
 
-            {/* 3. Financial Overview: Today's Collection Card */}
-            <SalesSummaryCard lang={lang} />
+              {/* 3. Financial Overview: Today's Collection Card */}
+              <SalesSummaryCard lang={lang} />
 
-            {/* 4. Khata Credit Ledger Widget */}
-            <KhataSummaryCard lang={lang} />
+              {/* 4. Khata Credit Ledger Widget */}
+              <KhataSummaryCard lang={lang} />
 
-            {/* 5. Low Stock Watch */}
-            <LowStockAlerts lang={lang} />
+              {/* 5. Low Stock Watch */}
+              <LowStockAlerts lang={lang} />
 
-            {/* 6. Daily Kirana Insights Strip */}
-            <DailyInsightsStrip lang={lang} />
-          </div>
+              {/* 6. Daily Kirana Insights Strip */}
+              <DailyInsightsStrip lang={lang} />
+            </div>
+          )
         )}
       </main>
 
-      {/* Modern Frosted Translucent Glassmorphism Floating Action Bar */}
-      <FloatingGlassBar
-        lang={lang}
-        onQuickAdd={() => setActiveTab('inventory')}
-        onSubmitPrompt={(prompt) => console.log('Floating prompt:', prompt)}
-      />
+      {/* Modern Frosted Translucent Glassmorphism Floating Action Bar (Shopkeeper Only) */}
+      {currentUser.role === 'OWNER' && (
+        <FloatingGlassBar
+          lang={lang}
+          onQuickAdd={() => setActiveTab('inventory')}
+          onSubmitPrompt={(prompt) => console.log('Floating prompt:', prompt)}
+        />
+      )}
 
-      {/* Docked Bottom Navigation Bar */}
-      <BottomNavBar
-        lang={lang}
-        activeTab={activeTab}
-        onSelectTab={(tab) => {
-          setActiveTab(tab);
-          if (tab === 'home') setActiveView('mobile');
-        }}
-      />
+      {/* Docked Bottom Navigation Bar (Shopkeeper Only) */}
+      {currentUser.role === 'OWNER' && (
+        <BottomNavBar
+          lang={lang}
+          activeTab={activeTab}
+          onSelectTab={(tab) => {
+            setActiveTab(tab);
+            if (tab === 'home') setActiveView('mobile');
+          }}
+        />
+      )}
 
       {/* QR Code Modal */}
       <QrModal
@@ -1283,10 +1852,13 @@ export function App() {
         onClose={() => setIsAuthOpen(false)}
         onSuccess={(data) => {
           setCurrentUser({
+            id: data.user.id,
             name: data.user.name,
             shopName: data.shop?.name || 'Shree Ganesh Kirana',
             phone: data.user.phone,
-            upiId: 'shreeganesh@sbi',
+            upiId: data.shop?.upiId || 'shreeganesh@sbi',
+            role: data.user.role || 'OWNER',
+            khataDue: data.user.khataDue || 0,
           });
         }}
       />

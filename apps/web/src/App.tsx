@@ -11,6 +11,7 @@ import { BottomNavBar } from './components/BottomNavBar';
 import { QrModal } from './components/QrModal';
 import { PosBillingView } from './components/PosBillingView';
 import { InventoryView } from './components/InventoryView';
+import { CustomerPortal } from './components/CustomerPortal';
 import { AuthModal } from './components/AuthModal';
 import { checkHealth } from './services/api';
 import { Lang } from './i18n/translations';
@@ -22,11 +23,16 @@ export function App() {
   const [systemHealth, setSystemHealth] = useState('Checking...');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
+  
+  // Dual User State: Shopkeeper vs Customer
   const [currentUser, setCurrentUser] = useState<any>({
+    id: 'usr_owner_01',
     name: 'Ramesh Ganesh',
     shopName: 'Shree Ganesh Kirana',
     phone: '9876543210',
     upiId: 'shreeganesh@sbi',
+    role: 'OWNER', // 'OWNER' | 'CUSTOMER'
+    khataDue: 0,
   });
 
   useEffect(() => {
@@ -45,6 +51,32 @@ export function App() {
     setLang((prev) => (prev === 'hi' ? 'en' : 'hi'));
   };
 
+  const handleQuickToggleRole = () => {
+    if (currentUser.role === 'OWNER') {
+      // Switch to Customer mode
+      setCurrentUser({
+        id: 'usr_cust_01',
+        name: 'रमेश कुमार (Ramesh Kumar)',
+        shopName: 'Shree Ganesh Kirana',
+        phone: '9823456789',
+        upiId: 'shreeganesh@sbi',
+        role: 'CUSTOMER',
+        khataDue: 1250,
+      });
+    } else {
+      // Switch to Shopkeeper mode
+      setCurrentUser({
+        id: 'usr_owner_01',
+        name: 'Ramesh Ganesh',
+        shopName: 'Shree Ganesh Kirana',
+        phone: '9876543210',
+        upiId: 'shreeganesh@sbi',
+        role: 'OWNER',
+        khataDue: 0,
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f8f9ff] text-[#0b1c30] flex flex-col font-sans pb-36 md:pb-24">
       {/* Top Universal Header */}
@@ -57,64 +89,87 @@ export function App() {
         activeView={activeView}
         onToggleView={setActiveView}
         onOpenAuth={() => setIsAuthOpen(true)}
+        userRole={currentUser.role}
+        userName={currentUser.name}
+        onQuickToggleRole={handleQuickToggleRole}
       />
 
       {/* Main Content Workspace */}
       <main className="max-w-7xl mx-auto px-3.5 sm:px-6 py-4 w-full flex-1">
-        {activeTab === 'inventory' ? (
-          <InventoryView lang={lang} />
-        ) : activeTab === 'khata' ? (
-          <div className="max-w-4xl mx-auto space-y-4">
-            <KhataSummaryCard lang={lang} />
-          </div>
-        ) : activeView === 'pos' ? (
-          <PosBillingView lang={lang} />
+        {currentUser.role === 'CUSTOMER' ? (
+          /* ================= CUSTOMER PORTAL ================= */
+          <CustomerPortal
+            lang={lang}
+            customer={{
+              name: currentUser.name,
+              phone: currentUser.phone,
+              khataDue: currentUser.khataDue || 1250,
+              shopName: currentUser.shopName || 'Shree Ganesh Kirana',
+              upiId: currentUser.upiId || 'shreeganesh@sbi',
+            }}
+            onOpenQr={() => setIsQrOpen(true)}
+          />
         ) : (
-          <div className="max-w-4xl mx-auto space-y-4">
-            {/* 1. Voice AI POS Hero Banner */}
-            <VoiceHeroBanner lang={lang} onCommandTrigger={(cmd) => console.log('Voice Command:', cmd)} />
+          /* ================= SHOPKEEPER MERCHANT OS ================= */
+          activeTab === 'inventory' ? (
+            <InventoryView lang={lang} />
+          ) : activeTab === 'khata' ? (
+            <div className="max-w-4xl mx-auto space-y-4">
+              <KhataSummaryCard lang={lang} />
+            </div>
+          ) : activeView === 'pos' ? (
+            <PosBillingView lang={lang} />
+          ) : (
+            <div className="max-w-4xl mx-auto space-y-4">
+              {/* 1. Voice AI POS Hero Banner */}
+              <VoiceHeroBanner lang={lang} onCommandTrigger={(cmd) => console.log('Voice Command:', cmd)} />
 
-            {/* 2. Dual Primary Fast Counter POS Actions & Shortcuts */}
-            <QuickActionTiles
-              lang={lang}
-              onNewBill={() => setActiveView('pos')}
-              onScanBarcode={() => alert(lang === 'hi' ? 'बारकोड कैमरा स्कैन शुरू किया गया' : 'Barcode scanner camera activated')}
-              onShowQr={() => setIsQrOpen(true)}
-              onAddProduct={() => setActiveTab('inventory')}
-              onDailyReport={() => alert(lang === 'hi' ? 'डेली Z-रिपोर्ट: आज की कुल सेल ₹8,450 | 60 ट्रांजैक्शन' : 'Daily Z-Report: Today\'s Total Sale ₹8,450 | 60 Transactions')}
-            />
+              {/* 2. Dual Primary Fast Counter POS Actions & Shortcuts */}
+              <QuickActionTiles
+                lang={lang}
+                onNewBill={() => setActiveView('pos')}
+                onScanBarcode={() => alert(lang === 'hi' ? 'बारकोड कैमरा स्कैन शुरू किया गया' : 'Barcode scanner camera activated')}
+                onShowQr={() => setIsQrOpen(true)}
+                onAddProduct={() => setActiveTab('inventory')}
+                onDailyReport={() => alert(lang === 'hi' ? 'डेली Z-रिपोर्ट: आज की कुल सेल ₹8,450 | 60 ट्रांजैक्शन' : 'Daily Z-Report: Today\'s Total Sale ₹8,450 | 60 Transactions')}
+              />
 
-            {/* 3. Financial Overview: Today's Collection Card */}
-            <SalesSummaryCard lang={lang} />
+              {/* 3. Financial Overview: Today's Collection Card */}
+              <SalesSummaryCard lang={lang} />
 
-            {/* 4. Khata Credit Ledger Widget */}
-            <KhataSummaryCard lang={lang} />
+              {/* 4. Khata Credit Ledger Widget */}
+              <KhataSummaryCard lang={lang} />
 
-            {/* 5. Low Stock Watch */}
-            <LowStockAlerts lang={lang} />
+              {/* 5. Low Stock Watch */}
+              <LowStockAlerts lang={lang} />
 
-            {/* 6. Daily Kirana Insights Strip */}
-            <DailyInsightsStrip lang={lang} />
-          </div>
+              {/* 6. Daily Kirana Insights Strip */}
+              <DailyInsightsStrip lang={lang} />
+            </div>
+          )
         )}
       </main>
 
-      {/* Modern Frosted Translucent Glassmorphism Floating Action Bar */}
-      <FloatingGlassBar
-        lang={lang}
-        onQuickAdd={() => setActiveTab('inventory')}
-        onSubmitPrompt={(prompt) => console.log('Floating prompt:', prompt)}
-      />
+      {/* Modern Frosted Translucent Glassmorphism Floating Action Bar (Shopkeeper Only) */}
+      {currentUser.role === 'OWNER' && (
+        <FloatingGlassBar
+          lang={lang}
+          onQuickAdd={() => setActiveTab('inventory')}
+          onSubmitPrompt={(prompt) => console.log('Floating prompt:', prompt)}
+        />
+      )}
 
-      {/* Docked Bottom Navigation Bar */}
-      <BottomNavBar
-        lang={lang}
-        activeTab={activeTab}
-        onSelectTab={(tab) => {
-          setActiveTab(tab);
-          if (tab === 'home') setActiveView('mobile');
-        }}
-      />
+      {/* Docked Bottom Navigation Bar (Shopkeeper Only) */}
+      {currentUser.role === 'OWNER' && (
+        <BottomNavBar
+          lang={lang}
+          activeTab={activeTab}
+          onSelectTab={(tab) => {
+            setActiveTab(tab);
+            if (tab === 'home') setActiveView('mobile');
+          }}
+        />
+      )}
 
       {/* QR Code Modal */}
       <QrModal
@@ -131,10 +186,13 @@ export function App() {
         onClose={() => setIsAuthOpen(false)}
         onSuccess={(data) => {
           setCurrentUser({
+            id: data.user.id,
             name: data.user.name,
             shopName: data.shop?.name || 'Shree Ganesh Kirana',
             phone: data.user.phone,
-            upiId: 'shreeganesh@sbi',
+            upiId: data.shop?.upiId || 'shreeganesh@sbi',
+            role: data.user.role || 'OWNER',
+            khataDue: data.user.khataDue || 0,
           });
         }}
       />
