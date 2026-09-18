@@ -64,32 +64,35 @@ export function QuickActionTiles({
         </button>
       </div>
 
-      {/* Secondary Counter Shortcuts */}
+      {/* Secondary Counter Shortcuts - Transparent Capsule Pills */}
       <div className="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar">
         <button
           onClick={onShowQr}
-          className="h-11 px-4 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-bold flex items-center gap-2 shrink-0 shadow-sm hover:bg-slate-50 transition-colors active:scale-95"
+          className="h-10 px-4 rounded-full bg-slate-900/85 hover:bg-slate-900 text-white backdrop-blur-xl border border-white/20 text-xs font-bold flex items-center gap-2 shrink-0 shadow-md transition-all active:scale-95 cursor-pointer"
           type="button"
         >
-          <QrCode className="w-4 h-4 text-blue-600" />
+          <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+          <QrCode className="w-4 h-4 text-blue-300" />
           <span>{t.showQr}</span>
         </button>
 
         <button
           onClick={onAddProduct}
-          className="h-11 px-4 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-bold flex items-center gap-2 shrink-0 shadow-sm hover:bg-slate-50 transition-colors active:scale-95"
+          className="h-10 px-4 rounded-full bg-slate-900/85 hover:bg-slate-900 text-white backdrop-blur-xl border border-white/20 text-xs font-bold flex items-center gap-2 shrink-0 shadow-md transition-all active:scale-95 cursor-pointer"
           type="button"
         >
-          <PlusCircle className="w-4 h-4 text-emerald-600" />
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
+          <PlusCircle className="w-4 h-4 text-emerald-300" />
           <span>{t.addProduct}</span>
         </button>
 
         <button
           onClick={onDailyReport}
-          className="h-11 px-4 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-bold flex items-center gap-2 shrink-0 shadow-sm hover:bg-slate-50 transition-colors active:scale-95"
+          className="h-10 px-4 rounded-full bg-slate-900/85 hover:bg-slate-900 text-white backdrop-blur-xl border border-white/20 text-xs font-bold flex items-center gap-2 shrink-0 shadow-md transition-all active:scale-95 cursor-pointer"
           type="button"
         >
-          <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
+          <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
+          <FileSpreadsheet className="w-4 h-4 text-indigo-300" />
           <span>{t.dailyReport}</span>
         </button>
       </div>

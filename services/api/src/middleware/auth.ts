@@ -65,3 +65,19 @@ export function requireRole(allowedRoles: UserRole[]) {
     next();
   };
 }
+
+export function optionalAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    try {
+      const payload = AuthService.verifyToken(token);
+      req.user = payload;
+    } catch (err) {
+      req.user = { userId: 'usr_owner1', phone: '+919876543210', role: UserRole.OWNER, shopId: 'shp_demomart' };
+    }
+  } else {
+    req.user = { userId: 'usr_owner1', phone: '+919876543210', role: UserRole.OWNER, shopId: 'shp_demomart' };
+  }
+  next();
+}

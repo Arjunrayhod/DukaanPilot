@@ -266,8 +266,8 @@ export function Header({
       <div className="max-w-7xl mx-auto h-16 px-4 flex items-center justify-between gap-3">
         {/* Store Title & Role Status */}
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 to-blue-500 text-white flex items-center justify-center shadow-md shrink-0">
-            <Store className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-slate-900 via-blue-950 to-slate-900 text-white flex items-center justify-center shadow-md shrink-0 border border-white/10">
+            <Store className="w-5 h-5 text-blue-400" />
           </div>
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">
@@ -279,7 +279,7 @@ export function Header({
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
               <span className="font-semibold text-slate-500 uppercase tracking-wider text-[11px]">
                 {userRole === 'OWNER' ? t.posOnline : (lang === 'hi' ? 'ग्राहक पोर्टल' : 'Customer Portal')}
               </span>
@@ -293,64 +293,68 @@ export function Header({
 
         {/* View Switcher & Action Controls */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Quick Role Switcher Button */}
+          {/* Quick Role Switcher Button - Dark Translucent Pill */}
           {onQuickToggleRole && (
             <button
               onClick={onQuickToggleRole}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all bg-slate-50 hover:bg-blue-50 border-slate-200 text-slate-700 hover:text-blue-900 shadow-xs cursor-pointer active:scale-95"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-slate-900/85 hover:bg-slate-900 backdrop-blur-xl border border-white/15 text-white text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer group"
               title="Switch between Shopkeeper & Customer view"
             >
-              <ArrowLeftRight className="w-3.5 h-3.5 text-blue-700" />
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+              <ArrowLeftRight className="w-3.5 h-3.5 text-blue-300 group-hover:rotate-180 transition-transform duration-300" />
               <span className="hidden sm:inline">
                 {userRole === 'OWNER' ? (lang === 'hi' ? 'ग्राहक मोड' : 'Customer Mode') : (lang === 'hi' ? 'दुकानदार मोड' : 'Shopkeeper Mode')}
               </span>
             </button>
           )}
 
-          {/* Mobile / Counter POS Switcher (Shopkeeper Only) */}
+          {/* Mobile / Counter POS Switcher (Shopkeeper Only) - Dark Translucent Pill Container */}
           {userRole === 'OWNER' && (
-            <div className="hidden sm:flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-semibold">
+            <div className="hidden sm:flex bg-slate-900/85 backdrop-blur-xl p-1 rounded-full border border-white/15 text-xs font-semibold shadow-sm">
               <button
                 onClick={() => onToggleView('mobile')}
-                className={\`px-3 py-1.5 rounded-md transition-all \${
-                  activeView === 'mobile' ? 'bg-white text-blue-800 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
+                className={\`px-3 py-1 rounded-full transition-all flex items-center gap-1.5 \${
+                  activeView === 'mobile' ? 'bg-white/20 text-white font-bold shadow-xs border border-white/10' : 'text-slate-300 hover:text-white'
                 }\`}
               >
-                {t.mobileView}
+                {activeView === 'mobile' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
+                <span>{t.mobileView}</span>
               </button>
               <button
                 onClick={() => onToggleView('pos')}
-                className={\`px-3 py-1.5 rounded-md transition-all \${
-                  activeView === 'pos' ? 'bg-white text-blue-800 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
+                className={\`px-3 py-1 rounded-full transition-all flex items-center gap-1.5 \${
+                  activeView === 'pos' ? 'bg-white/20 text-white font-bold shadow-xs border border-white/10' : 'text-slate-300 hover:text-white'
                 }\`}
               >
-                {t.posView}
+                {activeView === 'pos' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
+                <span>{t.posView}</span>
               </button>
             </div>
           )}
 
-          {/* Language Toggle Button */}
+          {/* Language Toggle Button - Dark Translucent Pill */}
           <button
             onClick={onToggleLang}
-            className="h-9 px-3 flex items-center justify-center rounded-lg bg-blue-50/90 border border-blue-200 text-blue-900 text-xs font-bold hover:bg-blue-100 transition-all shadow-sm active:scale-95 cursor-pointer"
+            className="h-9 px-3.5 rounded-full bg-slate-900/85 hover:bg-slate-900 backdrop-blur-xl border border-white/15 text-white text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer flex items-center gap-1.5"
             type="button"
             title="Toggle Language"
           >
-            <Languages className="w-3.5 h-3.5 mr-1.5 text-blue-700" />
-            <span className={lang === 'hi' ? 'text-blue-800 font-extrabold' : 'text-slate-400 font-normal'}>हिन्दी</span>
-            <span className="mx-1 text-slate-300">|</span>
-            <span className={lang === 'en' ? 'text-blue-800 font-extrabold' : 'text-slate-400 font-normal'}>EN</span>
+            <Languages className="w-3.5 h-3.5 text-blue-300" />
+            <span className={lang === 'hi' ? 'text-emerald-400 font-extrabold' : 'text-slate-400 font-normal'}>हिन्दी</span>
+            <span className="text-slate-500">|</span>
+            <span className={lang === 'en' ? 'text-emerald-400 font-extrabold' : 'text-slate-400 font-normal'}>EN</span>
           </button>
 
-          {/* User Account / Login */}
+          {/* User Account Button - Dark Translucent Pill */}
           <button
             onClick={onOpenAuth}
-            className="h-9 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 flex items-center gap-1.5 text-slate-700 transition-colors shadow-sm cursor-pointer"
+            className="h-9 px-3.5 rounded-full bg-slate-900/85 hover:bg-slate-900 backdrop-blur-xl border border-white/15 flex items-center gap-1.5 text-white transition-colors shadow-sm cursor-pointer"
             type="button"
             title="Switch User / Account"
           >
-            <User className="w-4 h-4 text-blue-800" />
-            <span className="hidden md:inline text-xs font-bold text-slate-800">
+            <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+            <User className="w-3.5 h-3.5 text-blue-300" />
+            <span className="hidden md:inline text-xs font-bold">
               {userRole === 'OWNER' ? 'Shop' : 'Customer'}
             </span>
           </button>
@@ -394,19 +398,20 @@ export function VoiceHeroBanner({ lang, onCommandTrigger }: VoiceHeroBannerProps
   };
 
   return (
-    <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-900 via-blue-700 to-indigo-700 text-white p-5 shadow-lg border border-blue-500/20">
+    <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-blue-950 to-slate-950 text-white p-5 shadow-xl border border-white/15">
       <div className="absolute -right-10 -bottom-10 w-44 h-44 rounded-full bg-emerald-400/10 blur-2xl pointer-events-none"></div>
-      <div className="absolute -left-10 -top-10 w-36 h-36 rounded-full bg-blue-300/15 blur-xl pointer-events-none"></div>
+      <div className="absolute -left-10 -top-10 w-36 h-36 rounded-full bg-blue-400/15 blur-xl pointer-events-none"></div>
 
       <div className="relative z-10 flex flex-col space-y-4">
-        {/* Status Badges */}
+        {/* Status Badges - Dark Translucent Capsule Pills */}
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-white text-xs font-bold tracking-wide border border-white/20 shadow-sm">
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/80 backdrop-blur-md text-white text-xs font-bold tracking-wide border border-white/15 shadow-sm">
+            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
             <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
             <span>{t.instantVoicePos}</span>
           </span>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-sm text-blue-100 text-xs font-medium border border-white/10">
-            <Globe className="w-3.5 h-3.5 text-emerald-300" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/60 backdrop-blur-sm text-blue-200 text-xs font-medium border border-white/10">
+            <Globe className="w-3.5 h-3.5 text-emerald-400" />
             <span>{t.languagesSupported}</span>
           </span>
         </div>
@@ -416,7 +421,7 @@ export function VoiceHeroBanner({ lang, onCommandTrigger }: VoiceHeroBannerProps
           <div className="flex-1 min-w-0">
             <h2 className="text-xl sm:text-2xl font-extrabold leading-tight text-white flex items-center gap-2 flex-wrap">
               <span>{t.voiceBillTitle}</span>
-              <span className="text-emerald-300 text-lg font-bold">{t.voiceBillSub}</span>
+              <span className="text-emerald-400 text-lg font-bold">{t.voiceBillSub}</span>
             </h2>
             <p className="text-xs sm:text-sm text-blue-100/90 mt-1 font-medium">
               {transcribedText ? (
@@ -427,21 +432,21 @@ export function VoiceHeroBanner({ lang, onCommandTrigger }: VoiceHeroBannerProps
             </p>
           </div>
 
-          {/* Voice Mic Button */}
+          {/* Voice Mic Button - Dark Translucent Pill */}
           <button
             onClick={handleMicClick}
             aria-label="Activate Voice Assistant"
-            className={\`relative group shrink-0 w-14 h-14 rounded-full bg-white text-blue-900 flex items-center justify-center shadow-xl active:scale-95 transition-all \${
-              isListening ? 'ring-4 ring-emerald-400 bg-emerald-50' : 'hover:scale-105'
+            className={\`relative group shrink-0 w-14 h-14 rounded-full bg-slate-900/90 backdrop-blur-xl border border-white/20 text-white flex items-center justify-center shadow-xl active:scale-95 transition-all cursor-pointer \${
+              isListening ? 'ring-4 ring-emerald-400 bg-slate-900' : 'hover:scale-105 hover:bg-slate-800'
             }\`}
             type="button"
           >
             {isListening && (
-              <span className="absolute inset-0 rounded-full bg-white animate-ping opacity-30"></span>
+              <span className="absolute inset-0 rounded-full bg-emerald-400/30 animate-ping"></span>
             )}
-            <Mic className={\`w-7 h-7 \${isListening ? 'text-emerald-600 animate-bounce' : 'text-blue-800'}\`} />
+            <Mic className={\`w-7 h-7 \${isListening ? 'text-emerald-400 animate-bounce' : 'text-blue-300'}\`} />
             
-            <span className="absolute -bottom-1 flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-slate-900 text-white text-[9px] shadow-sm">
+            <span className="absolute -bottom-1 flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-slate-950 text-white text-[9px] shadow-sm border border-white/15">
               <span className="w-1 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
               <span className="w-1 h-3 bg-emerald-400 rounded-full animate-pulse delay-75"></span>
               <span className="w-1 h-1.5 bg-emerald-400 rounded-full animate-pulse delay-150"></span>
@@ -449,16 +454,17 @@ export function VoiceHeroBanner({ lang, onCommandTrigger }: VoiceHeroBannerProps
           </button>
         </div>
 
-        {/* Quick Suggestion Chips */}
+        {/* Quick Suggestion Chips - Dark Translucent Capsule Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pt-1 pb-1 no-scrollbar">
           {quickPrompts.map((chip, idx) => (
             <button
               key={idx}
               onClick={() => handleChipClick(chip)}
-              className="shrink-0 px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/10 text-white text-xs font-semibold backdrop-blur-sm transition-all active:scale-95 shadow-sm"
+              className="shrink-0 px-3.5 py-1.5 rounded-full bg-slate-900/80 hover:bg-slate-900/95 border border-white/15 text-white text-xs font-semibold backdrop-blur-md transition-all active:scale-95 shadow-sm flex items-center gap-1.5 cursor-pointer"
               type="button"
             >
-              {chip}
+              <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+              <span>{chip}</span>
             </button>
           ))}
         </div>
@@ -499,69 +505,78 @@ export function QuickActionTiles({
         {/* Quick Bill Card */}
         <button
           onClick={onNewBill}
-          className="flex flex-col justify-between p-4 h-28 rounded-2xl bg-blue-900 text-white shadow-md hover:bg-blue-800 active:scale-[0.98] transition-all text-left group relative overflow-hidden"
+          className="flex flex-col justify-between p-4 h-28 rounded-3xl bg-gradient-to-tr from-slate-950 via-blue-950 to-slate-900 text-white shadow-lg border border-white/15 hover:border-blue-400/40 active:scale-[0.98] transition-all text-left group relative overflow-hidden cursor-pointer"
           type="button"
         >
           <div className="flex items-center justify-between w-full">
-            <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Receipt className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Receipt className="w-5 h-5 text-blue-300" />
             </div>
-            <span className="px-2 py-0.5 rounded-md bg-white/20 text-white text-xs font-bold font-mono">F1</span>
+            <span className="px-2.5 py-1 rounded-full bg-slate-900/90 border border-white/20 text-white text-xs font-bold font-mono">F1</span>
           </div>
           <div>
-            <div className="text-base font-bold leading-tight">{t.newBill}</div>
-            <div className="text-xs text-blue-200 font-medium">{t.newBillSub}</div>
+            <div className="text-base font-bold leading-tight flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+              <span>{t.newBill}</span>
+            </div>
+            <div className="text-xs text-blue-200 font-medium mt-0.5">{t.newBillSub}</div>
           </div>
         </button>
 
-        {/* Scan Barcode Card */}
+        {/* Scan Barcode Card - Dark Translucent */}
         <button
           onClick={onScanBarcode}
-          className="flex flex-col justify-between p-4 h-28 rounded-2xl bg-white border border-slate-200/90 text-slate-900 shadow-sm hover:bg-slate-50 active:scale-[0.98] transition-all text-left group"
+          className="flex flex-col justify-between p-4 h-28 rounded-3xl bg-slate-900/90 backdrop-blur-xl border border-white/15 text-white shadow-lg hover:border-emerald-400/40 active:scale-[0.98] transition-all text-left group cursor-pointer"
           type="button"
         >
           <div className="flex items-center justify-between w-full">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700 group-hover:scale-110 transition-transform">
+            <div className="w-10 h-10 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
               <QrCode className="w-5 h-5" />
             </div>
-            <span className="inline-flex items-center gap-1 text-emerald-700 text-xs font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+            <span className="inline-flex items-center gap-1.5 text-emerald-400 text-xs font-bold bg-slate-950/80 px-2.5 py-1 rounded-full border border-emerald-500/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
               {t.live}
             </span>
           </div>
           <div>
-            <div className="text-base font-bold leading-tight text-slate-900">{t.scanBarcode}</div>
-            <div className="text-xs text-slate-500 font-medium">{t.scanBarcodeSub}</div>
+            <div className="text-base font-bold leading-tight text-white flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+              <span>{t.scanBarcode}</span>
+            </div>
+            <div className="text-xs text-slate-400 font-medium mt-0.5">{t.scanBarcodeSub}</div>
           </div>
         </button>
       </div>
 
-      {/* Secondary Counter Shortcuts */}
+      {/* Secondary Counter Shortcuts - Dark Translucent Capsule Pills */}
       <div className="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar">
         <button
           onClick={onShowQr}
-          className="h-11 px-4 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-bold flex items-center gap-2 shrink-0 shadow-sm hover:bg-slate-50 transition-colors active:scale-95"
+          className="h-10 px-4 rounded-full bg-slate-900/85 hover:bg-slate-900 backdrop-blur-xl border border-white/15 text-white text-xs font-bold flex items-center gap-2 shrink-0 shadow-md transition-all active:scale-95 cursor-pointer"
           type="button"
         >
-          <QrCode className="w-4 h-4 text-blue-600" />
+          <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+          <QrCode className="w-4 h-4 text-blue-300" />
           <span>{t.showQr}</span>
         </button>
 
         <button
           onClick={onAddProduct}
-          className="h-11 px-4 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-bold flex items-center gap-2 shrink-0 shadow-sm hover:bg-slate-50 transition-colors active:scale-95"
+          className="h-10 px-4 rounded-full bg-slate-900/85 hover:bg-slate-900 backdrop-blur-xl border border-white/15 text-white text-xs font-bold flex items-center gap-2 shrink-0 shadow-md transition-all active:scale-95 cursor-pointer"
           type="button"
         >
-          <PlusCircle className="w-4 h-4 text-emerald-600" />
+          <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+          <PlusCircle className="w-4 h-4 text-emerald-400" />
           <span>{t.addProduct}</span>
         </button>
 
         <button
           onClick={onDailyReport}
-          className="h-11 px-4 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-bold flex items-center gap-2 shrink-0 shadow-sm hover:bg-slate-50 transition-colors active:scale-95"
+          className="h-10 px-4 rounded-full bg-slate-900/85 hover:bg-slate-900 backdrop-blur-xl border border-white/15 text-white text-xs font-bold flex items-center gap-2 shrink-0 shadow-md transition-all active:scale-95 cursor-pointer"
           type="button"
         >
-          <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
+          <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+          <FileSpreadsheet className="w-4 h-4 text-indigo-300" />
           <span>{t.dailyReport}</span>
         </button>
       </div>
@@ -1339,12 +1354,13 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   return (
     <div className="max-w-4xl mx-auto space-y-4">
       {/* 1. Customer Welcome & Shop Connected Card */}
-      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 rounded-3xl p-5 text-white shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-slate-950 via-blue-950 to-slate-950 rounded-3xl p-5 text-white shadow-xl relative overflow-hidden border border-white/15">
         <div className="absolute right-0 top-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
         
         <div className="flex items-center justify-between gap-3 relative z-10">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-[11px] font-bold text-blue-200 mb-2 border border-white/10">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/80 backdrop-blur-md text-xs font-bold text-white mb-2 border border-white/15 shadow-sm">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
               <span>{lang === 'hi' ? 'सत्यापित ग्राहक खाता' : 'Verified Customer Profile'}</span>
             </div>
@@ -1366,7 +1382,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
           <div className="flex items-center gap-2">
             <span className="text-blue-300 font-medium">{lang === 'hi' ? 'दुकान:' : 'Shop:'}</span>
             <span className="font-bold text-white">{customer.shopName}</span>
-            <span className="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded-full font-bold border border-emerald-500/30">
+            <span className="bg-emerald-500/20 text-emerald-300 text-[10px] px-2.5 py-0.5 rounded-full font-bold border border-emerald-500/30">
               Open Now
             </span>
           </div>
@@ -1374,48 +1390,52 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
           <div className="flex items-center gap-2">
             <a
               href="tel:9876543210"
-              className="inline-flex items-center gap-1 text-[11px] font-bold bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-lg transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs font-bold bg-slate-900/80 hover:bg-slate-900 px-3 py-1.5 rounded-full border border-white/15 text-white transition-all shadow-sm"
             >
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
               <Phone className="w-3 h-3 text-emerald-300" />
               <span>{t.callShop}</span>
             </a>
             <button
               onClick={onOpenQr}
-              className="inline-flex items-center gap-1 text-[11px] font-bold bg-emerald-500 text-slate-950 px-2.5 py-1 rounded-lg hover:bg-emerald-400 transition-colors shadow-sm cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs font-bold bg-slate-900/80 hover:bg-slate-900 px-3 py-1.5 rounded-full border border-white/15 text-white transition-all shadow-sm cursor-pointer"
             >
-              <QrCode className="w-3 h-3" />
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+              <QrCode className="w-3 h-3 text-blue-300" />
               <span>{lang === 'hi' ? 'दुकान QR' : 'Shop QR'}</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* 2. Customer Navigation Tabs */}
-      <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/80">
+      {/* 2. Customer Navigation Tabs - Dark Translucent Pill Container */}
+      <div className="flex items-center gap-2 bg-slate-900/85 backdrop-blur-xl p-1.5 rounded-full border border-white/15 shadow-md">
         <button
           onClick={() => setActiveTab('overview')}
-          className={\`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer \${
+          className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'overview'
-              ? 'bg-white text-blue-900 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
-          }\`}
+              ? 'bg-white/20 text-white shadow-sm border border-white/15'
+              : 'text-slate-300 hover:text-white'
+          }`}
         >
-          <Receipt className="w-4 h-4 text-blue-600" />
-          <span>{lang === 'hi' ? 'मेरा खाता व समरी' : 'My Khata & Ledger'}</span>
+          {activeTab === 'overview' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
+          <Receipt className="w-3.5 h-3.5 text-blue-300" />
+          <span>{lang === 'hi' ? 'मेरा खाता' : 'My Khata'}</span>
         </button>
 
         <button
           onClick={() => setActiveTab('catalog')}
-          className={\`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer \${
+          className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'catalog'
-              ? 'bg-white text-blue-900 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
-          }\`}
+              ? 'bg-white/20 text-white shadow-sm border border-white/15'
+              : 'text-slate-300 hover:text-white'
+          }`}
         >
-          <ShoppingBag className="w-4 h-4 text-emerald-600" />
-          <span>{lang === 'hi' ? 'दुकान का सामान' : 'Store Catalog'}</span>
+          {activeTab === 'catalog' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
+          <ShoppingBag className="w-3.5 h-3.5 text-emerald-300" />
+          <span>{lang === 'hi' ? 'सामान ऑर्डर' : 'Catalog'}</span>
           {cartTotalCount > 0 && (
-            <span className="bg-emerald-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-black">
+            <span className="bg-emerald-500 text-slate-950 text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-black">
               {cartTotalCount}
             </span>
           )}
@@ -1423,13 +1443,14 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
         <button
           onClick={() => setActiveTab('bills')}
-          className={\`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer \${
+          className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'bills'
-              ? 'bg-white text-blue-900 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900'
-          }\`}
+              ? 'bg-white/20 text-white shadow-sm border border-white/15'
+              : 'text-slate-300 hover:text-white'
+          }`}
         >
-          <Clock className="w-4 h-4 text-amber-600" />
+          {activeTab === 'bills' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
+          <Clock className="w-3.5 h-3.5 text-amber-300" />
           <span>{lang === 'hi' ? 'पुराने बिल' : 'My Bills'}</span>
         </button>
       </div>
@@ -1448,7 +1469,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                   <span className="text-3xl font-black font-display text-rose-600">
                     ₹{customer.khataDue.toLocaleString('en-IN')}
                   </span>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                     {lang === 'hi' ? 'देय बकाया' : 'Outstanding Due'}
                   </span>
                 </div>
@@ -1456,8 +1477,9 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
               <button
                 onClick={onOpenQr}
-                className="flex items-center gap-1.5 bg-blue-900 hover:bg-blue-800 text-white px-4 py-2.5 rounded-2xl text-xs font-bold shadow-md transition-all active:scale-95 cursor-pointer"
+                className="flex items-center gap-2 bg-slate-900/90 hover:bg-slate-900 backdrop-blur-xl border border-white/20 text-white px-4 py-2.5 rounded-full text-xs font-bold shadow-md transition-all active:scale-95 cursor-pointer"
               >
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
                 <QrCode className="w-4 h-4 text-emerald-300" />
                 <span>{t.payNowViaUpi}</span>
               </button>
@@ -1508,11 +1530,11 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                   <div className="text-right shrink-0">
                     <div className="font-mono font-bold text-slate-900 text-sm">₹{b.total}</div>
                     <span
-                      className={\`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full \${
+                      className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${
                         b.status === 'paid'
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : 'bg-rose-50 text-rose-700 border border-rose-200'
-                      }\`}
+                      }`}
                     >
                       {b.status === 'paid' ? t.paidStatus : t.dueStatus}
                     </span>
@@ -1533,8 +1555,9 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 <h3 className="text-base font-bold text-slate-900">{t.customerCatalogTitle}</h3>
                 <p className="text-xs text-slate-500">{t.customerCatalogSub}</p>
               </div>
-              <div className="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-xl border border-blue-200">
-                {catalog.length} {lang === 'hi' ? 'आइटम उपलब्ध' : 'Items Available'}
+              <div className="text-xs font-bold text-white bg-slate-900/85 px-3 py-1.5 rounded-full border border-white/15 flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                <span>{catalog.length} {lang === 'hi' ? 'आइटम उपलब्ध' : 'Items'}</span>
               </div>
             </div>
 
@@ -1559,23 +1582,24 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                       {qtyInCart === 0 ? (
                         <button
                           onClick={() => addToCart(item.id)}
-                          className="h-8 px-3 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold flex items-center gap-1 transition-colors shadow-sm cursor-pointer"
+                          className="h-8 px-3.5 rounded-full bg-slate-900/85 hover:bg-slate-900 backdrop-blur-md border border-white/15 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
                         >
-                          <Plus className="w-3.5 h-3.5" />
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                          <Plus className="w-3.5 h-3.5 text-emerald-400" />
                           <span>{lang === 'hi' ? 'जोड़ें' : 'Add'}</span>
                         </button>
                       ) : (
-                        <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 p-1 rounded-xl">
+                        <div className="flex items-center gap-1.5 bg-slate-900/85 backdrop-blur-md border border-white/15 p-1 rounded-full text-white shadow-sm">
                           <button
                             onClick={() => removeFromCart(item.id)}
-                            className="w-6 h-6 rounded-lg bg-white text-blue-900 font-bold flex items-center justify-center hover:bg-rose-50 hover:text-rose-600 shadow-xs cursor-pointer"
+                            className="w-6 h-6 rounded-full bg-white/10 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 font-bold flex items-center justify-center transition-colors cursor-pointer"
                           >
                             <Minus className="w-3 h-3" />
                           </button>
-                          <span className="font-mono font-bold text-xs text-blue-950 px-1">{qtyInCart}</span>
+                          <span className="font-mono font-bold text-xs text-white px-1.5">{qtyInCart}</span>
                           <button
                             onClick={() => addToCart(item.id)}
-                            className="w-6 h-6 rounded-lg bg-blue-900 text-white font-bold flex items-center justify-center hover:bg-blue-800 shadow-xs cursor-pointer"
+                            className="w-6 h-6 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold flex items-center justify-center transition-colors cursor-pointer"
                           >
                             <Plus className="w-3 h-3" />
                           </button>
@@ -1589,19 +1613,20 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
             {/* Cart Floating / Docked Strip */}
             {cartTotalCount > 0 && (
-              <div className="mt-5 p-4 rounded-2xl bg-emerald-950 text-white flex items-center justify-between gap-3 shadow-xl animate-in slide-in-from-bottom-2">
+              <div className="mt-5 p-4 rounded-full bg-slate-950/95 backdrop-blur-2xl border border-white/20 text-white flex items-center justify-between gap-3 shadow-2xl animate-in slide-in-from-bottom-2 px-6">
                 <div>
-                  <div className="text-xs font-bold text-emerald-300">
-                    {cartTotalCount} {t.itemsInCart}
+                  <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                    <span>{cartTotalCount} {t.itemsInCart}</span>
                   </div>
-                  <div className="text-lg font-black font-display text-white">
+                  <div className="text-base font-black font-display text-white">
                     ₹{cartTotalPrice.toLocaleString('en-IN')}
                   </div>
                 </div>
 
                 <button
                   onClick={handleSendWhatsAppOrder}
-                  className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 transition-all shadow-md active:scale-95 cursor-pointer"
+                  className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-5 py-2.5 rounded-full text-xs flex items-center gap-2 transition-all shadow-md active:scale-95 cursor-pointer"
                 >
                   <MessageSquare className="w-4 h-4 text-slate-950 fill-slate-950" />
                   <span>{t.sendOrderWhatsApp}</span>
@@ -1628,11 +1653,11 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                     <div className="flex items-center gap-2">
                       <span className="font-black text-slate-900">{b.id}</span>
                       <span
-                        className={\`text-[10px] font-bold px-2 py-0.5 rounded-full \${
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                           b.status === 'paid'
                             ? 'bg-emerald-100 text-emerald-800'
                             : 'bg-rose-100 text-rose-800'
-                        }\`}
+                        }`}
                       >
                         {b.status === 'paid' ? t.paidStatus : t.dueStatus}
                       </span>
@@ -1976,36 +2001,38 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
   return (
     <div className="space-y-4">
       {/* 1. Desktop POS Hotkeys & Function Header Strip */}
-      <div className="bg-slate-900 text-white rounded-2xl p-3 shadow-md border border-white/10 flex items-center justify-between gap-2 overflow-x-auto text-xs">
+      <div className="bg-slate-900/90 backdrop-blur-xl text-white rounded-3xl p-3 shadow-md border border-white/15 flex items-center justify-between gap-2 overflow-x-auto text-xs">
         <div className="flex items-center gap-2 shrink-0">
-          <span className="flex items-center gap-1 bg-blue-600/90 text-white px-2.5 py-1 rounded-lg font-bold">
-            <Receipt className="w-3.5 h-3.5" />
+          <span className="flex items-center gap-1.5 bg-slate-800/90 text-white px-3 py-1.5 rounded-full font-bold border border-white/15 shadow-sm">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+            <Receipt className="w-3.5 h-3.5 text-blue-300" />
             <span>F1: {lang === 'hi' ? 'नया बिल' : 'New Bill'}</span>
           </span>
-          <span className="flex items-center gap-1 bg-white/10 text-slate-200 px-2.5 py-1 rounded-lg font-semibold">
-            <Barcode className="w-3.5 h-3.5" />
+          <span className="flex items-center gap-1.5 bg-slate-800/60 text-slate-200 px-3 py-1.5 rounded-full font-semibold border border-white/10">
+            <Barcode className="w-3.5 h-3.5 text-emerald-400" />
             <span>F2: {lang === 'hi' ? 'बारकोड' : 'Barcode'}</span>
           </span>
-          <span className="flex items-center gap-1 bg-white/10 text-slate-200 px-2.5 py-1 rounded-lg font-semibold">
-            <PauseCircle className="w-3.5 h-3.5" />
+          <span className="flex items-center gap-1.5 bg-slate-800/60 text-slate-200 px-3 py-1.5 rounded-full font-semibold border border-white/10">
+            <PauseCircle className="w-3.5 h-3.5 text-amber-400" />
             <span>F3: {lang === 'hi' ? 'होल्ड बिल' : 'Hold Cart'}</span>
           </span>
-          <span className="flex items-center gap-1 bg-white/10 text-slate-200 px-2.5 py-1 rounded-lg font-semibold">
+          <span className="flex items-center gap-1.5 bg-slate-800/60 text-slate-200 px-3 py-1.5 rounded-full font-semibold border border-white/10">
             <Banknote className="w-3.5 h-3.5 text-emerald-400" />
             <span>F4: {lang === 'hi' ? 'नकद' : 'Cash'}</span>
           </span>
-          <span className="flex items-center gap-1 bg-white/10 text-slate-200 px-2.5 py-1 rounded-lg font-semibold">
+          <span className="flex items-center gap-1.5 bg-slate-800/60 text-slate-200 px-3 py-1.5 rounded-full font-semibold border border-white/10">
             <QrCode className="w-3.5 h-3.5 text-blue-400" />
             <span>F8: {lang === 'hi' ? 'UPI QR' : 'UPI QR'}</span>
           </span>
-          <span className="flex items-center gap-1 bg-white/10 text-slate-200 px-2.5 py-1 rounded-lg font-semibold">
+          <span className="flex items-center gap-1.5 bg-slate-800/60 text-slate-200 px-3 py-1.5 rounded-full font-semibold border border-white/10">
             <BookOpen className="w-3.5 h-3.5 text-amber-400" />
             <span>F9: {lang === 'hi' ? 'खाता' : 'Khata'}</span>
           </span>
         </div>
 
         <div className="flex items-center gap-2 shrink-0 font-mono">
-          <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold text-[11px]">
+          <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[11px] border border-emerald-500/30 flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
             {lang === 'hi' ? 'काउंटर #1 सक्रिय' : 'Counter #1 Online'}
           </span>
         </div>
@@ -2016,15 +2043,15 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
         {/* Left Column (8 of 12): Voice Trigger, Barcode Scanner, & Product Catalog Grid */}
         <div className="lg:col-span-8 space-y-4">
           {/* Voice AI POS Fast Counter Banner */}
-          <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-800 text-white rounded-2xl p-4 shadow-md flex items-center justify-between border border-blue-500/30">
+          <div className="bg-gradient-to-r from-slate-950 via-blue-950 to-slate-950 text-white rounded-3xl p-4 shadow-md flex items-center justify-between border border-white/15">
             <div className="flex items-center gap-3 min-w-0">
               <button
                 onClick={() => setIsListening(!isListening)}
-                className={\`w-12 h-12 rounded-xl flex items-center justify-center transition-all shadow-md active:scale-95 shrink-0 \${
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-md active:scale-95 shrink-0 border border-white/20 ${
                   isListening
                     ? 'bg-emerald-400 text-slate-950 ring-4 ring-emerald-300 animate-bounce'
-                    : 'bg-white text-blue-900 hover:bg-blue-50'
-                }\`}
+                    : 'bg-slate-900 text-blue-300 hover:bg-slate-800'
+                }`}
               >
                 <Mic className="w-6 h-6" />
               </button>
@@ -2034,14 +2061,9 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
                     <Zap className="w-3 h-3 fill-amber-300" />
                     {lang === 'hi' ? 'AI वॉइस बिलिंग (बोलकर तुरंत जोड़ें)' : 'AI Voice POS (Spacebar to Speak)'}
                   </span>
-                  <span className="bg-white/15 text-blue-100 text-[10px] px-2 py-0.5 rounded-full font-bold">
-                    {lang === 'hi' ? '3 सामान डिटेक्टेड' : '3 Items Auto-Detected'}
-                  </span>
                 </div>
-                <p className="text-sm font-semibold text-blue-100 truncate mt-0.5">
-                  {isListening
-                    ? (lang === 'hi' ? 'सुन रहा हूं... "5kg आटा, 2L तेल और 1 bread जोड़ो"' : 'Listening... "5kg Atta, 2L Oil and 1 Bread"')
-                    : \`"\${voiceInput}"\`}
+                <p className="text-xs text-blue-100 font-semibold truncate mt-0.5">
+                  {isListening ? 'सुन रहा हूं... "3 पैकेट दूध, 2 किलो चीनी"' : voiceInput}
                 </p>
               </div>
             </div>
@@ -2050,15 +2072,16 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
                 addItemToCart(catalog[0]);
                 addItemToCart(catalog[1]);
               }}
-              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-3.5 py-2 rounded-xl text-xs font-bold shadow-md shrink-0 transition-transform active:scale-95 flex items-center gap-1.5"
+              className="bg-slate-900 hover:bg-slate-800 text-white border border-white/20 px-4 py-2 rounded-full text-xs font-bold shadow-md shrink-0 transition-transform active:scale-95 flex items-center gap-2 cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>{lang === 'hi' ? 'वॉइस जोड़ें' : 'Process Voice'}</span>
+              <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{lang === 'hi' ? 'वॉइस प्रोसेस' : 'Process Voice'}</span>
             </button>
           </div>
 
           {/* Search & Barcode Quick Input Bar */}
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm space-y-3">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-4 shadow-sm space-y-3">
             <div className="flex items-center gap-2.5">
               <div className="relative flex-1">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -2072,26 +2095,28 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
               </div>
               <button
                 onClick={() => alert(lang === 'hi' ? 'बारकोड स्कैनर चालू है!' : 'Barcode Scanner Ready!')}
-                className="flex items-center gap-1.5 bg-blue-900 hover:bg-blue-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-colors shrink-0"
+                className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-full text-xs font-bold shadow-sm border border-white/15 transition-colors shrink-0 cursor-pointer"
               >
-                <Barcode className="w-4 h-4" />
-                <span>{lang === 'hi' ? 'F2: बारकोड स्कैन' : 'F2: Scan Barcode'}</span>
+                <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                <Barcode className="w-4 h-4 text-blue-300" />
+                <span>{lang === 'hi' ? 'F2: स्कैन' : 'F2: Scan'}</span>
               </button>
             </div>
 
-            {/* Category Quick Filter Chips */}
+            {/* Category Quick Filter Chips - Dark Translucent Capsule Pills */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
               {categories.map((cat) => (
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={\`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all shadow-sm active:scale-95 \${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm active:scale-95 flex items-center gap-1.5 cursor-pointer ${
                     selectedCategory === cat.id
-                      ? 'bg-blue-900 text-white shadow-md'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/60'
-                  }\`}
+                      ? 'bg-slate-950 text-white shadow-md border border-white/20'
+                      : 'bg-slate-900/80 hover:bg-slate-900 text-slate-300 hover:text-white border border-white/10 backdrop-blur-md'
+                  }`}
                 >
-                  {cat.label}
+                  <div className={`w-2 h-2 rounded-full ${selectedCategory === cat.id ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'}`}></div>
+                  <span>{cat.label}</span>
                 </button>
               ))}
             </div>
@@ -2105,7 +2130,7 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
                 <div
                   key={item.id}
                   onClick={() => addItemToCart(item)}
-                  className="bg-white border border-slate-200/90 hover:border-blue-500 rounded-2xl p-3.5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-pointer group active:scale-[0.98]"
+                  className="bg-white border border-slate-200/90 hover:border-blue-500 rounded-3xl p-3.5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-pointer group active:scale-[0.98]"
                 >
                   <div>
                     <span className="text-xs font-bold text-slate-900 line-clamp-2 leading-tight group-hover:text-blue-700 transition-colors">
@@ -2117,8 +2142,10 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
                   </div>
                   <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
                     <span className="text-base font-extrabold text-blue-900">₹{item.price}</span>
-                    <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-700 group-hover:bg-blue-900 group-hover:text-white flex items-center justify-center transition-colors">
-                      <Plus className="w-4 h-4" />
+                    <div className="h-7 px-2.5 rounded-full bg-slate-900/85 hover:bg-slate-900 text-white text-xs font-bold flex items-center gap-1 shadow-sm border border-white/15 group-hover:border-emerald-400/40 transition-colors">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                      <Plus className="w-3 h-3 text-emerald-300" />
+                      <span>{lang === 'hi' ? 'जोड़ें' : 'Add'}</span>
                     </div>
                   </div>
                 </div>
@@ -2127,148 +2154,130 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
         </div>
 
         {/* Right Column (4 of 12): Active Cart & Checkout Panel */}
-        <div className="lg:col-span-4 bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm flex flex-col justify-between space-y-4">
+        <div className="lg:col-span-4 bg-white border border-slate-200/90 rounded-3xl p-4 shadow-sm flex flex-col justify-between space-y-4">
           <div>
             {/* Bill Header & Customer Selector */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
                 <span className="text-xs font-bold text-slate-900 block">
-                  {lang === 'hi' ? 'चालू बिल #2048' : 'Current Bill #2048'}
+                  {lang === 'hi' ? 'काउंटर बिल #8421' : 'Current Bill #8421'}
                 </span>
-                <span className="text-[10px] text-slate-400">
-                  {lang === 'hi' ? 'फास्ट बिलिंग काउंटर' : 'Fast Checkout Counter'}
-                </span>
+                <span className="text-[11px] text-slate-500 font-medium">Customer: Cash Sale / Walk-in</span>
               </div>
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                {cart.length} {lang === 'hi' ? 'आइटम्स' : 'Items'}
-              </span>
-            </div>
-
-            {/* Customer Pill Selector */}
-            <div className="bg-[#eff4ff] border border-blue-100 rounded-xl p-3 my-3 flex items-center justify-between">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-blue-200 text-blue-900 flex items-center justify-center font-bold text-xs shrink-0">
-                  RK
-                </div>
-                <div className="min-w-0">
-                  <span className="text-xs font-bold text-slate-900 block truncate">
-                    {lang === 'hi' ? 'रमेश कुमार (Ramesh)' : 'Ramesh Kumar'}
-                  </span>
-                  <span className="text-[10px] text-amber-700 font-semibold block">
-                    {lang === 'hi' ? 'खाता: ₹1,450 बकाया' : 'Khata: ₹1,450 Pending'}
-                  </span>
-                </div>
-              </div>
-              <button className="text-xs font-bold text-blue-700 hover:underline shrink-0">
-                {lang === 'hi' ? 'बदलें' : 'Change'}
+              <button
+                onClick={() => setCart([])}
+                className="text-xs text-rose-600 hover:text-rose-700 font-bold flex items-center gap-1"
+                title="Clear Cart"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>{lang === 'hi' ? 'रीसेट' : 'Clear'}</span>
               </button>
             </div>
 
-            {/* Cart Items Table */}
-            <div className="space-y-2 max-h-72 overflow-y-auto pr-1 no-scrollbar">
-              {cart.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100 text-xs hover:bg-slate-100/70 transition-colors"
-                >
-                  <div className="flex-1 pr-2 min-w-0">
-                    <span className="font-bold text-slate-900 block truncate">
-                      {lang === 'hi' && item.hindi ? item.hindi : item.name}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      ₹{item.price} &times; {item.qty} {item.unit}
-                    </span>
-                  </div>
+            {/* Cart Items List */}
+            <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto pr-1 my-2">
+              {cart.length === 0 ? (
+                <div className="py-8 text-center text-slate-400 text-xs font-medium">
+                  {lang === 'hi' ? 'कार्ट खाली है। सामान जोड़ें या बोलकर कहें।' : 'Cart is empty. Add products to begin.'}
+                </div>
+              ) : (
+                cart.map((item) => (
+                  <div key={item.id} className="py-2.5 flex items-center justify-between gap-2 text-xs">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-slate-900 truncate">
+                        {lang === 'hi' && item.hindi ? item.hindi : item.name}
+                      </div>
+                      <div className="text-[11px] text-slate-500">
+                        ₹{item.price} &times; {item.qty} {item.unit}
+                      </div>
+                    </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    {/* Qty +/- stepper */}
-                    <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 shadow-sm">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         onClick={() => updateQty(item.id, -1)}
-                        className="p-1 hover:bg-slate-100 rounded text-slate-600 active:scale-90"
+                        className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center cursor-pointer"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
-                      <span className="px-2 font-bold text-slate-900 text-xs font-mono">{item.qty}</span>
+                      <span className="font-mono font-bold text-slate-900 w-4 text-center">{item.qty}</span>
                       <button
                         onClick={() => updateQty(item.id, 1)}
-                        className="p-1 hover:bg-slate-100 rounded text-slate-600 active:scale-90"
+                        className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center cursor-pointer"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
                     </div>
 
-                    <span className="font-extrabold text-slate-900 w-12 text-right font-mono">
-                      ₹{item.price * item.qty}
-                    </span>
-
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      className="text-slate-400 hover:text-rose-600 p-1 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="text-right shrink-0 min-w-[50px]">
+                      <div className="font-mono font-bold text-slate-900">₹{item.price * item.qty}</div>
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        className="text-slate-400 hover:text-rose-600 transition-colors"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
-          {/* Bill Calculation & Checkout Triggers */}
-          <div className="space-y-3 pt-3 border-t border-slate-100">
-            {/* Subtotal & GST rows */}
-            <div className="space-y-1 text-xs text-slate-600">
+          {/* Bottom Billing Calculations & Tender Buttons */}
+          <div className="space-y-3 pt-3 border-t border-slate-100 text-xs">
+            <div className="space-y-1 text-slate-600">
               <div className="flex justify-between">
-                <span>{lang === 'hi' ? 'उप-कुल (Subtotal):' : 'Subtotal:'}</span>
-                <span className="font-bold font-mono">₹{subtotal}</span>
+                <span>{lang === 'hi' ? 'कुल सामान मूल्य (Subtotal):' : 'Subtotal:'}</span>
+                <span className="font-mono font-bold text-slate-900">₹{subtotal}</span>
               </div>
               <div className="flex justify-between">
-                <span>{lang === 'hi' ? 'जीएसटी / GST (5%):' : 'GST (5%):'}</span>
-                <span className="font-bold font-mono">₹{gstAmount}</span>
+                <span>{lang === 'hi' ? 'जीएसटी (GST 5% Approx):' : 'GST (5% Approx):'}</span>
+                <span className="font-mono font-bold text-slate-900">₹{gstAmount}</span>
               </div>
-              <div className="flex justify-between items-baseline pt-2 border-t border-slate-200">
-                <span className="text-xs font-bold text-slate-900 uppercase tracking-wide">
-                  {lang === 'hi' ? 'कुल देय राशि (Grand Total)' : 'Grand Total'}
-                </span>
-                <span className="text-2xl font-extrabold text-blue-900 font-mono">₹{grandTotal}</span>
+              <div className="flex justify-between text-base font-extrabold text-blue-950 pt-1 border-t border-slate-200">
+                <span>{lang === 'hi' ? 'कुल देय राशि (Grand Total):' : 'Grand Total:'}</span>
+                <span className="font-mono font-black text-xl text-blue-900">₹{grandTotal}</span>
               </div>
             </div>
 
-            {/* Payment Method Selector Grid */}
+            {/* Payment Method Selector Grid - Dark Translucent Pills */}
             <div className="grid grid-cols-3 gap-2 pt-1">
               <button
                 onClick={() => setSelectedPayment('cash')}
-                className={\`flex flex-col items-center justify-center p-2.5 rounded-xl border transition-all text-xs font-bold \${
+                className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border transition-all text-xs font-bold cursor-pointer ${
                   selectedPayment === 'cash'
-                    ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-sm ring-2 ring-emerald-200'
-                    : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
-                }\`}
+                    ? 'bg-slate-950 border-emerald-400 text-white shadow-md ring-2 ring-emerald-300/30'
+                    : 'border-white/15 bg-slate-900/80 text-slate-300 hover:text-white'
+                }`}
               >
-                <Banknote className="w-4 h-4 text-emerald-600 mb-1" />
+                <div className="w-2 h-2 rounded-full bg-emerald-400 mb-1"></div>
+                <Banknote className="w-4 h-4 text-emerald-400 mb-0.5" />
                 <span>{lang === 'hi' ? 'नकद (F4)' : 'Cash (F4)'}</span>
               </button>
 
               <button
                 onClick={() => setSelectedPayment('upi')}
-                className={\`flex flex-col items-center justify-center p-2.5 rounded-xl border transition-all text-xs font-bold \${
+                className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border transition-all text-xs font-bold cursor-pointer ${
                   selectedPayment === 'upi'
-                    ? 'bg-blue-50 border-blue-600 text-blue-900 shadow-sm ring-2 ring-blue-200'
-                    : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
-                }\`}
+                    ? 'bg-slate-950 border-blue-400 text-white shadow-md ring-2 ring-blue-300/30'
+                    : 'border-white/15 bg-slate-900/80 text-slate-300 hover:text-white'
+                }`}
               >
-                <QrCode className="w-4 h-4 text-blue-600 mb-1" />
+                <div className="w-2 h-2 rounded-full bg-blue-400 mb-1"></div>
+                <QrCode className="w-4 h-4 text-blue-400 mb-0.5" />
                 <span>{lang === 'hi' ? 'UPI QR (F8)' : 'UPI QR (F8)'}</span>
               </button>
 
               <button
                 onClick={() => setSelectedPayment('khata')}
-                className={\`flex flex-col items-center justify-center p-2.5 rounded-xl border transition-all text-xs font-bold \${
+                className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border transition-all text-xs font-bold cursor-pointer ${
                   selectedPayment === 'khata'
-                    ? 'bg-amber-50 border-amber-500 text-amber-900 shadow-sm ring-2 ring-amber-200'
-                    : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
-                }\`}
+                    ? 'bg-slate-950 border-amber-400 text-white shadow-md ring-2 ring-amber-300/30'
+                    : 'border-white/15 bg-slate-900/80 text-slate-300 hover:text-white'
+                }`}
               >
-                <BookOpen className="w-4 h-4 text-amber-600 mb-1" />
+                <div className="w-2 h-2 rounded-full bg-amber-400 mb-1"></div>
+                <BookOpen className="w-4 h-4 text-amber-400 mb-0.5" />
                 <span>{lang === 'hi' ? 'उधार (F9)' : 'Khata (F9)'}</span>
               </button>
             </div>
@@ -2276,17 +2285,19 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
             {/* Big Action Buttons */}
             <button
               onClick={handleCompleteBill}
-              className="w-full flex items-center justify-center gap-2 bg-blue-900 hover:bg-blue-800 text-white py-3.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2 bg-slate-950 hover:bg-slate-900 border border-white/20 text-white py-3.5 rounded-full font-bold text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer"
             >
-              <Printer className="w-4 h-4" />
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+              <Printer className="w-4 h-4 text-blue-300" />
               <span>{lang === 'hi' ? 'प्रिंट & बिल पूरा करें (Enter)' : 'Complete & Print Bill (Enter)'}</span>
             </button>
 
             <button
               onClick={() => alert(lang === 'hi' ? 'WhatsApp पर रसीद भेजी गई!' : 'WhatsApp receipt sent!')}
-              className="w-full flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 py-2.5 rounded-xl font-bold text-xs transition-colors active:scale-95"
+              className="w-full flex items-center justify-center gap-2 bg-slate-900/80 hover:bg-slate-900 border border-white/15 text-white py-2.5 rounded-full font-bold text-xs transition-colors active:scale-95 cursor-pointer shadow-sm"
             >
-              <MessageSquare className="w-3.5 h-3.5 text-emerald-700" />
+              <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+              <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
               <span>{lang === 'hi' ? 'WhatsApp पर बिल भेजें (Alt+W)' : 'Send Bill on WhatsApp (Alt+W)'}</span>
             </button>
           </div>
@@ -2360,7 +2371,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
   return (
     <div className="space-y-4">
       {/* Header with Search & Stats */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm space-y-4">
+      <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
@@ -2375,9 +2386,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
           <div className="flex items-center gap-2">
             <button
               onClick={() => loadCatalog()}
-              className="h-9 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors"
+              className="h-9 px-4 rounded-full bg-slate-900/85 hover:bg-slate-900 border border-white/15 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
             >
-              <RefreshCw className={\`w-3.5 h-3.5 \${loading ? 'animate-spin text-blue-600' : ''}\`} />
+              <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-blue-300' : ''}`} />
               <span>{lang === 'hi' ? 'रिफ्रेश' : 'Refresh'}</span>
             </button>
           </div>
@@ -2396,18 +2408,20 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
             />
           </div>
 
+          {/* Category Filter Chips - Dark Translucent Capsule Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
             {categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={\`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all shadow-sm active:scale-95 \${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all shadow-sm active:scale-95 flex items-center gap-1.5 cursor-pointer ${
                   selectedCategory === cat.id
-                    ? 'bg-blue-900 text-white shadow-md'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/60'
-                }\`}
+                    ? 'bg-slate-950 text-white shadow-md border border-white/20'
+                    : 'bg-slate-900/80 hover:bg-slate-900 text-slate-300 hover:text-white border border-white/10 backdrop-blur-md'
+                }`}
               >
-                {cat.name}
+                <div className={`w-2 h-2 rounded-full ${selectedCategory === cat.id ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'}`}></div>
+                <span>{cat.name}</span>
               </button>
             ))}
           </div>
@@ -2415,70 +2429,76 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
       </div>
 
       {successMsg && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2 shadow-sm animate-in fade-in">
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-bold flex items-center gap-2">
           <Check className="w-4 h-4 text-emerald-600" />
           <span>{successMsg}</span>
         </div>
       )}
 
-      {/* Stock Table */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-sm overflow-hidden">
+      {/* Inventory Table Card */}
+      <div className="bg-white border border-slate-200/90 rounded-3xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
+            <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
               <tr>
-                <th className="py-3 px-4">{lang === 'hi' ? 'सामान (Product)' : 'Product'}</th>
-                <th className="py-3 px-4">{lang === 'hi' ? 'श्रेणी (Category)' : 'Category'}</th>
-                <th className="py-3 px-4">{lang === 'hi' ? 'MRP / मूल्य' : 'Price'}</th>
-                <th className="py-3 px-4">{lang === 'hi' ? 'स्टॉक (Stock)' : 'Stock'}</th>
-                <th className="py-3 px-4">{lang === 'hi' ? 'स्थिति (Status)' : 'Status'}</th>
-                <th className="py-3 px-4 text-right">{lang === 'hi' ? 'एक्शन' : 'Action'}</th>
+                <th className="p-3.5 pl-5">Item / Product</th>
+                <th className="p-3.5">Category</th>
+                <th className="p-3.5">Selling Price</th>
+                <th className="p-3.5">Stock Level</th>
+                <th className="p-3.5">Status</th>
+                <th className="p-3.5 pr-5 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-medium text-slate-900">
-              {products.length === 0 ? (
+            <tbody className="divide-y divide-slate-100 font-medium">
+              {loading ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-400">
-                    {loading ? (lang === 'hi' ? 'सामान लोड हो रहे हैं...' : 'Loading catalog...') : (lang === 'hi' ? 'कोई सामान नहीं मिला' : 'No products found')}
-                  </td>
+                  <td colSpan={6} className="p-8 text-center text-slate-400">Loading catalog...</td>
+                </tr>
+              ) : products.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-slate-400">No products found matching query.</td>
                 </tr>
               ) : (
                 products.map((item) => {
                   const isLow = item.currentStock <= item.minThreshold;
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-slate-900">
-                          {lang === 'hi' && item.hindiName ? \`\${item.hindiName} (\${item.name})\` : item.name}
-                        </div>
-                        <div className="text-[10px] text-slate-400 font-mono">SKU: {item.sku} &bull; {item.barcode}</div>
+                      <td className="p-3.5 pl-5">
+                        <div className="font-bold text-slate-900">{item.name}</div>
+                        {item.nameHindi && <div className="text-[11px] text-slate-400">{item.nameHindi}</div>}
+                        {item.barcode && <div className="text-[10px] text-slate-400 font-mono">Barcode: {item.barcode}</div>}
                       </td>
-                      <td className="py-3 px-4 text-slate-600">{item.category?.name || 'Kirana'}</td>
-                      <td className="py-3 px-4 font-bold font-mono text-blue-900">₹{item.sellingPrice}</td>
-                      <td className="py-3 px-4 font-bold font-mono">
-                        <span className={isLow ? 'text-rose-600' : 'text-slate-900'}>
+                      <td className="p-3.5 text-slate-600 font-semibold">{item.categoryName || 'General'}</td>
+                      <td className="p-3.5 font-bold font-mono text-slate-900">₹{item.sellingPrice}</td>
+                      <td className="p-3.5">
+                        <span className={`font-mono font-bold ${isLow ? 'text-rose-600' : 'text-slate-900'}`}>
                           {item.currentStock} {item.unit}
                         </span>
+                        <span className="text-[10px] text-slate-400 block">Min: {item.minThreshold}</span>
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="p-3.5">
                         {isLow ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-[10px] font-extrabold">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-[10px] font-bold">
                             <AlertTriangle className="w-3 h-3" />
-                            {lang === 'hi' ? 'कम स्टॉक' : 'Low Stock'}
+                            <span>Low Stock</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-extrabold">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
                             <Check className="w-3 h-3" />
-                            {lang === 'hi' ? 'पर्याप्त' : 'In Stock'}
+                            <span>In Stock</span>
                           </span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="p-3.5 pr-5 text-right">
                         <button
-                          onClick={() => setAdjustingItem(item)}
-                          className="h-8 px-3 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 font-bold text-xs transition-colors"
+                          onClick={() => {
+                            setAdjustingItem(item);
+                            setAdjustDelta('5');
+                          }}
+                          className="px-3 py-1 rounded-full bg-slate-900/85 hover:bg-slate-900 text-white font-bold text-[11px] shadow-sm transition-all border border-white/15 flex items-center gap-1 ml-auto cursor-pointer"
                         >
-                          {lang === 'hi' ? 'स्टॉक बदलें' : 'Adjust'}
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                          <span>{lang === 'hi' ? 'स्टॉक बदलें' : 'Adjust'}</span>
                         </button>
                       </td>
                     </tr>
@@ -2549,7 +2569,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 h-10 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold transition-colors"
+                  className="flex-1 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors"
                 >
                   {lang === 'hi' ? 'सेव करें' : 'Save Stock'}
                 </button>
@@ -2564,4 +2584,4 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
 `;
 fs.writeFileSync('apps/web/src/components/InventoryView.tsx', inventoryCode, 'utf8');
 
-console.log('--- ALL DESKTOP / COMPUTER POS & MOBILE UI COMPONENTS FULLY REBUILT ---');
+console.log('--- ALL DESKTOP / COMPUTER POS & MOBILE UI COMPONENTS FULLY REBUILT WITH TRANSPARENT CAPSULE PILLS ---');

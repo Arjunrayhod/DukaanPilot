@@ -69,3 +69,84 @@ export async function adjustStock(productId: string, delta: number, reason: stri
     return { success: false, error: { message: err.message } };
   }
 }
+
+export async function createProduct(productData: {
+  name: string;
+  nameHindi?: string;
+  categoryId?: string;
+  unit?: string;
+  sellingPrice: number;
+  costPrice?: number;
+  mrp?: number;
+  currentStock?: number;
+  minThreshold?: number;
+  barcode?: string;
+  sku?: string;
+  brand?: string;
+}, token?: string) {
+  try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(`${API_BASE_URL}/products`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(productData),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: { message: err.message } };
+  }
+}
+
+export async function updateProduct(id: string, updates: any, token?: string) {
+  try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(`${API_BASE_URL}/products/${id}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(updates),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: { message: err.message } };
+  }
+}
+
+export async function deleteProduct(id: string, token?: string) {
+  try {
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(`${API_BASE_URL}/products/${id}`, {
+      method: 'DELETE',
+      headers,
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: { message: err.message } };
+  }
+}
+
+export async function fetchCategories() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/categories`);
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: { message: err.message } };
+  }
+}
+
+export async function createCategory(data: { name: string; nameHindi?: string; icon?: string }, token?: string) {
+  try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(`${API_BASE_URL}/categories`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: { message: err.message } };
+  }
+}

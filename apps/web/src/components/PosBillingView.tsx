@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Barcode,
@@ -20,10 +20,11 @@ import {
   PauseCircle,
   HelpCircle,
 } from 'lucide-react';
+import { fetchProducts, fetchCategories } from '../services/api';
 import { Lang, translations } from '../i18n/translations';
 
 interface CartItem {
-  id: number;
+  id: string | number;
   name: string;
   hindi: string;
   price: number;
@@ -39,11 +40,9 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
   const t = translations[lang];
 
   const [cart, setCart] = useState<CartItem[]>([
-    { id: 1, name: 'Amul Taaza Milk 500ml', hindi: 'अमूल ताजा दूध 500ml', price: 27, qty: 3, unit: 'pkts' },
-    { id: 2, name: 'Madhur Pure Sugar 1kg', hindi: 'मधुर चीनी 1kg', price: 48, qty: 2, unit: 'kg' },
-    { id: 3, name: 'Britannia Daily Bread 400g', hindi: 'ब्रिटानिया ब्रेड 400g', price: 45, qty: 1, unit: 'pkt' },
-    { id: 4, name: 'Aashirvaad Atta 10kg', hindi: 'आशीर्वाद आटा 10kg', price: 420, qty: 1, unit: 'bag' },
-    { id: 5, name: 'Fortune Mustard Oil 1L', hindi: 'फॉर्च्यून सरसों तेल 1L', price: 138, qty: 1, unit: 'btl' },
+    { id: '1', name: 'Amul Taaza Milk 500ml', hindi: 'अमूल ताजा दूध 500ml', price: 27, qty: 3, unit: 'packet' },
+    { id: '2', name: 'Madhur Pure Sugar 1kg', hindi: 'मधुर चीनी 1kg', price: 48, qty: 2, unit: 'kg' },
+    { id: '3', name: 'Britannia Daily Bread 400g', hindi: 'ब्रिटानिया ब्रेड 400g', price: 45, qty: 1, unit: 'packet' },
   ]);
 
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -51,28 +50,42 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
   const [voiceInput, setVoiceInput] = useState('3 packet doodh, 2 kg cheeni, 1 bread add karo');
   const [isListening, setIsListening] = useState(false);
   const [barcodeQuery, setBarcodeQuery] = useState('');
+  const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const categories = [
-    { id: 'All', label: lang === 'hi' ? 'सभी सामान (All)' : 'All Items' },
-    { id: 'Atta & Flour', label: lang === 'hi' ? 'आटा व दाल (Atta/Dal)' : 'Atta & Flour' },
-    { id: 'Edible Oil', label: lang === 'hi' ? 'तेल व घी (Edible Oils)' : 'Edible Oils' },
-    { id: 'Spices & Masala', label: lang === 'hi' ? 'मसाले (Spices)' : 'Spices' },
-    { id: 'Dairy & Eggs', label: lang === 'hi' ? 'डेयरी व दूध (Dairy)' : 'Dairy' },
-    { id: 'Snacks & Namkeen', label: lang === 'hi' ? 'नमकीन व बिस्कुट (Snacks)' : 'Snacks' },
+  const defaultCategories = [
+    { id: 'All', name: 'All Items', nameHindi: 'सभी सामान (All)' },
+    { id: 'cat_atta', name: 'Atta & Flour', nameHindi: 'आटा व दाल (Atta/Dal)' },
+    { id: 'cat_oils', name: 'Edible Oil', nameHindi: 'तेल व घी (Edible Oils)' },
+    { id: 'cat_spices', name: 'Spices & Masala', nameHindi: 'मसाले (Spices)' },
+    { id: 'cat_dairy', name: 'Dairy & Bakery', nameHindi: 'डेयरी व दूध (Dairy)' },
+    { id: 'cat_snacks', name: 'Snacks & Namkeen', nameHindi: 'नमकीन व बिस्कुट (Snacks)' },
   ];
 
-  const catalog = [
-    { id: 1, name: 'Aashirvaad Shudh Atta 10kg', hindi: 'आशीर्वाद शुद्ध आटा 10kg', price: 420, stock: 4, category: 'Atta & Flour', unit: 'bag' },
-    { id: 2, name: 'Fortune Mustard Oil 1L', hindi: 'फॉर्च्यून सरसों तेल 1L', price: 145, stock: 12, category: 'Edible Oil', unit: 'btl' },
-    { id: 3, name: 'Amul Taaza Fresh Milk 500ml', hindi: 'अमूल ताजा दूध 500ml', price: 27, stock: 35, category: 'Dairy & Eggs', unit: 'pkt' },
-    { id: 4, name: 'Madhur Pure Sugar 1kg', hindi: 'मधुर चीनी 1kg', price: 48, stock: 50, category: 'All', unit: 'kg' },
-    { id: 5, name: 'Parle-G Gold Biscuits 1kg', hindi: 'पार्ले-जी गोल्ड बिस्कुट', price: 110, stock: 24, category: 'Snacks & Namkeen', unit: 'pack' },
-    { id: 6, name: 'Tata Salt Vacuum Evaporated 1kg', hindi: 'टाटा नमक 1kg', price: 28, stock: 40, category: 'Spices & Masala', unit: 'pkt' },
-    { id: 7, name: 'Everest Garam Masala 100g', hindi: 'एवरेस्ट गरम मसाला 100g', price: 82, stock: 18, category: 'Spices & Masala', unit: 'pkt' },
-    { id: 8, name: 'Tata Tea Gold 500g', hindi: 'टाटा टी गोल्ड 500g', price: 280, stock: 15, category: 'All', unit: 'pkt' },
-  ];
+  useEffect(() => {
+    async function initData() {
+      setLoading(true);
+      const [pRes, cRes] = await Promise.all([
+        fetchProducts(barcodeQuery, selectedCategory),
+        fetchCategories()
+      ]);
 
-  const updateQty = (id: number, delta: number) => {
+      if (cRes.success && cRes.data && cRes.data.length > 0) {
+        setCategories([{ id: 'All', name: 'All Items', nameHindi: 'सभी सामान (All)' }, ...cRes.data]);
+      } else {
+        setCategories(defaultCategories);
+      }
+
+      if (pRes.success && pRes.data?.items) {
+        setProducts(pRes.data.items);
+      }
+      setLoading(false);
+    }
+    initData();
+  }, [barcodeQuery, selectedCategory]);
+
+  const updateQty = (id: string | number, delta: number) => {
     setCart((prev) =>
       prev
         .map((item) => (item.id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item))
@@ -80,7 +93,7 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
     );
   };
 
-  const removeItem = (id: number) => {
+  const removeItem = (id: string | number) => {
     setCart((prev) => prev.filter((item) => item.id !== id));
   };
 
@@ -90,7 +103,17 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
       if (existing) {
         return prev.map((p) => (p.id === item.id ? { ...p, qty: p.qty + 1 } : p));
       }
-      return [...prev, { id: item.id, name: item.name, hindi: item.hindi || '', price: item.price, qty: 1, unit: item.unit }];
+      return [
+        ...prev,
+        {
+          id: item.id,
+          name: item.name,
+          hindi: item.nameHindi || item.hindi || '',
+          price: item.sellingPrice || item.price,
+          qty: 1,
+          unit: item.unit || 'packet',
+        },
+      ];
     });
   };
 
@@ -107,52 +130,54 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
       {/* 1. Desktop POS Hotkeys & Function Header Strip */}
       <div className="bg-slate-900 text-white rounded-2xl p-3 shadow-md border border-white/10 flex items-center justify-between gap-2 overflow-x-auto text-xs">
         <div className="flex items-center gap-2 shrink-0">
-          <span className="flex items-center gap-1 bg-blue-600/90 text-white px-2.5 py-1 rounded-lg font-bold">
-            <Receipt className="w-3.5 h-3.5" />
+          <span className="flex items-center gap-1.5 bg-slate-800 text-white px-3 py-1.5 rounded-full border border-white/15 font-bold shadow-sm">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+            <Receipt className="w-3.5 h-3.5 text-blue-300" />
             <span>F1: {lang === 'hi' ? 'नया बिल' : 'New Bill'}</span>
           </span>
-          <span className="flex items-center gap-1 bg-white/10 text-slate-200 px-2.5 py-1 rounded-lg font-semibold">
-            <Barcode className="w-3.5 h-3.5" />
+          <span className="flex items-center gap-1.5 bg-slate-800/80 text-slate-200 px-3 py-1.5 rounded-full border border-white/10 font-semibold">
+            <Barcode className="w-3.5 h-3.5 text-slate-300" />
             <span>F2: {lang === 'hi' ? 'बारकोड' : 'Barcode'}</span>
           </span>
-          <span className="flex items-center gap-1 bg-white/10 text-slate-200 px-2.5 py-1 rounded-lg font-semibold">
-            <PauseCircle className="w-3.5 h-3.5" />
+          <span className="flex items-center gap-1.5 bg-slate-800/80 text-slate-200 px-3 py-1.5 rounded-full border border-white/10 font-semibold">
+            <PauseCircle className="w-3.5 h-3.5 text-slate-300" />
             <span>F3: {lang === 'hi' ? 'होल्ड बिल' : 'Hold Cart'}</span>
           </span>
-          <span className="flex items-center gap-1 bg-white/10 text-slate-200 px-2.5 py-1 rounded-lg font-semibold">
+          <span className="flex items-center gap-1.5 bg-slate-800/80 text-slate-200 px-3 py-1.5 rounded-full border border-white/10 font-semibold">
             <Banknote className="w-3.5 h-3.5 text-emerald-400" />
             <span>F4: {lang === 'hi' ? 'नकद' : 'Cash'}</span>
           </span>
-          <span className="flex items-center gap-1 bg-white/10 text-slate-200 px-2.5 py-1 rounded-lg font-semibold">
+          <span className="flex items-center gap-1.5 bg-slate-800/80 text-slate-200 px-3 py-1.5 rounded-full border border-white/10 font-semibold">
             <QrCode className="w-3.5 h-3.5 text-blue-400" />
             <span>F8: {lang === 'hi' ? 'UPI QR' : 'UPI QR'}</span>
           </span>
-          <span className="flex items-center gap-1 bg-white/10 text-slate-200 px-2.5 py-1 rounded-lg font-semibold">
+          <span className="flex items-center gap-1.5 bg-slate-800/80 text-slate-200 px-3 py-1.5 rounded-full border border-white/10 font-semibold">
             <BookOpen className="w-3.5 h-3.5 text-amber-400" />
             <span>F9: {lang === 'hi' ? 'खाता' : 'Khata'}</span>
           </span>
         </div>
 
         <div className="flex items-center gap-2 shrink-0 font-mono">
-          <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold text-[11px]">
-            {lang === 'hi' ? 'काउंटर #1 सक्रिय' : 'Counter #1 Online'}
+          <span className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 font-bold text-[11px] flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
+            <span>{lang === 'hi' ? 'काउंटर #1 सक्रिय' : 'Counter #1 Online'}</span>
           </span>
         </div>
       </div>
 
-      {/* 2. Main Desktop POS Split Layout */}
+      {/* 2. Main 2-Column POS Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Left Column (8 of 12): Voice Trigger, Barcode Scanner, & Product Catalog Grid */}
+        {/* Left Column (8 of 12): Voice AI Input, Quick Search & Catalog Grid */}
         <div className="lg:col-span-8 space-y-4">
-          {/* Voice AI POS Fast Counter Banner */}
-          <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-800 text-white rounded-2xl p-4 shadow-md flex items-center justify-between border border-blue-500/30">
+          {/* AI Voice Billing Action Banner */}
+          <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-2xl p-4 shadow-md border border-white/10 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <button
                 onClick={() => setIsListening(!isListening)}
-                className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all shadow-md active:scale-95 shrink-0 ${
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-md active:scale-95 shrink-0 ${
                   isListening
                     ? 'bg-emerald-400 text-slate-950 ring-4 ring-emerald-300 animate-bounce'
-                    : 'bg-white text-blue-900 hover:bg-blue-50'
+                    : 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-md border border-white/20'
                 }`}
               >
                 <Mic className="w-6 h-6" />
@@ -163,7 +188,7 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
                     <Zap className="w-3 h-3 fill-amber-300" />
                     {lang === 'hi' ? 'AI वॉइस बिलिंग (बोलकर तुरंत जोड़ें)' : 'AI Voice POS (Spacebar to Speak)'}
                   </span>
-                  <span className="bg-white/15 text-blue-100 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                  <span className="bg-white/15 text-blue-100 text-[10px] px-2.5 py-0.5 rounded-full font-bold">
                     {lang === 'hi' ? '3 सामान डिटेक्टेड' : '3 Items Auto-Detected'}
                   </span>
                 </div>
@@ -176,12 +201,14 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
             </div>
             <button
               onClick={() => {
-                addItemToCart(catalog[0]);
-                addItemToCart(catalog[1]);
+                if (products.length > 0) {
+                  addItemToCart(products[0]);
+                  if (products[1]) addItemToCart(products[1]);
+                }
               }}
-              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-3.5 py-2 rounded-xl text-xs font-bold shadow-md shrink-0 transition-transform active:scale-95 flex items-center gap-1.5"
+              className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 px-4 py-2 rounded-full text-xs font-black shadow-md shrink-0 transition-transform active:scale-95 flex items-center gap-1.5 cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="w-3.5 h-3.5 text-slate-950" />
               <span>{lang === 'hi' ? 'वॉइस जोड़ें' : 'Process Voice'}</span>
             </button>
           </div>
@@ -201,26 +228,28 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
               </div>
               <button
                 onClick={() => alert(lang === 'hi' ? 'बारकोड स्कैनर चालू है!' : 'Barcode Scanner Ready!')}
-                className="flex items-center gap-1.5 bg-blue-900 hover:bg-blue-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-colors shrink-0"
+                className="flex items-center gap-1.5 bg-slate-900/85 hover:bg-slate-900 text-white backdrop-blur-xl border border-white/20 px-4 py-2.5 rounded-full text-xs font-bold shadow-md transition-all shrink-0 cursor-pointer"
               >
-                <Barcode className="w-4 h-4" />
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                <Barcode className="w-4 h-4 text-slate-200" />
                 <span>{lang === 'hi' ? 'F2: बारकोड स्कैन' : 'F2: Scan Barcode'}</span>
               </button>
             </div>
 
-            {/* Category Quick Filter Chips */}
+            {/* Category Quick Filter Chips - Transparent Capsule Pills */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
               {categories.map((cat) => (
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all shadow-sm active:scale-95 ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer ${
                     selectedCategory === cat.id
-                      ? 'bg-blue-900 text-white shadow-md'
+                      ? 'bg-slate-900 text-white shadow-md border border-white/20'
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/60'
                   }`}
                 >
-                  {cat.label}
+                  {selectedCategory === cat.id && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
+                  <span>{lang === 'hi' && cat.nameHindi ? cat.nameHindi : (cat.name || cat.label)}</span>
                 </button>
               ))}
             </div>
@@ -228,9 +257,12 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
 
           {/* Product Catalog Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {catalog
-              .filter((item) => selectedCategory === 'All' || item.category === selectedCategory)
-              .map((item) => (
+            {products.length === 0 ? (
+              <div className="col-span-4 py-8 text-center text-slate-400 bg-white rounded-2xl border border-slate-200">
+                {loading ? (lang === 'hi' ? 'कैटलॉग लोड हो रहा है...' : 'Loading catalog...') : (lang === 'hi' ? 'कोई सामान नहीं मिला' : 'No products found')}
+              </div>
+            ) : (
+              products.map((item) => (
                 <div
                   key={item.id}
                   onClick={() => addItemToCart(item)}
@@ -238,20 +270,21 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
                 >
                   <div>
                     <span className="text-xs font-bold text-slate-900 line-clamp-2 leading-tight group-hover:text-blue-700 transition-colors">
-                      {lang === 'hi' && item.hindi ? item.hindi : item.name}
+                      {lang === 'hi' && (item.nameHindi || item.hindi) ? (item.nameHindi || item.hindi) : item.name}
                     </span>
                     <span className="text-[10px] text-slate-400 font-medium block mt-1">
-                      {lang === 'hi' ? `स्टॉक: ${item.stock} ${item.unit}` : `Stock: ${item.stock} ${item.unit}`}
+                      {lang === 'hi' ? `स्टॉक: ${item.currentStock || item.stock || 0} ${item.unit}` : `Stock: ${item.currentStock || item.stock || 0} ${item.unit}`}
                     </span>
                   </div>
                   <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
-                    <span className="text-base font-extrabold text-blue-900">₹{item.price}</span>
-                    <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-700 group-hover:bg-blue-900 group-hover:text-white flex items-center justify-center transition-colors">
-                      <Plus className="w-4 h-4" />
+                    <span className="text-base font-extrabold text-blue-900 font-mono">₹{item.sellingPrice || item.price}</span>
+                    <div className="w-7 h-7 rounded-full bg-slate-900/80 group-hover:bg-slate-900 text-white flex items-center justify-center transition-all border border-white/15">
+                      <Plus className="w-3.5 h-3.5 text-emerald-400" />
                     </div>
                   </div>
                 </div>
-              ))}
+              ))
+            )}
           </div>
         </div>
 
