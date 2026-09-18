@@ -3,9 +3,9 @@ import { BookOpen, MessageCircle, Send, CheckCircle2 } from 'lucide-react';
 
 export const KhataSummaryCard: React.FC = () => {
   const debtors = [
-    { id: 1, name: 'Ramesh Kumar', phone: '+91 98234 56789', pending: '?1,450', days: '12 days ago' },
-    { id: 2, name: 'Priya Sharma', phone: '+91 97112 34567', pending: '?820', days: '3 days ago' },
-    { id: 3, name: 'Amit Verma', phone: '+91 99887 11223', pending: '?2,100', days: '15 days ago' },
+    { id: 1, name: 'Ramesh Kumar', phone: '+91 98234 56789', pending: '₹1,450', days: '12 days ago' },
+    { id: 2, name: 'Priya Sharma', phone: '+91 97112 34567', pending: '₹820', days: '3 days ago' },
+    { id: 3, name: 'Amit Verma', phone: '+91 99887 11223', pending: '₹2,100', days: '15 days ago' },
   ];
 
   return (
@@ -17,14 +17,14 @@ export const KhataSummaryCard: React.FC = () => {
           </div>
           <div>
             <h3 className="font-display font-bold text-slate-900 text-sm">
-              Digital Khata Ledger � ?????? ???? ???????
+              Digital Khata Ledger • डिजिटल उधार बहीखाता
             </h3>
             <span className="text-xs text-slate-500">18 Customers with outstanding credit</span>
           </div>
         </div>
         <div className="text-right">
-          <span className="text-xl font-extrabold font-display text-slate-900">?14,200</span>
-          <span className="text-[10px] text-red-600 block font-semibold">?3,800 due today</span>
+          <span className="text-xl font-extrabold font-display text-slate-900">₹14,200</span>
+          <span className="text-[10px] text-red-600 block font-semibold">₹3,800 due today</span>
         </div>
       </div>
 
@@ -38,7 +38,7 @@ export const KhataSummaryCard: React.FC = () => {
             <div>
               <span className="text-xs font-bold text-slate-800 block">{debtor.name}</span>
               <span className="text-[10px] text-slate-400">
-                {debtor.phone} � {debtor.days}
+                {debtor.phone} • {debtor.days}
               </span>
             </div>
             <div className="flex items-center space-x-2">

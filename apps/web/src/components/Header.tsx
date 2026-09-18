@@ -41,7 +41,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center space-x-2 text-xs text-slate-500">
               <span className={`inline-block w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
               <span>{isOnline ? 'POS & Online Active' : 'Offline Mode'}</span>
-              <span className="text-slate-300">�</span>
+              <span className="text-slate-300">•</span>
               <span className="flex items-center text-slate-600 font-medium">
                 <Activity className="w-3 h-3 mr-1 text-emerald-600" />
                 API: {systemHealth}
@@ -60,7 +60,7 @@ export const Header: React.FC<HeaderProps> = ({
                 activeView === 'mobile' ? 'bg-white text-emerald-800 shadow-sm font-bold' : 'hover:text-slate-900'
               }`}
             >
-              ?? Mobile App
+              📱 Mobile App
             </button>
             <button
               onClick={() => onToggleView('pos')}
@@ -68,7 +68,7 @@ export const Header: React.FC<HeaderProps> = ({
                 activeView === 'pos' ? 'bg-white text-emerald-800 shadow-sm font-bold' : 'hover:text-slate-900'
               }`}
             >
-              ?? Counter POS
+              💻 Counter POS
             </button>
           </div>
 
@@ -78,7 +78,7 @@ export const Header: React.FC<HeaderProps> = ({
             className="flex items-center px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
           >
             <Globe className="w-3.5 h-3.5 mr-1 text-slate-500" />
-            {lang === 'hi' ? '??????' : 'English'}
+            {lang === 'hi' ? 'हिन्दी' : 'English'}
           </button>
 
           {/* Notification bell */}

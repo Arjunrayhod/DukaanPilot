@@ -44,7 +44,7 @@ export function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-24 lg:pb-8 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] pb-24 md:pb-8 flex flex-col font-sans">
       {/* Top Universal Header */}
       <Header
         storeName={currentUser?.shopName || 'Shree Ganesh Kirana Store'}
@@ -105,48 +105,46 @@ export function App() {
         }}
       />
 
-      {/* Mobile Docked Bottom Navigation Bar */}
-      {activeView === 'mobile' && (
-        <nav className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 py-2 px-3 shadow-lg max-w-md mx-auto sm:rounded-t-2xl">
-          <div className="flex items-center justify-around">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              if (item.isCenter) {
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id)}
-                    className="relative -top-5 flex flex-col items-center"
-                  >
-                    <div className="w-13 h-13 p-3 bg-emerald-700 text-white rounded-full shadow-lg ring-4 ring-white flex items-center justify-center hover:bg-emerald-800 transition-transform active:scale-95">
-                      <Icon className="w-6 h-6 text-amber-300" />
-                    </div>
-                    <span className="text-[10px] font-bold text-emerald-900 mt-1">AI Copilot</span>
-                  </button>
-                );
-              }
+      {/* Mobile Docked Bottom Navigation Bar (Shown on Mobile screens only) */}
+      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 py-2 px-3 shadow-lg max-w-md mx-auto sm:rounded-t-2xl md:hidden">
+        <div className="flex items-center justify-around">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            if (item.isCenter) {
               return (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`flex flex-col items-center relative py-1 px-2 transition-colors ${
-                    isActive ? 'text-emerald-800 font-bold' : 'text-slate-400 hover:text-slate-600'
-                  }`}
+                  className="relative -top-5 flex flex-col items-center"
                 >
-                  <Icon className="w-5 h-5" />
-                  <span className="text-[10px] mt-0.5">{item.label}</span>
-                  {item.badge && (
-                    <span className="absolute top-0 right-1 px-1.5 py-0.2 bg-amber-500 text-white text-[9px] font-extrabold rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
+                  <div className="w-13 h-13 p-3 bg-emerald-700 text-white rounded-full shadow-lg ring-4 ring-white flex items-center justify-center hover:bg-emerald-800 transition-transform active:scale-95">
+                    <Icon className="w-6 h-6 text-amber-300" />
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-900 mt-1">AI Copilot</span>
                 </button>
               );
-            })}
-          </div>
-        </nav>
-      )}
+            }
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`flex flex-col items-center relative py-1 px-2 transition-colors ${
+                  isActive ? 'text-emerald-800 font-bold' : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="text-[10px] mt-0.5">{item.label}</span>
+                {item.badge && (
+                  <span className="absolute top-0 right-1 px-1.5 py-0.2 bg-amber-500 text-white text-[9px] font-extrabold rounded-full">
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }

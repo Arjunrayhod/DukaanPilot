@@ -6,7 +6,7 @@ export const LowStockAlerts: React.FC = () => {
     {
       id: 1,
       name: 'Aashirvaad Shudh Chakki Atta 10kg',
-      hindi: '???????? ????? ???',
+      hindi: 'आशीर्वाद चक्की आटा',
       remaining: 2,
       minThreshold: 5,
       supplier: 'Bansal Wholesale Mart',
@@ -15,7 +15,7 @@ export const LowStockAlerts: React.FC = () => {
     {
       id: 2,
       name: 'Fortune Kachi Ghani Mustard Oil 1L',
-      hindi: '????????? ????? ???',
+      hindi: 'फॉर्च्यून सरसों तेल',
       remaining: 1,
       minThreshold: 6,
       supplier: 'Jindal Distributors',
@@ -32,7 +32,7 @@ export const LowStockAlerts: React.FC = () => {
           </div>
           <div>
             <h3 className="font-display font-bold text-slate-900 text-sm">
-              Low Stock Alerts � ?? ????? ???????
+              Low Stock Alerts • कम स्टॉक चेतावनी
             </h3>
             <span className="text-xs text-amber-700 font-medium">2 items urgent reorder required</span>
           </div>
@@ -55,7 +55,7 @@ export const LowStockAlerts: React.FC = () => {
               </div>
               <div className="flex items-center space-x-2 text-[11px] text-slate-600 mt-0.5">
                 <span className="text-red-600 font-bold">Only {item.remaining} left</span>
-                <span>�</span>
+                <span>•</span>
                 <span>Supplier: {item.supplier}</span>
               </div>
             </div>
@@ -68,7 +68,7 @@ export const LowStockAlerts: React.FC = () => {
       </div>
 
       <button className="w-full flex items-center justify-center space-x-2 bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-xl font-bold text-xs shadow-sm transition-colors">
-        <span>? 1-Click WhatsApp Purchase Order to All Distributors</span>
+        <span>⚡ 1-Click WhatsApp Purchase Order to All Distributors</span>
       </button>
     </div>
   );

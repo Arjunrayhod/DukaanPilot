@@ -7,11 +7,11 @@ export const SalesSummaryCard: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Today's Business � ?? ?? ??? ??????
+            Today's Business • आज की कुल बिक्री
           </span>
           <div className="flex items-baseline space-x-3 mt-1">
             <h3 className="text-3xl font-extrabold font-display text-slate-900">
-              ?8,450
+              ₹8,450
             </h3>
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
               <TrendingUp className="w-3.5 h-3.5 mr-1 text-emerald-600" />
@@ -22,7 +22,7 @@ export const SalesSummaryCard: React.FC = () => {
         <div className="text-right">
           <span className="text-xs text-slate-400 block font-medium">42 Bills Total</span>
           <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 px-2 py-1 rounded-md inline-block mt-1">
-            Avg Bill: ?201
+            Avg Bill: ₹201
           </span>
         </div>
       </div>
@@ -36,7 +36,7 @@ export const SalesSummaryCard: React.FC = () => {
             </div>
             <div>
               <span className="text-[11px] font-medium text-slate-500 block">UPI / QR Online</span>
-              <span className="text-sm font-bold text-slate-800">?6,200</span>
+              <span className="text-sm font-bold text-slate-800">₹6,200</span>
             </div>
           </div>
           <span className="text-xs font-semibold text-slate-400">73%</span>
@@ -49,7 +49,7 @@ export const SalesSummaryCard: React.FC = () => {
             </div>
             <div>
               <span className="text-[11px] font-medium text-slate-500 block">Cash in Drawer</span>
-              <span className="text-sm font-bold text-slate-800">?2,250</span>
+              <span className="text-sm font-bold text-slate-800">₹2,250</span>
             </div>
           </div>
           <span className="text-xs font-semibold text-slate-400">27%</span>

@@ -19,9 +19,9 @@ export const VoiceFab: React.FC<VoiceFabProps> = ({ onCommandTrigger }) => {
   const handleMicToggle = () => {
     setIsListening((prev) => !prev);
     if (!isListening) {
-      setTranscript('Listening... (?????, ??? ??? ??? ???)');
+      setTranscript('Listening... (बोलिए, मैं सुन रहा हूँ)');
       setTimeout(() => {
-        setTranscript('"5 kg Aashirvaad Aata added to inventory" (???-????? ???)');
+        setTranscript('"5 kg Aashirvaad Aata added to inventory" (ऑटो-अपडेट सफल)');
       }, 2000);
     } else {
       setTranscript('');
@@ -53,10 +53,10 @@ export const VoiceFab: React.FC<VoiceFabProps> = ({ onCommandTrigger }) => {
             )}
           </div>
           <h2 className="text-xl font-bold font-display tracking-tight">
-            ????? ????? ?? ??? ???? (Tap & Speak)
+            बोलकर दुकान का काम करें (Tap & Speak)
           </h2>
           <p className="text-xs text-emerald-100/90 max-w-md">
-            ?????? ??????, ??? ????? ?????, ?? ??????? ?????�???? ????? ?? Hinglish ??? ??????
+            किराना बिलिंग, नया सामान जोक़ना, या बहीखाता हिसाब—सीधे हिंदी या Hinglish में बोलें।
           </p>
         </div>
 
@@ -71,7 +71,7 @@ export const VoiceFab: React.FC<VoiceFabProps> = ({ onCommandTrigger }) => {
             }`}
           >
             <Mic className={`w-5 h-5 ${isListening ? 'animate-bounce text-slate-950' : 'text-emerald-700'}`} />
-            <span>{isListening ? 'Listening... ?????' : '??? ????? ??? ????'}</span>
+            <span>{isListening ? 'Listening... रोकें' : '🎙️ बोलकर काम करें'}</span>
           </button>
         </div>
       </div>

@@ -6,7 +6,7 @@ export const ActiveOrdersFeed: React.FC = () => {
     {
       id: '#1042',
       customer: 'Vikram Verma',
-      items: '4 items (?420)',
+      items: '4 items (₹420)',
       type: 'Delivery in 15 mins',
       status: 'Ready for Dispatch',
       badgeColor: 'bg-emerald-100 text-emerald-800',
@@ -14,7 +14,7 @@ export const ActiveOrdersFeed: React.FC = () => {
     {
       id: '#1041',
       customer: 'Sunita Devi',
-      items: '2 items (?180)',
+      items: '2 items (₹180)',
       type: 'Self-Pickup',
       status: 'Packed',
       badgeColor: 'bg-blue-100 text-blue-800',
@@ -22,7 +22,7 @@ export const ActiveOrdersFeed: React.FC = () => {
     {
       id: '#1040',
       customer: 'Amit Patel',
-      items: '6 items (?1,150)',
+      items: '6 items (₹1,150)',
       type: 'Home Delivery',
       status: 'Preparing',
       badgeColor: 'bg-amber-100 text-amber-800',
@@ -38,7 +38,7 @@ export const ActiveOrdersFeed: React.FC = () => {
           </div>
           <div>
             <h3 className="font-display font-bold text-slate-900 text-sm">
-              Active Customer Orders � ?????? ???????
+              Active Customer Orders • सक्रिय ऑर्डर्स
             </h3>
             <span className="text-xs text-slate-500">3 pending orders for store pickup & delivery</span>
           </div>
@@ -56,14 +56,14 @@ export const ActiveOrdersFeed: React.FC = () => {
           >
             <div className="space-y-0.5">
               <div className="flex items-center space-x-2">
-                <span className="font-bold text-xs text-slate-900">{order.id} � {order.customer}</span>
+                <span className="font-bold text-xs text-slate-900">{order.id} • {order.customer}</span>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${order.badgeColor}`}>
                   {order.status}
                 </span>
               </div>
               <div className="flex items-center space-x-2 text-[11px] text-slate-500">
                 <span>{order.items}</span>
-                <span>�</span>
+                <span>•</span>
                 <span className="flex items-center text-slate-700 font-medium">
                   <Clock className="w-3 h-3 mr-1 text-slate-400" />
                   {order.type}
