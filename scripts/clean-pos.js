@@ -1,4 +1,8 @@
-import React, { useState } from 'react';
+const fs = require('fs');
+const path = require('path');
+const root = path.resolve(__dirname, '..');
+
+const posBillingCode = `import React, { useState } from 'react';
 import {
   Search,
   Barcode,
@@ -123,11 +127,11 @@ export const PosBillingView: React.FC = () => {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
+                className={\`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors \${
                   selectedCategory === cat
                     ? 'bg-emerald-700 text-white'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
+                }\`}
               >
                 {cat}
               </button>
@@ -252,3 +256,7 @@ export const PosBillingView: React.FC = () => {
     </div>
   );
 };
+`;
+
+fs.writeFileSync(path.join(root, 'apps/web/src/components/PosBillingView.tsx'), posBillingCode, 'utf8');
+console.log('Cleaned PosBillingView.tsx written successfully');

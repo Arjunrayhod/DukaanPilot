@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, Phone, Store, User, KeyRound, ArrowRight, Shield } from 'lucide-react';
+import { Lock, Phone, Store, User, KeyRound, ArrowRight } from 'lucide-react';
 import { loginUser, registerOwner } from '../services/api';
 
 interface AuthModalProps {
@@ -58,7 +58,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
             <Store className="w-6 h-6" />
           </div>
           <h3 className="text-xl font-bold font-display text-slate-900">
-            {isRegister ? 'Register New Store (??? ????)' : 'Merchant Fast Login (???????? ?????)'}
+            {isRegister ? 'Register New Store (नया खाता)' : 'Merchant Fast Login (दुकानदार लॉगिन)'}
           </h3>
           <p className="text-xs text-slate-500">
             {isRegister
@@ -77,7 +77,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           {isRegister && (
             <>
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Store Name (????? ?? ???)</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Store Name (दुकान का नाम)</label>
                 <div className="relative">
                   <Store className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
@@ -91,7 +91,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Owner Name (???????? ?? ???)</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Owner Name (दुकानदार का नाम)</label>
                 <div className="relative">
                   <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
@@ -108,7 +108,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           )}
 
           <div>
-            <label className="text-xs font-bold text-slate-700 block mb-1">Mobile Number (?????? ????)</label>
+            <label className="text-xs font-bold text-slate-700 block mb-1">Mobile Number (मोबाइल नंबर)</label>
             <div className="relative">
               <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -123,7 +123,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           </div>
 
           <div>
-            <label className="text-xs font-bold text-slate-700 block mb-1">4-Digit Quick PIN (???)</label>
+            <label className="text-xs font-bold text-slate-700 block mb-1">4-Digit Quick PIN (पिन)</label>
             <div className="relative">
               <KeyRound className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -133,14 +133,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs tracking-widest font-mono"
-                placeholder="����"
+                placeholder="••••"
               />
             </div>
           </div>
 
           {isRegister && (
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">Password (???????)</label>
+              <label className="text-xs font-bold text-slate-700 block mb-1">Password (पासवर्ड)</label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
