@@ -10,15 +10,15 @@ export function VoiceHeroBanner({ onCommandTrigger }: VoiceHeroBannerProps) {
   const [transcribedText, setTranscribedText] = useState('');
 
   const quickPrompts = [
-    '+ 5kg \u0906\u0936\u0940\u0930\u094d\u0935\u093e\u0926 \u0906\u091f\u093e',
-    '+ \u20B9500 \u0928\u0915\u0926 \u091c\u092e\u093e (\u0938\u0941\u0930\u0947\u0936)',
-    '\u0906\u091c \u0915\u0940 \u0915\u0941\u0932 \u092c\u093f\u0915\u094d\u0930\u0940?',
+    '+ 5kg आशीर्वाद आटा',
+    '+ ₹500 नकद जमा (सुरेश)',
+    'आज की कुल बिक्री?',
   ];
 
   const handleMicClick = () => {
     setIsListening(!isListening);
     if (!isListening) {
-      setTranscribedText('\u0938\u0941\u0928 \u0930\u0939\u093e \u0939\u0942\u0902... "\u0930\u092e\u0947\u0936 \u0915\u0941\u092e\u093e\u0930 2 \u0915\u093f\u0932\u094b \u091a\u0940\u0928\u0940 \u0914\u0930 \u20B9150 \u0909\u0927\u093e\u0930 \u091c\u094b\u0921\u093c\u094b"');
+      setTranscribedText('सुन रहा हूं... "रमेश कुमार 2 किलो चीनी और ₹150 उधार जोड़ो"');
     } else {
       setTranscribedText('');
     }
@@ -44,7 +44,7 @@ export function VoiceHeroBanner({ onCommandTrigger }: VoiceHeroBannerProps) {
           </span>
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-sm text-blue-100 text-xs font-medium border border-white/10">
             <Globe className="w-3.5 h-3.5 text-emerald-300" />
-            <span>8 \u092d\u093e\u0937\u093e\u090f\u0901 \u0938\u092e\u0930\u094d\u0925\u093f\u0924</span>
+            <span>8 भाषाएँ समर्थित</span>
           </span>
         </div>
 
@@ -52,14 +52,14 @@ export function VoiceHeroBanner({ onCommandTrigger }: VoiceHeroBannerProps) {
         <div className="flex items-center justify-between gap-4 pt-1">
           <div className="flex-1 min-w-0">
             <h2 className="text-xl sm:text-2xl font-extrabold leading-tight text-white flex items-center gap-2 flex-wrap">
-              <span>\u092c\u094b\u0932\u0915\u0930 \u092c\u093f\u0932 \u092c\u0928\u093e\u090f\u0901</span>
+              <span>बोलकर बिल बनाएँ</span>
               <span className="text-emerald-300 text-lg font-bold">/ Voice Bill</span>
             </h2>
             <p className="text-xs sm:text-sm text-blue-100/90 mt-1 font-medium">
               {transcribedText ? (
                 <span className="text-amber-200 font-semibold animate-pulse">{transcribedText}</span>
               ) : (
-                '\u0909\u0926\u093e: "\u0930\u092e\u0947\u0936 \u0915\u0941\u092e\u093e\u0930 2 \u0915\u093f\u0932\u094b \u091a\u0940\u0928\u0940 \u0914\u0930 \u20B9150 \u0909\u0927\u093e\u0930 \u091c\u094b\u0921\u093c\u094b"'
+                'उदा: "रमेश कुमार 2 किलो चीनी और ₹150 उधार जोड़ो"'
               )}
             </p>
           </div>

@@ -72,19 +72,19 @@ export function App() {
             {/* 2. Dual Primary Fast Counter POS Actions & Shortcuts */}
             <QuickActionTiles
               onNewBill={() => setActiveView('pos')}
-              onScanBarcode={() => alert('\u092c\u093e\u0930\u0915\u094b\u0921 \u0915\u0948\u092e\u0930\u093e \u0938\u094d\u0915\u0948\u0928 \u0936\u0941\u0930\u0942 \u0915\u093f\u092f\u093e \u0917\u092f\u093e (Live Barcode Scanner Ready)')}
+              onScanBarcode={() => alert('बारकोड कैमरा स्कैन शुरू किया गया (Live Barcode Scanner Ready)')}
               onShowQr={() => setIsQrOpen(true)}
               onAddProduct={() => setActiveTab('inventory')}
-              onDailyReport={() => alert('\u0921\u0947\u0932\u0940 Z-\u0930\u093f\u092a\u094b\u0930\u094d\u091f: \u0906\u091c \u0915\u0940 \u0915\u0941\u0932 \u0938\u0947\u0932 \u20B98,450 | 60 \u091f\u094d\u0930\u093e\u0902\u091c\u0948\u0915\u094d\u0936\u0928 | UPI: 73%')}
+              onDailyReport={() => alert('डेली Z-रिपोर्ट: आज की कुल सेल ₹8,450 | 60 ट्रांजैक्शन | UPI: 73%')}
             />
 
             {/* 3. Financial Overview: Today's Collection Card */}
             <SalesSummaryCard />
 
-            {/* 4. Khata Credit Ledger Widget (\u0909\u0927\u093e\u0930 \u092c\u0939\u0940\u0916\u093e\u0924\u093e) */}
+            {/* 4. Khata Credit Ledger Widget (उधार बहीखाता) */}
             <KhataSummaryCard />
 
-            {/* 5. Low Stock Watch (\u0907\u0928\u094d\u0935\u0947\u0902\u091f\u0930\u0940 \u0905\u0932\u0930\u094d\u091f) */}
+            {/* 5. Low Stock Watch (इन्वेंटरी अलर्ट) */}
             <LowStockAlerts />
 
             {/* 6. Daily Kirana Insights Strip */}

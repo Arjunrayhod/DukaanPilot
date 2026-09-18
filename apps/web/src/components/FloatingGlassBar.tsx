@@ -16,14 +16,14 @@ export function FloatingGlassBar({ onSubmitPrompt, onQuickAdd }: FloatingGlassBa
     if (e) e.preventDefault();
     if (!inputVal.trim()) return;
     if (onSubmitPrompt) onSubmitPrompt(inputVal);
-    alert(`\u0915\u092e\u093e\u0902\u0921 \u092a\u094d\u0930\u094b\u0938\u0947\u0938 \u0939\u094b \u0930\u0939\u093e \u0939\u0942\u0902: "${inputVal}"`);
+    alert(`कमांड प्रोसेस हो रहा हूं: "${inputVal}"`);
     setInputVal('');
   };
 
   const handleMicToggle = () => {
     setIsListening(!isListening);
     if (!isListening) {
-      setInputVal('\u0930\u092e\u0947\u0936 \u0915\u0941\u092e\u093e\u0930 2 \u0915\u093f\u0932\u094b \u091a\u0940\u0928\u0940 \u0914\u0930 \u20B9150 \u0909\u0927\u093e\u0930 \u091c\u094b\u0921\u093c\u094b');
+      setInputVal('रमेश कुमार 2 किलो चीनी और ₹150 उधार जोड़ो');
     }
   };
 
@@ -37,7 +37,7 @@ export function FloatingGlassBar({ onSubmitPrompt, onQuickAdd }: FloatingGlassBa
             type="text"
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
-            placeholder="\u0915\u094d\u092f\u093e \u092c\u0928\u093e\u0928\u093e \u092f\u093e \u091c\u094b\u0921\u093c\u0928\u093e \u091a\u093e\u0939\u0924\u0947 \u0939\u0948\u0902? (What would you like to change or create?)"
+            placeholder="क्या बनाना या जोड़ना चाहते हैं? (What would you like to change or create?)"
             className="w-full bg-transparent text-white placeholder-slate-400 text-sm font-medium focus:outline-none py-1"
           />
         </form>
@@ -50,7 +50,7 @@ export function FloatingGlassBar({ onSubmitPrompt, onQuickAdd }: FloatingGlassBa
               type="button"
               onClick={onQuickAdd}
               className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all"
-              title="\u0928\u092f\u093e \u0906\u0907\u091f\u092e \u091c\u094b\u0921\u093c\u0947\u0902"
+              title="नया आइटम जोड़ें"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -59,7 +59,7 @@ export function FloatingGlassBar({ onSubmitPrompt, onQuickAdd }: FloatingGlassBa
               type="button"
               onClick={() => setInputVal('/')}
               className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center text-slate-300 active:scale-90 transition-all font-mono font-bold"
-              title="\u0915\u092e\u093e\u0902\u0921 \u0938\u094d\u0932\u0948\u0936"
+              title="कमांड स्लैश"
             >
               /
             </button>
@@ -118,7 +118,7 @@ export function FloatingGlassBar({ onSubmitPrompt, onQuickAdd }: FloatingGlassBa
                   ? 'bg-emerald-500 text-white ring-2 ring-emerald-300 animate-bounce'
                   : 'bg-white/15 hover:bg-white/25 text-white border border-white/15'
               }`}
-              title="\u092c\u094b\u0932\u0915\u0930 \u0915\u0939\u0947\u0902 (Voice Input)"
+              title="बोलकर कहें (Voice Input)"
             >
               <Mic className="w-4 h-4" />
             </button>
@@ -133,7 +133,7 @@ export function FloatingGlassBar({ onSubmitPrompt, onQuickAdd }: FloatingGlassBa
                   ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold active:scale-90 cursor-pointer'
                   : 'bg-white/10 text-white/40 cursor-not-allowed'
               }`}
-              title="\u092d\u0947\u091c\u0947\u0902 (Submit)"
+              title="भेजें (Submit)"
             >
               <ArrowUp className="w-4 h-4" />
             </button>

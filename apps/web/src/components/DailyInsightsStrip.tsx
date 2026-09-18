@@ -11,12 +11,12 @@ export function DailyInsightsStrip() {
             <Award className="w-4 h-4" />
           </span>
           <span className="text-xs font-extrabold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-            34 \u092c\u093f\u0915\u0947
+            34 बिके
           </span>
         </div>
         <div>
-          <span className="text-[11px] font-bold text-slate-500 block">\u0938\u092c\u0938\u0947 \u091c\u094d\u092f\u093e\u0926\u093e \u092c\u093f\u0915\u093e \u0938\u093e\u092e\u093e\u0928</span>
-          <span className="text-sm font-extrabold text-slate-900 truncate block mt-0.5">\u0905\u092e\u0942\u0932 \u092c\u091f\u0930 500g</span>
+          <span className="text-[11px] font-bold text-slate-500 block">सबसे ज्यादा बिका सामान</span>
+          <span className="text-sm font-extrabold text-slate-900 truncate block mt-0.5">अमूल बटर 500g</span>
         </div>
       </div>
 
@@ -32,7 +32,7 @@ export function DailyInsightsStrip() {
           </span>
         </div>
         <div>
-          <span className="text-[11px] font-bold text-slate-500 block">\u0926\u0941\u0915\u093e\u0928 \u092a\u0930 \u0915\u0941\u0932 \u0917\u094d\u0930\u093e\u0939\u0915</span>
+          <span className="text-[11px] font-bold text-slate-500 block">दुकान पर कुल ग्राहक</span>
           <span className="text-sm font-extrabold text-slate-900 block mt-0.5">86 Footfall</span>
         </div>
       </div>

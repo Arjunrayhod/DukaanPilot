@@ -33,7 +33,7 @@ export function QuickActionTiles({
             <span className="px-2 py-0.5 rounded-md bg-white/20 text-white text-xs font-bold font-mono">F1</span>
           </div>
           <div>
-            <div className="text-base font-bold leading-tight">\u0928\u092f\u093e \u092c\u093f\u0932 \u092c\u0928\u093e\u090f\u0901</div>
+            <div className="text-base font-bold leading-tight">नया बिल बनाएँ</div>
             <div className="text-xs text-blue-200 font-medium">New Quick Bill</div>
           </div>
         </button>
@@ -54,7 +54,7 @@ export function QuickActionTiles({
             </span>
           </div>
           <div>
-            <div className="text-base font-bold leading-tight text-slate-900">\u092c\u093e\u0930\u0915\u094b\u0921 \u0938\u094d\u0915\u0948\u0928</div>
+            <div className="text-base font-bold leading-tight text-slate-900">बारकोड स्कैन</div>
             <div className="text-xs text-slate-500 font-medium">Instant Scan &amp; Add</div>
           </div>
         </button>
@@ -68,7 +68,7 @@ export function QuickActionTiles({
           type="button"
         >
           <QrCode className="w-4 h-4 text-blue-600" />
-          <span>\u0926\u0941\u0915\u093e\u0928 QR \u0926\u093f\u0916\u093e\u090f\u0901</span>
+          <span>दुकान QR दिखाएँ</span>
         </button>
 
         <button
@@ -77,7 +77,7 @@ export function QuickActionTiles({
           type="button"
         >
           <PlusCircle className="w-4 h-4 text-emerald-600" />
-          <span>\u0928\u092f\u093e \u0938\u093e\u092e\u093e\u0928 \u091c\u094b\u0921\u093c\u0947\u0902</span>
+          <span>नया सामान जोड़ें</span>
         </button>
 
         <button
@@ -86,7 +86,7 @@ export function QuickActionTiles({
           type="button"
         >
           <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
-          <span>\u0921\u0947\u0932\u0940 Z-\u0930\u093f\u092a\u094b\u0930\u094d\u091f</span>
+          <span>डेली Z-रिपोर्ट</span>
         </button>
       </div>
     </section>

@@ -8,10 +8,10 @@ export function SalesSummaryCard() {
       <div className="flex items-start justify-between">
         <div>
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-            \u0906\u091c \u0915\u0940 \u0915\u0941\u0932 \u092c\u093f\u0915\u094d\u0930\u0940 &bull; TOTAL COLLECTION
+            आज की कुल बिक्री &bull; TOTAL COLLECTION
           </span>
           <div className="flex items-baseline gap-2.5 mt-1">
-            <span className="text-3xl font-extrabold text-slate-900 tracking-tight">\u20B98,450.00</span>
+            <span className="text-3xl font-extrabold text-slate-900 tracking-tight">₹8,450.00</span>
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
               <TrendingUp className="w-3.5 h-3.5" />
               +14%
@@ -34,7 +34,7 @@ export function SalesSummaryCard() {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-xs font-extrabold text-slate-900 leading-none">60</span>
-            <span className="text-[9px] font-bold text-slate-500 leading-none mt-0.5">\u092c\u093f\u0932</span>
+            <span className="text-[9px] font-bold text-slate-500 leading-none mt-0.5">बिल</span>
           </div>
         </div>
 
@@ -45,17 +45,17 @@ export function SalesSummaryCard() {
               <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
               <span className="text-xs font-bold text-slate-600">UPI / QR (73%)</span>
             </div>
-            <div className="text-base font-extrabold text-slate-900">\u20B96,200</div>
-            <span className="text-[11px] text-slate-500 font-medium">42 \u091f\u094d\u0930\u093e\u0902\u091c\u0948\u0915\u094d\u0936\u0928</span>
+            <div className="text-base font-extrabold text-slate-900">₹6,200</div>
+            <span className="text-[11px] text-slate-500 font-medium">42 ट्रांजैक्शन</span>
           </div>
 
           <div className="space-y-0.5">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-700"></span>
-              <span className="text-xs font-bold text-slate-600">\u0928\u0915\u0926 / Cash (27%)</span>
+              <span className="text-xs font-bold text-slate-600">नकद / Cash (27%)</span>
             </div>
-            <div className="text-base font-extrabold text-slate-900">\u20B92,250</div>
-            <span className="text-[11px] text-slate-500 font-medium">18 \u091f\u094d\u0930\u093e\u0902\u091c\u0948\u0915\u094d\u0936\u0928</span>
+            <div className="text-base font-extrabold text-slate-900">₹2,250</div>
+            <span className="text-[11px] text-slate-500 font-medium">18 ट्रांजैक्शन</span>
           </div>
         </div>
       </div>
@@ -67,7 +67,7 @@ export function SalesSummaryCard() {
           <span className="truncate">Auto-settles tonight 11:59 PM &bull; SBI A/c &bull;&bull;4291</span>
         </div>
         <button className="shrink-0 text-blue-700 font-bold hover:underline flex items-center gap-0.5" type="button">
-          <span>\u0938\u0947\u091f\u0932\u092e\u0947\u0902\u091f</span>
+          <span>सेटलमेंट</span>
           <ArrowUpRight className="w-3 h-3" />
         </button>
       </div>

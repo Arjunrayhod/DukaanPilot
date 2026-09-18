@@ -25,7 +25,7 @@ export function QrModal({ isOpen, onClose, shopName, upiId }: QrModalProps) {
           <QrCode className="w-6 h-6" />
         </div>
 
-        <h3 className="text-lg font-bold text-slate-900">\u0926\u0941\u0915\u093e\u0928 UPI QR \u0915\u094b\u0921</h3>
+        <h3 className="text-lg font-bold text-slate-900">दुकान UPI QR कोड</h3>
         <p className="text-xs text-slate-500 font-medium mt-0.5">{shopName}</p>
 
         {/* QR Display */}
@@ -40,14 +40,14 @@ export function QrModal({ isOpen, onClose, shopName, upiId }: QrModalProps) {
 
         <div className="grid grid-cols-2 gap-2.5 w-full">
           <button
-            onClick={() => alert('\u0921\u093e\u0909\u0928\u0932\u094b\u0921 \u0936\u0941\u0930\u0942 \u0939\u094b \u0917\u092f\u093e')}
+            onClick={() => alert('डाउनलोड शुरू हो गया')}
             className="h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
           >
             <Download className="w-4 h-4" />
             <span>Download</span>
           </button>
           <button
-            onClick={() => alert('\u0935\u094d\u0939\u093e\u091f\u094d\u0938\u090f\u092a \u092a\u0930 \u0936\u0947\u092f\u0930 \u0915\u0930\u0947\u0902')}
+            onClick={() => alert('व्हाट्सएप पर शेयर करें')}
             className="h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
           >
             <Share2 className="w-4 h-4" />

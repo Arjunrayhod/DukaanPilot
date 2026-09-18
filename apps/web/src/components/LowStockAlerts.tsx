@@ -7,33 +7,33 @@ export function LowStockAlerts() {
   const stockAlerts = [
     {
       id: 1,
-      title: '\u091f\u093e\u091f\u093e \u0928\u092e\u0915 (Tata Salt 1kg)',
-      remaining: '4 \u092a\u0948\u0915\u0947\u091f \u092c\u091a\u0947',
-      minThreshold: '(\u0928\u094d\u092f\u0942\u0928\u0924\u092e 25)',
-      supplier: '\u0938\u092a\u094d\u0932\u093e\u092f\u0930: \u092c\u093e\u0932\u093e\u091c\u0940 \u090f\u091c\u0947\u0902\u0938\u0940\u091c\u093c',
-      orderQty: '50 \u092a\u0948\u0915\u0947\u091f \u0911\u0930\u094d\u0921\u0930',
+      title: 'टाटा नमक (Tata Salt 1kg)',
+      remaining: '4 पैकेट बचे',
+      minThreshold: '(न्यूनतम 25)',
+      supplier: 'सप्लायर: बालाजी एजेंसीज़',
+      orderQty: '50 पैकेट ऑर्डर',
     },
     {
       id: 2,
-      title: '\u092b\u0949\u0930\u094d\u091a\u094d\u092f\u0942\u0928 \u0938\u0928\u092b\u094d\u0932\u093e\u0935\u0930 \u0911\u092f\u0932 1L',
-      remaining: '2 \u092c\u094b\u0924\u0932 \u092c\u091a\u0940',
-      minThreshold: '(\u0928\u094d\u092f\u0942\u0928\u0924\u092e 12)',
-      supplier: '\u0938\u092a\u094d\u0932\u093e\u092f\u0930: \u092e\u0947\u091f\u094d\u0930\u094b \u0939\u094b\u0932\u0938\u0947\u0932',
-      orderQty: '24 \u092c\u094b\u0924\u0932 \u0911\u0930\u094d\u0921\u0930',
+      title: 'फॉर्च्यून सनफ्लावर ऑयल 1L',
+      remaining: '2 बोतल बची',
+      minThreshold: '(न्यूनतम 12)',
+      supplier: 'सप्लायर: मेट्रो होलसेल',
+      orderQty: '24 बोतल ऑर्डर',
     },
     {
       id: 3,
-      title: '\u0906\u0936\u0940\u0930\u094d\u0935\u093e\u0926 \u091a\u0915\u094d\u0915\u0940 \u0906\u091f\u093e 5kg',
-      remaining: '3 \u092c\u0948\u0917 \u092c\u091a\u0947',
-      minThreshold: '(\u0928\u094d\u092f\u0942\u0928\u0924\u092e 15)',
-      supplier: '\u0938\u092a\u094d\u0932\u093e\u092f\u0930: \u0906\u0908\u091f\u0940\u0938\u0940 \u0921\u093e\u092f\u0930\u0947\u0915\u094d\u091f',
-      orderQty: '20 \u092c\u0948\u0917 \u0911\u0930\u094d\u0921\u0930',
+      title: 'आशीर्वाद चक्की आटा 5kg',
+      remaining: '3 बैग बचे',
+      minThreshold: '(न्यूनतम 15)',
+      supplier: 'सप्लायर: आईटीसी डायरेक्ट',
+      orderQty: '20 बैग ऑर्डर',
     },
   ];
 
   const handleOrder = (id: number, title: string, qty: string) => {
     setOrderedItems((prev) => [...prev, id]);
-    alert(`\u0938\u092a\u094d\u0932\u093e\u092f\u0930 \u0915\u094b \u0911\u0930\u094d\u0921\u0930 \u092d\u0947\u091c \u0926\u093f\u092f\u093e \u0917\u092f\u093e: ${title} (${qty})`);
+    alert(`सप्लायर को ऑर्डर भेज दिया गया: ${title} (${qty})`);
   };
 
   return (
@@ -44,12 +44,12 @@ export function LowStockAlerts() {
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div className="truncate">
-            <h3 className="text-base font-bold text-slate-900 truncate">\u0915\u092e \u0938\u094d\u091f\u0949\u0915 \u0905\u0932\u0930\u094d\u091f</h3>
+            <h3 className="text-base font-bold text-slate-900 truncate">कम स्टॉक अलर्ट</h3>
             <span className="text-xs text-slate-500 font-medium">Smart Low Stock Watch</span>
           </div>
         </div>
         <span className="px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-extrabold">
-          3 \u0906\u0907\u091f\u092e\u094d\u0938 \u0915\u092e
+          3 आइटम्स कम
         </span>
       </div>
 
@@ -85,7 +85,7 @@ export function LowStockAlerts() {
                 {isOrdered ? (
                   <>
                     <Check className="w-3.5 h-3.5" />
-                    <span>\u0911\u0930\u094d\u0921\u0930 \u092d\u0947\u091c\u093e</span>
+                    <span>ऑर्डर भेजा</span>
                   </>
                 ) : (
                   <>

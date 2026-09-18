@@ -56,7 +56,7 @@ export function Header({
                 activeView === 'mobile' ? 'bg-white text-blue-800 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              \u092e\u094b\u092c\u093e\u0907\u0932 (Mobile)
+              मोबाइल (Mobile)
             </button>
             <button
               onClick={() => onToggleView('pos')}
@@ -64,7 +64,7 @@ export function Header({
                 activeView === 'pos' ? 'bg-white text-blue-800 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              \u0915\u093e\u0909\u0902\u091f\u0930 POS
+              काउंटर POS
             </button>
           </div>
 
@@ -76,9 +76,9 @@ export function Header({
             title="Toggle Language"
           >
             <Languages className="w-3.5 h-3.5 mr-1 text-blue-700" />
-            <span>{lang === 'hi' ? '\u0939\u093f\u0928\u094d\u0926\u0940' : 'EN'}</span>
+            <span>{lang === 'hi' ? 'हिन्दी' : 'EN'}</span>
             <span className="mx-1 text-slate-300">|</span>
-            <span className="text-slate-400 font-normal">{lang === 'hi' ? 'EN' : '\u0939\u093f\u0928\u094d\u0926\u0940'}</span>
+            <span className="text-slate-400 font-normal">{lang === 'hi' ? 'EN' : 'हिन्दी'}</span>
           </button>
 
           {/* User Account / Login */}

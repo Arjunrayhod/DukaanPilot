@@ -8,10 +8,10 @@ interface BottomNavBarProps {
 
 export function BottomNavBar({ activeTab, onSelectTab }: BottomNavBarProps) {
   const tabs = [
-    { id: 'home', label: '\u0939\u094b\u092e', subLabel: 'Home', icon: Store },
-    { id: 'khata', label: '\u092c\u0939\u0940\u0916\u093e\u0924\u093e', subLabel: 'Khata', icon: BookOpen, badge: '4' },
-    { id: 'inventory', label: '\u0907\u0928\u094d\u0935\u0947\u0902\u091f\u0930\u0940', subLabel: 'Stock', icon: Package },
-    { id: 'settings', label: '\u0938\u0947\u091f\u093f\u0902\u0917\u094d\u0938', subLabel: 'Settings', icon: Settings },
+    { id: 'home', label: 'होम', subLabel: 'Home', icon: Store },
+    { id: 'khata', label: 'बहीखाता', subLabel: 'Khata', icon: BookOpen, badge: '4' },
+    { id: 'inventory', label: 'इन्वेंटरी', subLabel: 'Stock', icon: Package },
+    { id: 'settings', label: 'सेटिंग्स', subLabel: 'Settings', icon: Settings },
   ];
 
   return (
