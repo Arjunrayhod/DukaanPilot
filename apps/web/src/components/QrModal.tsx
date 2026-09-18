@@ -1,14 +1,17 @@
 import React from 'react';
 import { X, QrCode, Download, Share2 } from 'lucide-react';
+import { Lang, translations } from '../i18n/translations';
 
 interface QrModalProps {
+  lang: Lang;
   isOpen: boolean;
   onClose: () => void;
   shopName: string;
   upiId: string;
 }
 
-export function QrModal({ isOpen, onClose, shopName, upiId }: QrModalProps) {
+export function QrModal({ lang, isOpen, onClose, shopName, upiId }: QrModalProps) {
+  const t = translations[lang];
   if (!isOpen) return null;
 
   return (
@@ -25,10 +28,9 @@ export function QrModal({ isOpen, onClose, shopName, upiId }: QrModalProps) {
           <QrCode className="w-6 h-6" />
         </div>
 
-        <h3 className="text-lg font-bold text-slate-900">दुकान UPI QR कोड</h3>
+        <h3 className="text-lg font-bold text-slate-900">{t.shopQrTitle}</h3>
         <p className="text-xs text-slate-500 font-medium mt-0.5">{shopName}</p>
 
-        {/* QR Display */}
         <div className="p-4 bg-white border-2 border-dashed border-blue-200 rounded-2xl my-4 shadow-sm">
           <img
             src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=ramesh.kirana@sbi%26pn=Shree%20Ganesh%20Kirana"
@@ -40,18 +42,18 @@ export function QrModal({ isOpen, onClose, shopName, upiId }: QrModalProps) {
 
         <div className="grid grid-cols-2 gap-2.5 w-full">
           <button
-            onClick={() => alert('डाउनलोड शुरू हो गया')}
+            onClick={() => alert('Downloading QR...')}
             className="h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
           >
             <Download className="w-4 h-4" />
-            <span>Download</span>
+            <span>{t.download}</span>
           </button>
           <button
-            onClick={() => alert('व्हाट्सएप पर शेयर करें')}
+            onClick={() => alert('Sharing QR...')}
             className="h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
           >
             <Share2 className="w-4 h-4" />
-            <span>Share QR</span>
+            <span>{t.shareQr}</span>
           </button>
         </div>
       </div>

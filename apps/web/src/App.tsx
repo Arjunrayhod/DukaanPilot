@@ -13,9 +13,10 @@ import { PosBillingView } from './components/PosBillingView';
 import { InventoryView } from './components/InventoryView';
 import { AuthModal } from './components/AuthModal';
 import { checkHealth } from './services/api';
+import { Lang } from './i18n/translations';
 
 export function App() {
-  const [lang, setLang] = useState<'hi' | 'en'>('hi');
+  const [lang, setLang] = useState<Lang>('hi');
   const [activeView, setActiveView] = useState<'mobile' | 'pos'>('mobile');
   const [activeTab, setActiveTab] = useState('home');
   const [systemHealth, setSystemHealth] = useState('Checking...');
@@ -40,6 +41,10 @@ export function App() {
     loadHealth();
   }, []);
 
+  const toggleLanguage = () => {
+    setLang((prev) => (prev === 'hi' ? 'en' : 'hi'));
+  };
+
   return (
     <div className="min-h-screen bg-[#f8f9ff] text-[#0b1c30] flex flex-col font-sans pb-36 md:pb-24">
       {/* Top Universal Header */}
@@ -47,7 +52,7 @@ export function App() {
         storeName={currentUser?.shopName || 'Shree Ganesh Kirana'}
         isOnline={true}
         lang={lang}
-        onToggleLang={() => setLang(lang === 'hi' ? 'en' : 'hi')}
+        onToggleLang={toggleLanguage}
         systemHealth={systemHealth}
         activeView={activeView}
         onToggleView={setActiveView}
@@ -60,47 +65,50 @@ export function App() {
           <InventoryView />
         ) : activeTab === 'khata' ? (
           <div className="space-y-4">
-            <KhataSummaryCard />
+            <KhataSummaryCard lang={lang} />
           </div>
         ) : activeView === 'pos' ? (
           <PosBillingView />
         ) : (
           <div className="space-y-4">
             {/* 1. Voice AI POS Hero Banner */}
-            <VoiceHeroBanner onCommandTrigger={(cmd) => console.log('Voice Command:', cmd)} />
+            <VoiceHeroBanner lang={lang} onCommandTrigger={(cmd) => console.log('Voice Command:', cmd)} />
 
             {/* 2. Dual Primary Fast Counter POS Actions & Shortcuts */}
             <QuickActionTiles
+              lang={lang}
               onNewBill={() => setActiveView('pos')}
-              onScanBarcode={() => alert('बारकोड कैमरा स्कैन शुरू किया गया (Live Barcode Scanner Ready)')}
+              onScanBarcode={() => alert(lang === 'hi' ? 'बारकोड कैमरा स्कैन शुरू किया गया' : 'Barcode scanner camera activated')}
               onShowQr={() => setIsQrOpen(true)}
               onAddProduct={() => setActiveTab('inventory')}
-              onDailyReport={() => alert('डेली Z-रिपोर्ट: आज की कुल सेल ₹8,450 | 60 ट्रांजैक्शन | UPI: 73%')}
+              onDailyReport={() => alert(lang === 'hi' ? 'डेली Z-रिपोर्ट: आज की कुल सेल ₹8,450 | 60 ट्रांजैक्शन' : 'Daily Z-Report: Today\'s Total Sale ₹8,450 | 60 Transactions')}
             />
 
             {/* 3. Financial Overview: Today's Collection Card */}
-            <SalesSummaryCard />
+            <SalesSummaryCard lang={lang} />
 
-            {/* 4. Khata Credit Ledger Widget (उधार बहीखाता) */}
-            <KhataSummaryCard />
+            {/* 4. Khata Credit Ledger Widget */}
+            <KhataSummaryCard lang={lang} />
 
-            {/* 5. Low Stock Watch (इन्वेंटरी अलर्ट) */}
-            <LowStockAlerts />
+            {/* 5. Low Stock Watch */}
+            <LowStockAlerts lang={lang} />
 
             {/* 6. Daily Kirana Insights Strip */}
-            <DailyInsightsStrip />
+            <DailyInsightsStrip lang={lang} />
           </div>
         )}
       </main>
 
       {/* Modern Frosted Translucent Glassmorphism Floating Action Bar */}
       <FloatingGlassBar
+        lang={lang}
         onQuickAdd={() => setActiveTab('inventory')}
         onSubmitPrompt={(prompt) => console.log('Floating prompt:', prompt)}
       />
 
       {/* Docked Bottom Navigation Bar */}
       <BottomNavBar
+        lang={lang}
         activeTab={activeTab}
         onSelectTab={(tab) => {
           setActiveTab(tab);
@@ -110,6 +118,7 @@ export function App() {
 
       {/* QR Code Modal */}
       <QrModal
+        lang={lang}
         isOpen={isQrOpen}
         onClose={() => setIsQrOpen(false)}
         shopName={currentUser?.shopName || 'Shree Ganesh Kirana'}

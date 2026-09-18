@@ -1,85 +1,203 @@
 const fs = require('fs');
-const path = require('path');
 
-console.log('--- Generating Stitch Kirana UI with Transparent Floating Glass Bar ---');
+console.log('--- WIRING MULTI-LANGUAGE (HINDI / ENGLISH) ACROSS ALL COMPONENTS ---');
 
-// 1. apps/web/index.html
-const indexHtml = `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230051d5'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>DukaanPilot &bull; AI Local Business Operating System</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
-  </head>
-  <body class="bg-[#f8f9ff] text-[#0b1c30] antialiased selection:bg-blue-100 selection:text-blue-900 font-sans">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>`;
-fs.writeFileSync('apps/web/index.html', indexHtml, 'utf8');
+fs.mkdirSync('apps/web/src/i18n', { recursive: true });
 
-// 2. apps/web/tailwind.config.js
-const tailwindConfig = `/** @type {import('tailwindcss').Config} */
-export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
-  theme: {
-    extend: {
-      colors: {
-        'primary': '#00288e',
-        'primary-container': '#1e40af',
-        'on-primary': '#ffffff',
-        'on-primary-container': '#a8b8ff',
-        'secondary': '#0051d5',
-        'secondary-container': '#316bf3',
-        'tertiary': '#003d28',
-        'tertiary-container': '#00563a',
-        'tertiary-fixed': '#85f8c4',
-        'tertiary-fixed-dim': '#68dba9',
-        'on-tertiary': '#ffffff',
-        'surface': '#f8f9ff',
-        'surface-bright': '#f8f9ff',
-        'surface-dim': '#cbdbf5',
-        'surface-variant': '#d3e4fe',
-        'surface-container-lowest': '#ffffff',
-        'surface-container-low': '#eff4ff',
-        'surface-container': '#e5eeff',
-        'surface-container-high': '#dce9ff',
-        'surface-container-highest': '#d3e4fe',
-        'on-surface': '#0b1c30',
-        'on-surface-variant': '#444653',
-        'outline': '#757684',
-        'outline-variant': '#c4c5d5',
-        'error': '#ba1a1a',
-        'error-container': '#ffdad6',
-        'on-error-container': '#93000a',
-        'on-error': '#ffffff',
-      },
-      fontFamily: {
-        sans: ['Noto Sans', 'Plus Jakarta Sans', 'sans-serif'],
-        display: ['Plus Jakarta Sans', 'Noto Sans', 'sans-serif'],
-      }
-    },
+const translationsCode = `export type Lang = 'hi' | 'en';
+
+export const translations = {
+  hi: {
+    // Header
+    storeName: 'श्री गणेश किराना',
+    posOnline: 'पीओएस ऑनलाइन',
+    dashboard: 'डैशबोर्ड',
+    mobileView: 'मोबाइल',
+    posView: 'काउंटर POS',
+    account: 'खाता',
+    
+    // Voice Hero Banner
+    instantVoicePos: 'Instant AI वॉइस POS',
+    languagesSupported: '8 भाषाएँ समर्थित',
+    voiceBillTitle: 'बोलकर बिल बनाएं',
+    voiceBillSub: '/ Voice Bill',
+    voicePlaceholder: 'उदा: "रमेश कुमार 2 किलो चीनी और ₹150 उधार जोड़ो"',
+    listening: 'सुन रहा हूं... "रमेश कुमार 2 किलो चीनी और ₹150 उधार जोड़ो"',
+    promptAtta: '+ 5kg आशीर्वाद आटा',
+    promptCash: '+ ₹500 नकद जमा (सुरेश)',
+    promptSales: 'आज की कुल बिक्री?',
+
+    // Quick Actions
+    newBill: 'नया बिल बनाएं',
+    newBillSub: 'New Quick Bill',
+    scanBarcode: 'बारकोड स्कैन',
+    scanBarcodeSub: 'Instant Scan & Add',
+    live: 'Live',
+    showQr: 'दुकान QR दिखाएं',
+    addProduct: 'नया सामान जोड़ें',
+    dailyReport: 'डेली Z-रिपोर्ट',
+
+    // Sales Summary
+    totalCollection: 'आज की कुल बिक्री • TOTAL COLLECTION',
+    bills: 'बिल',
+    upiShare: 'UPI / QR (73%)',
+    cashShare: 'नकद / Cash (27%)',
+    transactions: 'ट्रांजैक्शन',
+    autoSettles: 'Auto-settles tonight 11:59 PM • SBI A/c ••4291',
+    settlement: 'सेटलमेंट',
+
+    // Khata
+    pendingKhata: 'बकाया ग्राहक खाता',
+    pendingKhataSub: 'Pending Khata Ledger',
+    totalDue: 'कुल: ₹18,650',
+    due: 'बकाया',
+    daysAgo: '2 दिन पहले लिया',
+    dueToday: 'आज देय',
+    weekLate: '1 हफ्ता लेट',
+    remindBtn: 'तकादा',
+    reminded: 'भेजा गया',
+    viewAllLedger: 'सभी 14 खाते देखें (View All Ledger)',
+
+    // Low Stock
+    lowStockTitle: 'कम स्टॉक अलर्ट',
+    lowStockSub: 'Smart Low Stock Watch',
+    itemsLow: '3 आइटम्स कम',
+    packetsLeft: 'पैकेट बचे',
+    bottlesLeft: 'बोतल बची',
+    bagsLeft: 'बैग बचे',
+    minText: 'न्यूनतम',
+    supplier: 'सप्लायर',
+    orderBtn: 'ऑर्डर',
+    orderedBtn: 'ऑर्डर भेजा',
+
+    // Daily Insights
+    soldCount: '34 बिके',
+    topSellerLabel: 'सबसे ज्यादा बिका सामान',
+    topSellerItem: 'अमूल बटर 500g',
+    footfallLabel: 'दुकान पर कुल ग्राहक',
+    footfallCount: '86 Footfall',
+
+    // Floating Glass Bar
+    glassPlaceholder: 'क्या बनाना या जोड़ना चाहते हैं? (बोलें या लिखें...)',
+    instantAi: 'Instant AI',
+    balanced: 'Balanced',
+    posMode: 'POS Mode',
+    voiceInput: 'बोलकर कहें',
+    submit: 'भेजें',
+
+    // Bottom Nav
+    navHome: 'होम',
+    navKhata: 'बहीखाता',
+    navInventory: 'इन्वेंटरी',
+    navSettings: 'सेटिंग्स',
+
+    // QR Modal
+    shopQrTitle: 'दुकान UPI QR कोड',
+    download: 'डाउनलोड',
+    shareQr: 'WhatsApp शेयर',
   },
-  plugins: [],
-};`;
-fs.writeFileSync('apps/web/tailwind.config.js', tailwindConfig, 'utf8');
+  en: {
+    // Header
+    storeName: 'Shree Ganesh Kirana',
+    posOnline: 'POS ONLINE',
+    dashboard: 'Dashboard',
+    mobileView: 'Mobile',
+    posView: 'Counter POS',
+    account: 'Account',
+    
+    // Voice Hero Banner
+    instantVoicePos: 'Instant AI Voice POS',
+    languagesSupported: '8 Languages Supported',
+    voiceBillTitle: 'Create Voice Bill',
+    voiceBillSub: '/ Voice Bill',
+    voicePlaceholder: 'Ex: "Ramesh Kumar 2kg Sugar and add ₹150 Credit"',
+    listening: 'Listening... "Ramesh Kumar 2kg Sugar and add ₹150 Credit"',
+    promptAtta: '+ 5kg Aashirvaad Atta',
+    promptCash: '+ ₹500 Cash Deposit (Suresh)',
+    promptSales: "Today's Total Sales?",
 
-// 3. apps/web/src/components/Header.tsx
+    // Quick Actions
+    newBill: 'New Quick Bill',
+    newBillSub: 'Fast Checkout [F1]',
+    scanBarcode: 'Barcode Scanner',
+    scanBarcodeSub: 'Instant Scan & Add',
+    live: 'Live',
+    showQr: 'Show Store QR',
+    addProduct: 'Add New Product',
+    dailyReport: 'Daily Z-Report',
+
+    // Sales Summary
+    totalCollection: "TODAY'S TOTAL COLLECTION",
+    bills: 'Bills',
+    upiShare: 'UPI / QR (73%)',
+    cashShare: 'Cash (27%)',
+    transactions: 'Transactions',
+    autoSettles: 'Auto-settles tonight 11:59 PM • SBI A/c ••4291',
+    settlement: 'Settlement',
+
+    // Khata
+    pendingKhata: 'Pending Khata Ledger',
+    pendingKhataSub: 'Customer Credit Book',
+    totalDue: 'Total: ₹18,650',
+    due: 'Due',
+    daysAgo: '2 days ago',
+    dueToday: 'Due Today',
+    weekLate: '1 Week Overdue',
+    remindBtn: 'Remind',
+    reminded: 'Sent',
+    viewAllLedger: 'View All 14 Accounts',
+
+    // Low Stock
+    lowStockTitle: 'Low Stock Alerts',
+    lowStockSub: 'Smart Inventory Watch',
+    itemsLow: '3 Items Low',
+    packetsLeft: 'packets left',
+    bottlesLeft: 'bottles left',
+    bagsLeft: 'bags left',
+    minText: 'Min',
+    supplier: 'Supplier',
+    orderBtn: 'Order',
+    orderedBtn: 'Ordered',
+
+    // Daily Insights
+    soldCount: '34 Sold',
+    topSellerLabel: 'Top Selling Item Today',
+    topSellerItem: 'Amul Butter 500g',
+    footfallLabel: 'Total Store Footfall',
+    footfallCount: '86 Visitors',
+
+    // Floating Glass Bar
+    glassPlaceholder: 'What would you like to create or change? (Speak or type...)',
+    instantAi: 'Instant AI',
+    balanced: 'Balanced',
+    posMode: 'POS Mode',
+    voiceInput: 'Voice Input',
+    submit: 'Submit',
+
+    // Bottom Nav
+    navHome: 'Home',
+    navKhata: 'Khata',
+    navInventory: 'Inventory',
+    navSettings: 'Settings',
+
+    // QR Modal
+    shopQrTitle: 'Store UPI QR Code',
+    download: 'Download',
+    shareQr: 'Share WhatsApp',
+  }
+};
+`;
+fs.writeFileSync('apps/web/src/i18n/translations.ts', translationsCode, 'utf8');
+
+// 1. Header.tsx
 const headerCode = `import React from 'react';
 import { Store, ShieldCheck, Languages, User } from 'lucide-react';
+import { Lang, translations } from '../i18n/translations';
 
 interface HeaderProps {
   storeName: string;
   isOnline: boolean;
-  lang: 'hi' | 'en';
+  lang: Lang;
   onToggleLang: () => void;
   systemHealth: string;
   activeView: 'mobile' | 'pos';
@@ -97,6 +215,8 @@ export function Header({
   onToggleView,
   onOpenAuth,
 }: HeaderProps) {
+  const t = translations[lang];
+
   return (
     <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-slate-200/80 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
       <div className="max-w-7xl mx-auto h-16 px-4 flex items-center justify-between gap-3">
@@ -107,16 +227,18 @@ export function Header({
           </div>
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className="font-bold text-base text-slate-900 truncate">{storeName}</span>
+              <span className="font-bold text-base text-slate-900 truncate">
+                {lang === 'hi' ? 'श्री गणेश किराना' : storeName}
+              </span>
               <span className="inline-flex items-center text-blue-600 shrink-0" title="Verified Merchant">
                 <ShieldCheck className="w-4 h-4 fill-blue-100" />
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
-              <span className="font-semibold text-slate-500 uppercase tracking-wider text-[11px]">POS Online</span>
+              <span className="font-semibold text-slate-500 uppercase tracking-wider text-[11px]">{t.posOnline}</span>
               <span className="text-slate-300">&bull;</span>
-              <span className="font-medium text-blue-700 text-[11px] truncate">{systemHealth}</span>
+              <span className="font-medium text-blue-700 text-[11px] truncate">{t.dashboard}</span>
             </div>
           </div>
         </div>
@@ -131,7 +253,7 @@ export function Header({
                 activeView === 'mobile' ? 'bg-white text-blue-800 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
               }\`}
             >
-              \\u092e\\u094b\\u092c\\u093e\\u0907\\u0932 (Mobile)
+              {t.mobileView}
             </button>
             <button
               onClick={() => onToggleView('pos')}
@@ -139,21 +261,21 @@ export function Header({
                 activeView === 'pos' ? 'bg-white text-blue-800 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
               }\`}
             >
-              \\u0915\\u093e\\u0909\\u0902\\u091f\\u0930 POS
+              {t.posView}
             </button>
           </div>
 
-          {/* Language Toggle */}
+          {/* Language Toggle Button */}
           <button
             onClick={onToggleLang}
-            className="h-9 px-2.5 flex items-center justify-center rounded-lg bg-blue-50/80 border border-blue-100 text-blue-900 text-xs font-bold hover:bg-blue-100 transition-colors"
+            className="h-9 px-3 flex items-center justify-center rounded-lg bg-blue-50/90 border border-blue-200 text-blue-900 text-xs font-bold hover:bg-blue-100 transition-all shadow-sm active:scale-95 cursor-pointer"
             type="button"
             title="Toggle Language"
           >
-            <Languages className="w-3.5 h-3.5 mr-1 text-blue-700" />
-            <span>{lang === 'hi' ? '\\u0939\\u093f\\u0928\\u094d\\u0926\\u0940' : 'EN'}</span>
+            <Languages className="w-3.5 h-3.5 mr-1.5 text-blue-700" />
+            <span className={lang === 'hi' ? 'text-blue-800 font-extrabold' : 'text-slate-400 font-normal'}>हिन्दी</span>
             <span className="mx-1 text-slate-300">|</span>
-            <span className="text-slate-400 font-normal">{lang === 'hi' ? 'EN' : '\\u0939\\u093f\\u0928\\u094d\\u0926\\u0940'}</span>
+            <span className={lang === 'en' ? 'text-blue-800 font-extrabold' : 'text-slate-400 font-normal'}>EN</span>
           </button>
 
           {/* User Account / Login */}
@@ -173,28 +295,27 @@ export function Header({
 `;
 fs.writeFileSync('apps/web/src/components/Header.tsx', headerCode, 'utf8');
 
-// 4. apps/web/src/components/VoiceHeroBanner.tsx
+// 2. VoiceHeroBanner.tsx
 const voiceHeroCode = `import React, { useState } from 'react';
 import { Zap, Globe, Mic } from 'lucide-react';
+import { Lang, translations } from '../i18n/translations';
 
 interface VoiceHeroBannerProps {
+  lang: Lang;
   onCommandTrigger?: (cmd: string) => void;
 }
 
-export function VoiceHeroBanner({ onCommandTrigger }: VoiceHeroBannerProps) {
+export function VoiceHeroBanner({ lang, onCommandTrigger }: VoiceHeroBannerProps) {
+  const t = translations[lang];
   const [isListening, setIsListening] = useState(false);
   const [transcribedText, setTranscribedText] = useState('');
 
-  const quickPrompts = [
-    '+ 5kg \\u0906\\u0936\\u0940\\u0930\\u094d\\u0935\\u093e\\u0926 \\u0906\\u091f\\u093e',
-    '+ \\u20B9500 \\u0928\\u0915\\u0926 \\u091c\\u092e\\u093e (\\u0938\\u0941\\u0930\\u0947\\u0936)',
-    '\\u0906\\u091c \\u0915\\u0940 \\u0915\\u0941\\u0932 \\u092c\\u093f\\u0915\\u094d\\u0930\\u0940?',
-  ];
+  const quickPrompts = [t.promptAtta, t.promptCash, t.promptSales];
 
   const handleMicClick = () => {
     setIsListening(!isListening);
     if (!isListening) {
-      setTranscribedText('\\u0938\\u0941\\u0928 \\u0930\\u0939\\u093e \\u0939\\u0942\\u0902... "\\u0930\\u092e\\u0947\\u0936 \\u0915\\u0941\\u092e\\u093e\\u0930 2 \\u0915\\u093f\\u0932\\u094b \\u091a\\u0940\\u0928\\u0940 \\u0914\\u0930 \\u20B9150 \\u0909\\u0927\\u093e\\u0930 \\u091c\\u094b\\u0921\\u093c\\u094b"');
+      setTranscribedText(t.listening);
     } else {
       setTranscribedText('');
     }
@@ -207,7 +328,6 @@ export function VoiceHeroBanner({ onCommandTrigger }: VoiceHeroBannerProps) {
 
   return (
     <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-900 via-blue-700 to-indigo-700 text-white p-5 shadow-lg border border-blue-500/20">
-      {/* Subtle Background Glow */}
       <div className="absolute -right-10 -bottom-10 w-44 h-44 rounded-full bg-emerald-400/10 blur-2xl pointer-events-none"></div>
       <div className="absolute -left-10 -top-10 w-36 h-36 rounded-full bg-blue-300/15 blur-xl pointer-events-none"></div>
 
@@ -216,11 +336,11 @@ export function VoiceHeroBanner({ onCommandTrigger }: VoiceHeroBannerProps) {
         <div className="flex items-center gap-2 flex-wrap">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-white text-xs font-bold tracking-wide border border-white/20 shadow-sm">
             <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
-            <span>Instant AI Voice POS</span>
+            <span>{t.instantVoicePos}</span>
           </span>
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-sm text-blue-100 text-xs font-medium border border-white/10">
             <Globe className="w-3.5 h-3.5 text-emerald-300" />
-            <span>8 \\u092d\\u093e\\u0937\\u093e\\u090f\\u0901 \\u0938\\u092e\\u0930\\u094d\\u0925\\u093f\\u0924</span>
+            <span>{t.languagesSupported}</span>
           </span>
         </div>
 
@@ -228,14 +348,14 @@ export function VoiceHeroBanner({ onCommandTrigger }: VoiceHeroBannerProps) {
         <div className="flex items-center justify-between gap-4 pt-1">
           <div className="flex-1 min-w-0">
             <h2 className="text-xl sm:text-2xl font-extrabold leading-tight text-white flex items-center gap-2 flex-wrap">
-              <span>\\u092c\\u094b\\u0932\\u0915\\u0930 \\u092c\\u093f\\u0932 \\u092c\\u0928\\u093e\\u090f\\u0901</span>
-              <span className="text-emerald-300 text-lg font-bold">/ Voice Bill</span>
+              <span>{t.voiceBillTitle}</span>
+              <span className="text-emerald-300 text-lg font-bold">{t.voiceBillSub}</span>
             </h2>
             <p className="text-xs sm:text-sm text-blue-100/90 mt-1 font-medium">
               {transcribedText ? (
                 <span className="text-amber-200 font-semibold animate-pulse">{transcribedText}</span>
               ) : (
-                '\\u0909\\u0926\\u093e: "\\u0930\\u092e\\u0947\\u0936 \\u0915\\u0941\\u092e\\u093e\\u0930 2 \\u0915\\u093f\\u0932\\u094b \\u091a\\u0940\\u0928\\u0940 \\u0914\\u0930 \\u20B9150 \\u0909\\u0927\\u093e\\u0930 \\u091c\\u094b\\u0921\\u093c\\u094b"'
+                t.voicePlaceholder
               )}
             </p>
           </div>
@@ -254,7 +374,6 @@ export function VoiceHeroBanner({ onCommandTrigger }: VoiceHeroBannerProps) {
             )}
             <Mic className={\`w-7 h-7 \${isListening ? 'text-emerald-600 animate-bounce' : 'text-blue-800'}\`} />
             
-            {/* Soundwave Indicator */}
             <span className="absolute -bottom-1 flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-slate-900 text-white text-[9px] shadow-sm">
               <span className="w-1 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
               <span className="w-1 h-3 bg-emerald-400 rounded-full animate-pulse delay-75"></span>
@@ -283,11 +402,13 @@ export function VoiceHeroBanner({ onCommandTrigger }: VoiceHeroBannerProps) {
 `;
 fs.writeFileSync('apps/web/src/components/VoiceHeroBanner.tsx', voiceHeroCode, 'utf8');
 
-// 5. apps/web/src/components/QuickActionTiles.tsx
+// 3. QuickActionTiles.tsx
 const actionTilesCode = `import React from 'react';
 import { Receipt, QrCode, PlusCircle, FileSpreadsheet } from 'lucide-react';
+import { Lang, translations } from '../i18n/translations';
 
 interface QuickActionTilesProps {
+  lang: Lang;
   onNewBill: () => void;
   onScanBarcode: () => void;
   onShowQr: () => void;
@@ -296,15 +417,17 @@ interface QuickActionTilesProps {
 }
 
 export function QuickActionTiles({
+  lang,
   onNewBill,
   onScanBarcode,
   onShowQr,
   onAddProduct,
   onDailyReport,
 }: QuickActionTilesProps) {
+  const t = translations[lang];
+
   return (
     <section className="flex flex-col space-y-3">
-      {/* 2 Primary Action Cards */}
       <div className="grid grid-cols-2 gap-3">
         {/* Quick Bill Card */}
         <button
@@ -319,8 +442,8 @@ export function QuickActionTiles({
             <span className="px-2 py-0.5 rounded-md bg-white/20 text-white text-xs font-bold font-mono">F1</span>
           </div>
           <div>
-            <div className="text-base font-bold leading-tight">\\u0928\\u092f\\u093e \\u092c\\u093f\\u0932 \\u092c\\u0928\\u093e\\u090f\\u0901</div>
-            <div className="text-xs text-blue-200 font-medium">New Quick Bill</div>
+            <div className="text-base font-bold leading-tight">{t.newBill}</div>
+            <div className="text-xs text-blue-200 font-medium">{t.newBillSub}</div>
           </div>
         </button>
 
@@ -336,17 +459,17 @@ export function QuickActionTiles({
             </div>
             <span className="inline-flex items-center gap-1 text-emerald-700 text-xs font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
-              Live
+              {t.live}
             </span>
           </div>
           <div>
-            <div className="text-base font-bold leading-tight text-slate-900">\\u092c\\u093e\\u0930\\u0915\\u094b\\u0921 \\u0938\\u094d\\u0915\\u0948\\u0928</div>
-            <div className="text-xs text-slate-500 font-medium">Instant Scan &amp; Add</div>
+            <div className="text-base font-bold leading-tight text-slate-900">{t.scanBarcode}</div>
+            <div className="text-xs text-slate-500 font-medium">{t.scanBarcodeSub}</div>
           </div>
         </button>
       </div>
 
-      {/* Secondary Counter Shortcuts Carousel */}
+      {/* Secondary Counter Shortcuts */}
       <div className="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar">
         <button
           onClick={onShowQr}
@@ -354,7 +477,7 @@ export function QuickActionTiles({
           type="button"
         >
           <QrCode className="w-4 h-4 text-blue-600" />
-          <span>\\u0926\\u0941\\u0915\\u093e\\u0928 QR \\u0926\\u093f\\u0916\\u093e\\u090f\\u0901</span>
+          <span>{t.showQr}</span>
         </button>
 
         <button
@@ -363,7 +486,7 @@ export function QuickActionTiles({
           type="button"
         >
           <PlusCircle className="w-4 h-4 text-emerald-600" />
-          <span>\\u0928\\u092f\\u093e \\u0938\\u093e\\u092e\\u093e\\u0928 \\u091c\\u094b\\u0921\\u093c\\u0947\\u0902</span>
+          <span>{t.addProduct}</span>
         </button>
 
         <button
@@ -372,7 +495,7 @@ export function QuickActionTiles({
           type="button"
         >
           <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
-          <span>\\u0921\\u0947\\u0932\\u0940 Z-\\u0930\\u093f\\u092a\\u094b\\u0930\\u094d\\u091f</span>
+          <span>{t.dailyReport}</span>
         </button>
       </div>
     </section>
@@ -381,21 +504,27 @@ export function QuickActionTiles({
 `;
 fs.writeFileSync('apps/web/src/components/QuickActionTiles.tsx', actionTilesCode, 'utf8');
 
-// 6. apps/web/src/components/SalesSummaryCard.tsx
+// 4. SalesSummaryCard.tsx
 const salesSummaryCode = `import React from 'react';
 import { TrendingUp, Landmark, ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import { Lang, translations } from '../i18n/translations';
 
-export function SalesSummaryCard() {
+interface SalesSummaryCardProps {
+  lang: Lang;
+}
+
+export function SalesSummaryCard({ lang }: SalesSummaryCardProps) {
+  const t = translations[lang];
+
   return (
     <section className="rounded-2xl bg-white border border-slate-200/90 p-5 shadow-sm space-y-4">
-      {/* Header with Growth Pill */}
       <div className="flex items-start justify-between">
         <div>
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-            \\u0906\\u091c \\u0915\\u0940 \\u0915\\u0941\\u0932 \\u092c\\u093f\\u0915\\u094d\\u0930\\u0940 &bull; TOTAL COLLECTION
+            {t.totalCollection}
           </span>
           <div className="flex items-baseline gap-2.5 mt-1">
-            <span className="text-3xl font-extrabold text-slate-900 tracking-tight">\\u20B98,450.00</span>
+            <span className="text-3xl font-extrabold text-slate-900 tracking-tight">₹8,450.00</span>
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
               <TrendingUp className="w-3.5 h-3.5" />
               +14%
@@ -407,9 +536,7 @@ export function SalesSummaryCard() {
         </div>
       </div>
 
-      {/* Collection Breakdown Matrix with SVG Gauge */}
       <div className="p-4 rounded-xl bg-[#eff4ff] border border-blue-100/60 flex items-center justify-between gap-4">
-        {/* SVG Donut Chart */}
         <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
           <svg className="w-16 h-16 -rotate-90" viewBox="0 0 40 40">
             <circle cx="20" cy="20" fill="none" r="15.9" stroke="#dce9ff" strokeWidth="4.2"></circle>
@@ -418,40 +545,38 @@ export function SalesSummaryCard() {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-xs font-extrabold text-slate-900 leading-none">60</span>
-            <span className="text-[9px] font-bold text-slate-500 leading-none mt-0.5">\\u092c\\u093f\\u0932</span>
+            <span className="text-[9px] font-bold text-slate-500 leading-none mt-0.5">{t.bills}</span>
           </div>
         </div>
 
-        {/* Breakdown Stats */}
         <div className="flex-1 grid grid-cols-2 gap-3">
           <div className="space-y-0.5">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-              <span className="text-xs font-bold text-slate-600">UPI / QR (73%)</span>
+              <span className="text-xs font-bold text-slate-600">{t.upiShare}</span>
             </div>
-            <div className="text-base font-extrabold text-slate-900">\\u20B96,200</div>
-            <span className="text-[11px] text-slate-500 font-medium">42 \\u091f\\u094d\\u0930\\u093e\\u0902\\u091c\\u0948\\u0915\\u094d\\u0936\\u0928</span>
+            <div className="text-base font-extrabold text-slate-900">₹6,200</div>
+            <span className="text-[11px] text-slate-500 font-medium">42 {t.transactions}</span>
           </div>
 
           <div className="space-y-0.5">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-700"></span>
-              <span className="text-xs font-bold text-slate-600">\\u0928\\u0915\\u0926 / Cash (27%)</span>
+              <span className="text-xs font-bold text-slate-600">{t.cashShare}</span>
             </div>
-            <div className="text-base font-extrabold text-slate-900">\\u20B92,250</div>
-            <span className="text-[11px] text-slate-500 font-medium">18 \\u091f\\u094d\\u0930\\u093e\\u0902\\u091c\\u0948\\u0915\\u094d\\u0936\\u0928</span>
+            <div className="text-base font-extrabold text-slate-900">₹2,250</div>
+            <span className="text-[11px] text-slate-500 font-medium">18 {t.transactions}</span>
           </div>
         </div>
       </div>
 
-      {/* Auto Settlement Banner */}
       <div className="flex items-center justify-between pt-1 text-xs text-slate-600">
         <div className="flex items-center gap-1.5 truncate font-medium">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span className="truncate">Auto-settles tonight 11:59 PM &bull; SBI A/c &bull;&bull;4291</span>
+          <span className="truncate">{t.autoSettles}</span>
         </div>
         <button className="shrink-0 text-blue-700 font-bold hover:underline flex items-center gap-0.5" type="button">
-          <span>\\u0938\\u0947\\u091f\\u0932\\u092e\\u0947\\u0902\\u091f</span>
+          <span>{t.settlement}</span>
           <ArrowUpRight className="w-3 h-3" />
         </button>
       </div>
@@ -461,11 +586,17 @@ export function SalesSummaryCard() {
 `;
 fs.writeFileSync('apps/web/src/components/SalesSummaryCard.tsx', salesSummaryCode, 'utf8');
 
-// 7. apps/web/src/components/KhataSummaryCard.tsx
+// 5. KhataSummaryCard.tsx
 const khataSummaryCode = `import React, { useState } from 'react';
 import { BookOpen, Send, ArrowRight, Check } from 'lucide-react';
+import { Lang, translations } from '../i18n/translations';
 
-export function KhataSummaryCard() {
+interface KhataSummaryCardProps {
+  lang: Lang;
+}
+
+export function KhataSummaryCard({ lang }: KhataSummaryCardProps) {
+  const t = translations[lang];
   const [remindedList, setRemindedList] = useState<number[]>([]);
 
   const khataRows = [
@@ -473,9 +604,9 @@ export function KhataSummaryCard() {
       id: 1,
       initials: 'RK',
       colorClass: 'bg-blue-100 text-blue-800',
-      name: '\\u0930\\u092e\\u0947\\u0936 \\u0915\\u0941\\u092e\\u093e\\u0930 (Ramesh)',
-      amount: '\\u20B91,450',
-      status: '2 \\u0926\\u093f\\u0928 \\u092a\\u0939\\u0932\\u0947 \\u0932\\u093f\\u092f\\u093e',
+      name: lang === 'hi' ? 'रमेश कुमार (Ramesh)' : 'Ramesh Kumar',
+      amount: '₹1,450',
+      status: t.daysAgo,
       statusClass: 'text-slate-500',
       phone: '9876543210',
     },
@@ -483,9 +614,9 @@ export function KhataSummaryCard() {
       id: 2,
       initials: 'SV',
       colorClass: 'bg-emerald-100 text-emerald-800',
-      name: '\\u0938\\u0941\\u0928\\u0940\\u0924\\u093e \\u0935\\u0930\\u094d\\u092e\\u093e (Sunita V.)',
-      amount: '\\u20B9820',
-      status: '\\u0906\\u091c \\u0926\\u0947\\u092f',
+      name: lang === 'hi' ? 'सुनीता वर्मा (Sunita V.)' : 'Sunita Verma',
+      amount: '₹820',
+      status: t.dueToday,
       statusClass: 'text-amber-700 font-semibold',
       phone: '9876543211',
     },
@@ -493,9 +624,9 @@ export function KhataSummaryCard() {
       id: 3,
       initials: 'MK',
       colorClass: 'bg-indigo-100 text-indigo-800',
-      name: '\\u092e\\u0939\\u0947\\u0902\\u0926\\u094d\\u0930 \\u0915\\u093f\\u0930\\u093e\\u0928\\u093e (B2B)',
-      amount: '\\u20B93,100',
-      status: '1 \\u0939\\u092b\\u094d\\u0924\\u093e \\u0932\\u0947\\u091f',
+      name: lang === 'hi' ? 'महेंद्र किराना (B2B)' : 'Mahendra Kirana (B2B)',
+      amount: '₹3,100',
+      status: t.weekLate,
       statusClass: 'text-rose-600 font-semibold',
       phone: '9876543212',
     },
@@ -503,7 +634,7 @@ export function KhataSummaryCard() {
 
   const handleSendReminder = (id: number, name: string, amount: string) => {
     setRemindedList((prev) => [...prev, id]);
-    alert(\`\\u0935\\u094d\\u0939\\u093e\\u091f\\u094d\\u0938\\u090f\\u092a \\u0924\\u0915\\u093e\\u0926\\u093e \\u092d\\u0947\\u091c \\u0926\\u093f\\u092f\\u093e \\u0917\\u092f\\u093e: \${name} (\${amount})\`);
+    alert(\`WhatsApp reminder sent to: \${name} (\${amount})\`);
   };
 
   return (
@@ -514,16 +645,15 @@ export function KhataSummaryCard() {
             <BookOpen className="w-5 h-5" />
           </div>
           <div className="truncate">
-            <h3 className="text-base font-bold text-slate-900 truncate">\\u092c\\u0915\\u093e\\u092f\\u093e \\u0917\\u094d\\u0930\\u093e\\u0939\\u0915 \\u0916\\u093e\\u0924\\u093e</h3>
-            <span className="text-xs text-slate-500 font-medium">Pending Khata Ledger</span>
+            <h3 className="text-base font-bold text-slate-900 truncate">{t.pendingKhata}</h3>
+            <span className="text-xs text-slate-500 font-medium">{t.pendingKhataSub}</span>
           </div>
         </div>
         <span className="px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-extrabold">
-          \\u0915\\u0941\\u0932: \\u20B918,650
+          {t.totalDue}
         </span>
       </div>
 
-      {/* Customer Rows List */}
       <div className="space-y-2.5 pt-1">
         {khataRows.map((row) => {
           const isReminded = remindedList.includes(row.id);
@@ -541,7 +671,7 @@ export function KhataSummaryCard() {
                 <div className="min-w-0">
                   <div className="text-sm font-bold text-slate-900 truncate">{row.name}</div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                    <span className="text-rose-600 font-bold">{row.amount} \\u092c\\u0915\\u093e\\u092f\\u093e</span>
+                    <span className="text-rose-600 font-bold">{row.amount} {t.due}</span>
                     <span>&bull;</span>
                     <span className={row.statusClass}>{row.status}</span>
                   </div>
@@ -560,12 +690,12 @@ export function KhataSummaryCard() {
                 {isReminded ? (
                   <>
                     <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>\\u092d\\u0947\\u091c\\u093e \\u0917\\u092f\\u093e</span>
+                    <span>{t.reminded}</span>
                   </>
                 ) : (
                   <>
                     <Send className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>\\u0924\\u0915\\u093e\\u0926\\u093e</span>
+                    <span>{t.remindBtn}</span>
                   </>
                 )}
               </button>
@@ -574,12 +704,11 @@ export function KhataSummaryCard() {
         })}
       </div>
 
-      {/* View All CTA */}
       <button
         className="w-full h-11 rounded-xl bg-blue-50 border border-blue-100 text-blue-800 text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-blue-100 transition-colors active:scale-98"
         type="button"
       >
-        <span>\\u0938\\u092d\\u0940 14 \\u0916\\u093e\\u0924\\u0947 \\u0926\\u0947\\u0916\\u0947\\u0902 (View All Ledger)</span>
+        <span>{t.viewAllLedger}</span>
         <ArrowRight className="w-4 h-4" />
       </button>
     </section>
@@ -588,43 +717,49 @@ export function KhataSummaryCard() {
 `;
 fs.writeFileSync('apps/web/src/components/KhataSummaryCard.tsx', khataSummaryCode, 'utf8');
 
-// 8. apps/web/src/components/LowStockAlerts.tsx
+// 6. LowStockAlerts.tsx
 const lowStockCode = `import React, { useState } from 'react';
 import { AlertTriangle, Truck, Check } from 'lucide-react';
+import { Lang, translations } from '../i18n/translations';
 
-export function LowStockAlerts() {
+interface LowStockAlertsProps {
+  lang: Lang;
+}
+
+export function LowStockAlerts({ lang }: LowStockAlertsProps) {
+  const t = translations[lang];
   const [orderedItems, setOrderedItems] = useState<number[]>([]);
 
   const stockAlerts = [
     {
       id: 1,
-      title: '\\u091f\\u093e\\u091f\\u093e \\u0928\\u092e\\u0915 (Tata Salt 1kg)',
-      remaining: '4 \\u092a\\u0948\\u0915\\u0947\\u091f \\u092c\\u091a\\u0947',
-      minThreshold: '(\\u0928\\u094d\\u092f\\u0942\\u0928\\u0924\\u092e 25)',
-      supplier: '\\u0938\\u092a\\u094d\\u0932\\u093e\\u092f\\u0930: \\u092c\\u093e\\u0932\\u093e\\u091c\\u0940 \\u090f\\u091c\\u0947\\u0902\\u0938\\u0940\\u091c\\u093c',
-      orderQty: '50 \\u092a\\u0948\\u0915\\u0947\\u091f \\u0911\\u0930\\u094d\\u0921\\u0930',
+      title: lang === 'hi' ? 'टाटा नमक (Tata Salt 1kg)' : 'Tata Salt 1kg',
+      remaining: \`4 \${t.packetsLeft}\`,
+      minThreshold: \`(\${t.minText} 25)\`,
+      supplier: \`\${t.supplier}: \${lang === 'hi' ? 'बालाजी एजेंसीज़' : 'Balaji Agencies'}\`,
+      orderQty: \`50 \${t.packetsLeft} \${t.orderBtn}\`,
     },
     {
       id: 2,
-      title: '\\u092b\\u0949\\u0930\\u094d\\u091a\\u094d\\u092f\\u0942\\u0928 \\u0938\\u0928\\u092b\\u094d\\u0932\\u093e\\u0935\\u0930 \\u0911\\u092f\\u0932 1L',
-      remaining: '2 \\u092c\\u094b\\u0924\\u0932 \\u092c\\u091a\\u0940',
-      minThreshold: '(\\u0928\\u094d\\u092f\\u0942\\u0928\\u0924\\u092e 12)',
-      supplier: '\\u0938\\u092a\\u094d\\u0932\\u093e\\u092f\\u0930: \\u092e\\u0947\\u091f\\u094d\\u0930\\u094b \\u0939\\u094b\\u0932\\u0938\\u0947\\u0932',
-      orderQty: '24 \\u092c\\u094b\\u0924\\u0932 \\u0911\\u0930\\u094d\\u0921\\u0930',
+      title: lang === 'hi' ? 'फॉर्च्यून सनफ्लावर ऑयल 1L' : 'Fortune Sunflower Oil 1L',
+      remaining: \`2 \${t.bottlesLeft}\`,
+      minThreshold: \`(\${t.minText} 12)\`,
+      supplier: \`\${t.supplier}: \${lang === 'hi' ? 'मेट्रो होलसेल' : 'Metro Wholesale'}\`,
+      orderQty: \`24 \${t.bottlesLeft} \${t.orderBtn}\`,
     },
     {
       id: 3,
-      title: '\\u0906\\u0936\\u0940\\u0930\\u094d\\u0935\\u093e\\u0926 \\u091a\\u0915\\u094d\\u0915\\u0940 \\u0906\\u091f\\u093e 5kg',
-      remaining: '3 \\u092c\\u0948\\u0917 \\u092c\\u091a\\u0947',
-      minThreshold: '(\\u0928\\u094d\\u092f\\u0942\\u0928\\u0924\\u092e 15)',
-      supplier: '\\u0938\\u092a\\u094d\\u0932\\u093e\\u092f\\u0930: \\u0906\\u0908\\u091f\\u0940\\u0938\\u0940 \\u0921\\u093e\\u092f\\u0930\\u0947\\u0915\\u094d\\u091f',
-      orderQty: '20 \\u092c\\u0948\\u0917 \\u0911\\u0930\\u094d\\u0921\\u0930',
+      title: lang === 'hi' ? 'आशीर्वाद चक्की आटा 5kg' : 'Aashirvaad Chakki Atta 5kg',
+      remaining: \`3 \${t.bagsLeft}\`,
+      minThreshold: \`(\${t.minText} 15)\`,
+      supplier: \`\${t.supplier}: \${lang === 'hi' ? 'आईटीसी डायरेक्ट' : 'ITC Direct'}\`,
+      orderQty: \`20 \${t.bagsLeft} \${t.orderBtn}\`,
     },
   ];
 
   const handleOrder = (id: number, title: string, qty: string) => {
     setOrderedItems((prev) => [...prev, id]);
-    alert(\`\\u0938\\u092a\\u094d\\u0932\\u093e\\u092f\\u0930 \\u0915\\u094b \\u0911\\u0930\\u094d\\u0921\\u0930 \\u092d\\u0947\\u091c \\u0926\\u093f\\u092f\\u093e \\u0917\\u092f\\u093e: \${title} (\${qty})\`);
+    alert(\`Order sent to supplier: \${title} (\${qty})\`);
   };
 
   return (
@@ -635,16 +770,15 @@ export function LowStockAlerts() {
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div className="truncate">
-            <h3 className="text-base font-bold text-slate-900 truncate">\\u0915\\u092e \\u0938\\u094d\\u091f\\u0949\\u0915 \\u0905\\u0932\\u0930\\u094d\\u091f</h3>
-            <span className="text-xs text-slate-500 font-medium">Smart Low Stock Watch</span>
+            <h3 className="text-base font-bold text-slate-900 truncate">{t.lowStockTitle}</h3>
+            <span className="text-xs text-slate-500 font-medium">{t.lowStockSub}</span>
           </div>
         </div>
         <span className="px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-extrabold">
-          3 \\u0906\\u0907\\u091f\\u092e\\u094d\\u0938 \\u0915\\u092e
+          {t.itemsLow}
         </span>
       </div>
 
-      {/* Stock Alerts List */}
       <div className="space-y-2.5 pt-1">
         {stockAlerts.map((item) => {
           const isOrdered = orderedItems.includes(item.id);
@@ -676,7 +810,7 @@ export function LowStockAlerts() {
                 {isOrdered ? (
                   <>
                     <Check className="w-3.5 h-3.5" />
-                    <span>\\u0911\\u0930\\u094d\\u0921\\u0930 \\u092d\\u0947\\u091c\\u093e</span>
+                    <span>{t.orderedBtn}</span>
                   </>
                 ) : (
                   <>
@@ -695,26 +829,33 @@ export function LowStockAlerts() {
 `;
 fs.writeFileSync('apps/web/src/components/LowStockAlerts.tsx', lowStockCode, 'utf8');
 
-// 9. apps/web/src/components/DailyInsightsStrip.tsx
+// 7. DailyInsightsStrip.tsx
 const dailyInsightsCode = `import React from 'react';
 import { Award, Users, TrendingUp } from 'lucide-react';
+import { Lang, translations } from '../i18n/translations';
 
-export function DailyInsightsStrip() {
+interface DailyInsightsStripProps {
+  lang: Lang;
+}
+
+export function DailyInsightsStrip({ lang }: DailyInsightsStripProps) {
+  const t = translations[lang];
+
   return (
     <section className="grid grid-cols-2 gap-3">
-      {/* Top Seller Today Card */}
+      {/* Top Seller Card */}
       <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex flex-col justify-between space-y-2">
         <div className="flex items-center justify-between">
           <span className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700">
             <Award className="w-4 h-4" />
           </span>
           <span className="text-xs font-extrabold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-            34 \\u092c\\u093f\\u0915\\u0947
+            {t.soldCount}
           </span>
         </div>
         <div>
-          <span className="text-[11px] font-bold text-slate-500 block">\\u0938\\u092c\\u0938\\u0947 \\u091c\\u094d\\u092f\\u093e\\u0926\\u093e \\u092c\\u093f\\u0915\\u093e \\u0938\\u093e\\u092e\\u093e\\u0928</span>
-          <span className="text-sm font-extrabold text-slate-900 truncate block mt-0.5">\\u0905\\u092e\\u0942\\u0932 \\u092c\\u091f\\u0930 500g</span>
+          <span className="text-[11px] font-bold text-slate-500 block">{t.topSellerLabel}</span>
+          <span className="text-sm font-extrabold text-slate-900 truncate block mt-0.5">{t.topSellerItem}</span>
         </div>
       </div>
 
@@ -730,8 +871,8 @@ export function DailyInsightsStrip() {
           </span>
         </div>
         <div>
-          <span className="text-[11px] font-bold text-slate-500 block">\\u0926\\u0941\\u0915\\u093e\\u0928 \\u092a\\u0930 \\u0915\\u0941\\u0932 \\u0917\\u094d\\u0930\\u093e\\u0939\\u0915</span>
-          <span className="text-sm font-extrabold text-slate-900 block mt-0.5">86 Footfall</span>
+          <span className="text-[11px] font-bold text-slate-500 block">{t.footfallLabel}</span>
+          <span className="text-sm font-extrabold text-slate-900 block mt-0.5">{t.footfallCount}</span>
         </div>
       </div>
     </section>
@@ -740,16 +881,19 @@ export function DailyInsightsStrip() {
 `;
 fs.writeFileSync('apps/web/src/components/DailyInsightsStrip.tsx', dailyInsightsCode, 'utf8');
 
-// 10. apps/web/src/components/FloatingGlassBar.tsx (Frosted Glassmorphism Floating Bar)
+// 8. FloatingGlassBar.tsx
 const floatingGlassCode = `import React, { useState } from 'react';
 import { Plus, Slash, Sparkles, Mic, ArrowUp, ChevronDown, Check } from 'lucide-react';
+import { Lang, translations } from '../i18n/translations';
 
 interface FloatingGlassBarProps {
+  lang: Lang;
   onSubmitPrompt?: (prompt: string) => void;
   onQuickAdd?: () => void;
 }
 
-export function FloatingGlassBar({ onSubmitPrompt, onQuickAdd }: FloatingGlassBarProps) {
+export function FloatingGlassBar({ lang, onSubmitPrompt, onQuickAdd }: FloatingGlassBarProps) {
+  const t = translations[lang];
   const [inputVal, setInputVal] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [selectedMode, setSelectedMode] = useState<'instant' | 'balanced' | 'pos'>('instant');
@@ -759,14 +903,14 @@ export function FloatingGlassBar({ onSubmitPrompt, onQuickAdd }: FloatingGlassBa
     if (e) e.preventDefault();
     if (!inputVal.trim()) return;
     if (onSubmitPrompt) onSubmitPrompt(inputVal);
-    alert(\`\\u0915\\u092e\\u093e\\u0902\\u0921 \\u092a\\u094d\\u0930\\u094b\\u0938\\u0947\\u0938 \\u0939\\u094b \\u0930\\u0939\\u093e \\u0939\\u0942\\u0902: "\${inputVal}"\`);
+    alert(\`Command processed: "\${inputVal}"\`);
     setInputVal('');
   };
 
   const handleMicToggle = () => {
     setIsListening(!isListening);
     if (!isListening) {
-      setInputVal('\\u0930\\u092e\\u0947\\u0936 \\u0915\\u0941\\u092e\\u093e\\u0930 2 \\u0915\\u093f\\u0932\\u094b \\u091a\\u0940\\u0928\\u0940 \\u0914\\u0930 \\u20B9150 \\u0909\\u0927\\u093e\\u0930 \\u091c\\u094b\\u0921\\u093c\\u094b');
+      setInputVal(t.voicePlaceholder);
     }
   };
 
@@ -780,20 +924,19 @@ export function FloatingGlassBar({ onSubmitPrompt, onQuickAdd }: FloatingGlassBa
             type="text"
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
-            placeholder="\\u0915\\u094d\\u092f\\u093e \\u092c\\u0928\\u093e\\u0928\\u093e \\u092f\\u093e \\u091c\\u094b\\u0921\\u093c\\u0928\\u093e \\u091a\\u093e\\u0939\\u0924\\u0947 \\u0939\\u0948\\u0902? (What would you like to change or create?)"
+            placeholder={t.glassPlaceholder}
             className="w-full bg-transparent text-white placeholder-slate-400 text-sm font-medium focus:outline-none py-1"
           />
         </form>
 
         {/* Action Controls Toolbar inside the Glass Pill */}
         <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-white/10 text-xs">
-          {/* Left Quick Action Pills */}
           <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={onQuickAdd}
               className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all"
-              title="\\u0928\\u092f\\u093e \\u0906\\u0907\\u091f\\u092e \\u091c\\u094b\\u0921\\u093c\\u0947\\u0902"
+              title={t.addProduct}
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -802,15 +945,13 @@ export function FloatingGlassBar({ onSubmitPrompt, onQuickAdd }: FloatingGlassBa
               type="button"
               onClick={() => setInputVal('/')}
               className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center text-slate-300 active:scale-90 transition-all font-mono font-bold"
-              title="\\u0915\\u092e\\u093e\\u0902\\u0921 \\u0938\\u094d\\u0932\\u0948\\u0936"
+              title="Slash Command"
             >
               /
             </button>
           </div>
 
-          {/* Right Controls: Mode Selector + Mic + Submit */}
           <div className="flex items-center gap-2 relative">
-            {/* Mode Pill Dropdown */}
             <div className="relative">
               <button
                 type="button"
@@ -818,7 +959,7 @@ export function FloatingGlassBar({ onSubmitPrompt, onQuickAdd }: FloatingGlassBa
                 className="h-8 px-3 rounded-full bg-white/15 hover:bg-white/25 border border-white/15 flex items-center gap-1.5 text-xs font-semibold text-white transition-all"
               >
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
-                <span>{selectedMode === 'instant' ? 'Instant AI' : selectedMode === 'balanced' ? 'Balanced' : 'POS'}</span>
+                <span>{selectedMode === 'instant' ? t.instantAi : selectedMode === 'balanced' ? t.balanced : t.posMode}</span>
                 <ChevronDown className="w-3 h-3 text-slate-300" />
               </button>
 
@@ -829,7 +970,7 @@ export function FloatingGlassBar({ onSubmitPrompt, onQuickAdd }: FloatingGlassBa
                     onClick={() => { setSelectedMode('instant'); setShowModeDropdown(false); }}
                     className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-white/15 text-left text-white"
                   >
-                    <span>Instant AI</span>
+                    <span>{t.instantAi}</span>
                     {selectedMode === 'instant' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
                   </button>
                   <button
@@ -837,7 +978,7 @@ export function FloatingGlassBar({ onSubmitPrompt, onQuickAdd }: FloatingGlassBa
                     onClick={() => { setSelectedMode('balanced'); setShowModeDropdown(false); }}
                     className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-white/15 text-left text-white"
                   >
-                    <span>Balanced</span>
+                    <span>{t.balanced}</span>
                     {selectedMode === 'balanced' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
                   </button>
                   <button
@@ -845,14 +986,13 @@ export function FloatingGlassBar({ onSubmitPrompt, onQuickAdd }: FloatingGlassBa
                     onClick={() => { setSelectedMode('pos'); setShowModeDropdown(false); }}
                     className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-white/15 text-left text-white"
                   >
-                    <span>POS Mode</span>
+                    <span>{t.posMode}</span>
                     {selectedMode === 'pos' && <Check className="w-3.5 h-3.5 text-emerald-400" />}
                   </button>
                 </div>
               )}
             </div>
 
-            {/* Sparkle Voice Mic Pill */}
             <button
               type="button"
               onClick={handleMicToggle}
@@ -861,12 +1001,11 @@ export function FloatingGlassBar({ onSubmitPrompt, onQuickAdd }: FloatingGlassBa
                   ? 'bg-emerald-500 text-white ring-2 ring-emerald-300 animate-bounce'
                   : 'bg-white/15 hover:bg-white/25 text-white border border-white/15'
               }\`}
-              title="\\u092c\\u094b\\u0932\\u0915\\u0930 \\u0915\\u0939\\u0947\\u0902 (Voice Input)"
+              title={t.voiceInput}
             >
               <Mic className="w-4 h-4" />
             </button>
 
-            {/* Submit Arrow Pill */}
             <button
               type="button"
               onClick={() => handleSubmit()}
@@ -876,7 +1015,7 @@ export function FloatingGlassBar({ onSubmitPrompt, onQuickAdd }: FloatingGlassBa
                   ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold active:scale-90 cursor-pointer'
                   : 'bg-white/10 text-white/40 cursor-not-allowed'
               }\`}
-              title="\\u092d\\u0947\\u091c\\u0947\\u0902 (Submit)"
+              title={t.submit}
             >
               <ArrowUp className="w-4 h-4" />
             </button>
@@ -889,21 +1028,25 @@ export function FloatingGlassBar({ onSubmitPrompt, onQuickAdd }: FloatingGlassBa
 `;
 fs.writeFileSync('apps/web/src/components/FloatingGlassBar.tsx', floatingGlassCode, 'utf8');
 
-// 11. apps/web/src/components/BottomNavBar.tsx
+// 9. BottomNavBar.tsx
 const bottomNavCode = `import React from 'react';
 import { Store, BookOpen, Package, Settings } from 'lucide-react';
+import { Lang, translations } from '../i18n/translations';
 
 interface BottomNavBarProps {
+  lang: Lang;
   activeTab: string;
   onSelectTab: (tab: string) => void;
 }
 
-export function BottomNavBar({ activeTab, onSelectTab }: BottomNavBarProps) {
+export function BottomNavBar({ lang, activeTab, onSelectTab }: BottomNavBarProps) {
+  const t = translations[lang];
+
   const tabs = [
-    { id: 'home', label: '\\u0939\\u094b\\u092e', subLabel: 'Home', icon: Store },
-    { id: 'khata', label: '\\u092c\\u0939\\u0940\\u0916\\u093e\\u0924\\u093e', subLabel: 'Khata', icon: BookOpen, badge: '4' },
-    { id: 'inventory', label: '\\u0907\\u0928\\u094d\\u0935\\u0947\\u0902\\u091f\\u0930\\u0940', subLabel: 'Stock', icon: Package },
-    { id: 'settings', label: '\\u0938\\u0947\\u091f\\u093f\\u0902\\u0917\\u094d\\u0938', subLabel: 'Settings', icon: Settings },
+    { id: 'home', label: t.navHome, icon: Store },
+    { id: 'khata', label: t.navKhata, icon: BookOpen, badge: '4' },
+    { id: 'inventory', label: t.navInventory, icon: Package },
+    { id: 'settings', label: t.navSettings, icon: Settings },
   ];
 
   return (
@@ -940,18 +1083,21 @@ export function BottomNavBar({ activeTab, onSelectTab }: BottomNavBarProps) {
 `;
 fs.writeFileSync('apps/web/src/components/BottomNavBar.tsx', bottomNavCode, 'utf8');
 
-// 12. apps/web/src/components/QrModal.tsx
+// 10. QrModal.tsx
 const qrModalCode = `import React from 'react';
 import { X, QrCode, Download, Share2 } from 'lucide-react';
+import { Lang, translations } from '../i18n/translations';
 
 interface QrModalProps {
+  lang: Lang;
   isOpen: boolean;
   onClose: () => void;
   shopName: string;
   upiId: string;
 }
 
-export function QrModal({ isOpen, onClose, shopName, upiId }: QrModalProps) {
+export function QrModal({ lang, isOpen, onClose, shopName, upiId }: QrModalProps) {
+  const t = translations[lang];
   if (!isOpen) return null;
 
   return (
@@ -968,10 +1114,9 @@ export function QrModal({ isOpen, onClose, shopName, upiId }: QrModalProps) {
           <QrCode className="w-6 h-6" />
         </div>
 
-        <h3 className="text-lg font-bold text-slate-900">\\u0926\\u0941\\u0915\\u093e\\u0928 UPI QR \\u0915\\u094b\\u0921</h3>
+        <h3 className="text-lg font-bold text-slate-900">{t.shopQrTitle}</h3>
         <p className="text-xs text-slate-500 font-medium mt-0.5">{shopName}</p>
 
-        {/* QR Display */}
         <div className="p-4 bg-white border-2 border-dashed border-blue-200 rounded-2xl my-4 shadow-sm">
           <img
             src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=ramesh.kirana@sbi%26pn=Shree%20Ganesh%20Kirana"
@@ -983,18 +1128,18 @@ export function QrModal({ isOpen, onClose, shopName, upiId }: QrModalProps) {
 
         <div className="grid grid-cols-2 gap-2.5 w-full">
           <button
-            onClick={() => alert('\\u0921\\u093e\\u0909\\u0928\\u0932\\u094b\\u0921 \\u0936\\u0941\\u0930\\u0942 \\u0939\\u094b \\u0917\\u092f\\u093e')}
+            onClick={() => alert('Downloading QR...')}
             className="h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
           >
             <Download className="w-4 h-4" />
-            <span>Download</span>
+            <span>{t.download}</span>
           </button>
           <button
-            onClick={() => alert('\\u0935\\u094d\\u0939\\u093e\\u091f\\u094d\\u0938\\u090f\\u092a \\u092a\\u0930 \\u0936\\u0947\\u092f\\u0930 \\u0915\\u0930\\u0947\\u0902')}
+            onClick={() => alert('Sharing QR...')}
             className="h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
           >
             <Share2 className="w-4 h-4" />
-            <span>Share QR</span>
+            <span>{t.shareQr}</span>
           </button>
         </div>
       </div>
@@ -1004,7 +1149,7 @@ export function QrModal({ isOpen, onClose, shopName, upiId }: QrModalProps) {
 `;
 fs.writeFileSync('apps/web/src/components/QrModal.tsx', qrModalCode, 'utf8');
 
-// 13. apps/web/src/App.tsx
+// 11. App.tsx
 const appCode = `import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { VoiceHeroBanner } from './components/VoiceHeroBanner';
@@ -1020,9 +1165,10 @@ import { PosBillingView } from './components/PosBillingView';
 import { InventoryView } from './components/InventoryView';
 import { AuthModal } from './components/AuthModal';
 import { checkHealth } from './services/api';
+import { Lang } from './i18n/translations';
 
 export function App() {
-  const [lang, setLang] = useState<'hi' | 'en'>('hi');
+  const [lang, setLang] = useState<Lang>('hi');
   const [activeView, setActiveView] = useState<'mobile' | 'pos'>('mobile');
   const [activeTab, setActiveTab] = useState('home');
   const [systemHealth, setSystemHealth] = useState('Checking...');
@@ -1047,6 +1193,10 @@ export function App() {
     loadHealth();
   }, []);
 
+  const toggleLanguage = () => {
+    setLang((prev) => (prev === 'hi' ? 'en' : 'hi'));
+  };
+
   return (
     <div className="min-h-screen bg-[#f8f9ff] text-[#0b1c30] flex flex-col font-sans pb-36 md:pb-24">
       {/* Top Universal Header */}
@@ -1054,7 +1204,7 @@ export function App() {
         storeName={currentUser?.shopName || 'Shree Ganesh Kirana'}
         isOnline={true}
         lang={lang}
-        onToggleLang={() => setLang(lang === 'hi' ? 'en' : 'hi')}
+        onToggleLang={toggleLanguage}
         systemHealth={systemHealth}
         activeView={activeView}
         onToggleView={setActiveView}
@@ -1067,47 +1217,50 @@ export function App() {
           <InventoryView />
         ) : activeTab === 'khata' ? (
           <div className="space-y-4">
-            <KhataSummaryCard />
+            <KhataSummaryCard lang={lang} />
           </div>
         ) : activeView === 'pos' ? (
           <PosBillingView />
         ) : (
           <div className="space-y-4">
             {/* 1. Voice AI POS Hero Banner */}
-            <VoiceHeroBanner onCommandTrigger={(cmd) => console.log('Voice Command:', cmd)} />
+            <VoiceHeroBanner lang={lang} onCommandTrigger={(cmd) => console.log('Voice Command:', cmd)} />
 
             {/* 2. Dual Primary Fast Counter POS Actions & Shortcuts */}
             <QuickActionTiles
+              lang={lang}
               onNewBill={() => setActiveView('pos')}
-              onScanBarcode={() => alert('\\u092c\\u093e\\u0930\\u0915\\u094b\\u0921 \\u0915\\u0948\\u092e\\u0930\\u093e \\u0938\\u094d\\u0915\\u0948\\u0928 \\u0936\\u0941\\u0930\\u0942 \\u0915\\u093f\\u092f\\u093e \\u0917\\u092f\\u093e (Live Barcode Scanner Ready)')}
+              onScanBarcode={() => alert(lang === 'hi' ? 'बारकोड कैमरा स्कैन शुरू किया गया' : 'Barcode scanner camera activated')}
               onShowQr={() => setIsQrOpen(true)}
               onAddProduct={() => setActiveTab('inventory')}
-              onDailyReport={() => alert('\\u0921\\u0947\\u0932\\u0940 Z-\\u0930\\u093f\\u092a\\u094b\\u0930\\u094d\\u091f: \\u0906\\u091c \\u0915\\u0940 \\u0915\\u0941\\u0932 \\u0938\\u0947\\u0932 \\u20B98,450 | 60 \\u091f\\u094d\\u0930\\u093e\\u0902\\u091c\\u0948\\u0915\\u094d\\u0936\\u0928 | UPI: 73%')}
+              onDailyReport={() => alert(lang === 'hi' ? 'डेली Z-रिपोर्ट: आज की कुल सेल ₹8,450 | 60 ट्रांजैक्शन' : 'Daily Z-Report: Today\\'s Total Sale ₹8,450 | 60 Transactions')}
             />
 
             {/* 3. Financial Overview: Today's Collection Card */}
-            <SalesSummaryCard />
+            <SalesSummaryCard lang={lang} />
 
-            {/* 4. Khata Credit Ledger Widget (\\u0909\\u0927\\u093e\\u0930 \\u092c\\u0939\\u0940\\u0916\\u093e\\u0924\\u093e) */}
-            <KhataSummaryCard />
+            {/* 4. Khata Credit Ledger Widget */}
+            <KhataSummaryCard lang={lang} />
 
-            {/* 5. Low Stock Watch (\\u0907\\u0928\\u094d\\u0935\\u0947\\u0902\\u091f\\u0930\\u0940 \\u0905\\u0932\\u0930\\u094d\\u091f) */}
-            <LowStockAlerts />
+            {/* 5. Low Stock Watch */}
+            <LowStockAlerts lang={lang} />
 
             {/* 6. Daily Kirana Insights Strip */}
-            <DailyInsightsStrip />
+            <DailyInsightsStrip lang={lang} />
           </div>
         )}
       </main>
 
       {/* Modern Frosted Translucent Glassmorphism Floating Action Bar */}
       <FloatingGlassBar
+        lang={lang}
         onQuickAdd={() => setActiveTab('inventory')}
         onSubmitPrompt={(prompt) => console.log('Floating prompt:', prompt)}
       />
 
       {/* Docked Bottom Navigation Bar */}
       <BottomNavBar
+        lang={lang}
         activeTab={activeTab}
         onSelectTab={(tab) => {
           setActiveTab(tab);
@@ -1117,6 +1270,7 @@ export function App() {
 
       {/* QR Code Modal */}
       <QrModal
+        lang={lang}
         isOpen={isQrOpen}
         onClose={() => setIsQrOpen(false)}
         shopName={currentUser?.shopName || 'Shree Ganesh Kirana'}
@@ -1142,4 +1296,4 @@ export function App() {
 `;
 fs.writeFileSync('apps/web/src/App.tsx', appCode, 'utf8');
 
-console.log('--- ALL STITCH KIRANA UI FILES GENERATED AND WRITTEN CLEANLY ---');
+console.log('--- ALL COMPONENTS FULLY INTEGRATED WITH DYNAMIC HINDI / ENGLISH TOGGLE ---');

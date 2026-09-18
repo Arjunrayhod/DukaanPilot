@@ -1,7 +1,9 @@
 import React from 'react';
 import { Receipt, QrCode, PlusCircle, FileSpreadsheet } from 'lucide-react';
+import { Lang, translations } from '../i18n/translations';
 
 interface QuickActionTilesProps {
+  lang: Lang;
   onNewBill: () => void;
   onScanBarcode: () => void;
   onShowQr: () => void;
@@ -10,15 +12,17 @@ interface QuickActionTilesProps {
 }
 
 export function QuickActionTiles({
+  lang,
   onNewBill,
   onScanBarcode,
   onShowQr,
   onAddProduct,
   onDailyReport,
 }: QuickActionTilesProps) {
+  const t = translations[lang];
+
   return (
     <section className="flex flex-col space-y-3">
-      {/* 2 Primary Action Cards */}
       <div className="grid grid-cols-2 gap-3">
         {/* Quick Bill Card */}
         <button
@@ -33,8 +37,8 @@ export function QuickActionTiles({
             <span className="px-2 py-0.5 rounded-md bg-white/20 text-white text-xs font-bold font-mono">F1</span>
           </div>
           <div>
-            <div className="text-base font-bold leading-tight">नया बिल बनाएँ</div>
-            <div className="text-xs text-blue-200 font-medium">New Quick Bill</div>
+            <div className="text-base font-bold leading-tight">{t.newBill}</div>
+            <div className="text-xs text-blue-200 font-medium">{t.newBillSub}</div>
           </div>
         </button>
 
@@ -50,17 +54,17 @@ export function QuickActionTiles({
             </div>
             <span className="inline-flex items-center gap-1 text-emerald-700 text-xs font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
-              Live
+              {t.live}
             </span>
           </div>
           <div>
-            <div className="text-base font-bold leading-tight text-slate-900">बारकोड स्कैन</div>
-            <div className="text-xs text-slate-500 font-medium">Instant Scan &amp; Add</div>
+            <div className="text-base font-bold leading-tight text-slate-900">{t.scanBarcode}</div>
+            <div className="text-xs text-slate-500 font-medium">{t.scanBarcodeSub}</div>
           </div>
         </button>
       </div>
 
-      {/* Secondary Counter Shortcuts Carousel */}
+      {/* Secondary Counter Shortcuts */}
       <div className="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar">
         <button
           onClick={onShowQr}
@@ -68,7 +72,7 @@ export function QuickActionTiles({
           type="button"
         >
           <QrCode className="w-4 h-4 text-blue-600" />
-          <span>दुकान QR दिखाएँ</span>
+          <span>{t.showQr}</span>
         </button>
 
         <button
@@ -77,7 +81,7 @@ export function QuickActionTiles({
           type="button"
         >
           <PlusCircle className="w-4 h-4 text-emerald-600" />
-          <span>नया सामान जोड़ें</span>
+          <span>{t.addProduct}</span>
         </button>
 
         <button
@@ -86,7 +90,7 @@ export function QuickActionTiles({
           type="button"
         >
           <FileSpreadsheet className="w-4 h-4 text-indigo-600" />
-          <span>डेली Z-रिपोर्ट</span>
+          <span>{t.dailyReport}</span>
         </button>
       </div>
     </section>

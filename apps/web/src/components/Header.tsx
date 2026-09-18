@@ -1,10 +1,11 @@
 import React from 'react';
 import { Store, ShieldCheck, Languages, User } from 'lucide-react';
+import { Lang, translations } from '../i18n/translations';
 
 interface HeaderProps {
   storeName: string;
   isOnline: boolean;
-  lang: 'hi' | 'en';
+  lang: Lang;
   onToggleLang: () => void;
   systemHealth: string;
   activeView: 'mobile' | 'pos';
@@ -22,6 +23,8 @@ export function Header({
   onToggleView,
   onOpenAuth,
 }: HeaderProps) {
+  const t = translations[lang];
+
   return (
     <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-slate-200/80 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
       <div className="max-w-7xl mx-auto h-16 px-4 flex items-center justify-between gap-3">
@@ -32,16 +35,18 @@ export function Header({
           </div>
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className="font-bold text-base text-slate-900 truncate">{storeName}</span>
+              <span className="font-bold text-base text-slate-900 truncate">
+                {lang === 'hi' ? 'श्री गणेश किराना' : storeName}
+              </span>
               <span className="inline-flex items-center text-blue-600 shrink-0" title="Verified Merchant">
                 <ShieldCheck className="w-4 h-4 fill-blue-100" />
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
-              <span className="font-semibold text-slate-500 uppercase tracking-wider text-[11px]">POS Online</span>
+              <span className="font-semibold text-slate-500 uppercase tracking-wider text-[11px]">{t.posOnline}</span>
               <span className="text-slate-300">&bull;</span>
-              <span className="font-medium text-blue-700 text-[11px] truncate">{systemHealth}</span>
+              <span className="font-medium text-blue-700 text-[11px] truncate">{t.dashboard}</span>
             </div>
           </div>
         </div>
@@ -56,7 +61,7 @@ export function Header({
                 activeView === 'mobile' ? 'bg-white text-blue-800 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              मोबाइल (Mobile)
+              {t.mobileView}
             </button>
             <button
               onClick={() => onToggleView('pos')}
@@ -64,21 +69,21 @@ export function Header({
                 activeView === 'pos' ? 'bg-white text-blue-800 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              काउंटर POS
+              {t.posView}
             </button>
           </div>
 
-          {/* Language Toggle */}
+          {/* Language Toggle Button */}
           <button
             onClick={onToggleLang}
-            className="h-9 px-2.5 flex items-center justify-center rounded-lg bg-blue-50/80 border border-blue-100 text-blue-900 text-xs font-bold hover:bg-blue-100 transition-colors"
+            className="h-9 px-3 flex items-center justify-center rounded-lg bg-blue-50/90 border border-blue-200 text-blue-900 text-xs font-bold hover:bg-blue-100 transition-all shadow-sm active:scale-95 cursor-pointer"
             type="button"
             title="Toggle Language"
           >
-            <Languages className="w-3.5 h-3.5 mr-1 text-blue-700" />
-            <span>{lang === 'hi' ? 'हिन्दी' : 'EN'}</span>
+            <Languages className="w-3.5 h-3.5 mr-1.5 text-blue-700" />
+            <span className={lang === 'hi' ? 'text-blue-800 font-extrabold' : 'text-slate-400 font-normal'}>हिन्दी</span>
             <span className="mx-1 text-slate-300">|</span>
-            <span className="text-slate-400 font-normal">{lang === 'hi' ? 'EN' : 'हिन्दी'}</span>
+            <span className={lang === 'en' ? 'text-blue-800 font-extrabold' : 'text-slate-400 font-normal'}>EN</span>
           </button>
 
           {/* User Account / Login */}

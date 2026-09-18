@@ -1,17 +1,21 @@
 import React from 'react';
 import { Store, BookOpen, Package, Settings } from 'lucide-react';
+import { Lang, translations } from '../i18n/translations';
 
 interface BottomNavBarProps {
+  lang: Lang;
   activeTab: string;
   onSelectTab: (tab: string) => void;
 }
 
-export function BottomNavBar({ activeTab, onSelectTab }: BottomNavBarProps) {
+export function BottomNavBar({ lang, activeTab, onSelectTab }: BottomNavBarProps) {
+  const t = translations[lang];
+
   const tabs = [
-    { id: 'home', label: 'होम', subLabel: 'Home', icon: Store },
-    { id: 'khata', label: 'बहीखाता', subLabel: 'Khata', icon: BookOpen, badge: '4' },
-    { id: 'inventory', label: 'इन्वेंटरी', subLabel: 'Stock', icon: Package },
-    { id: 'settings', label: 'सेटिंग्स', subLabel: 'Settings', icon: Settings },
+    { id: 'home', label: t.navHome, icon: Store },
+    { id: 'khata', label: t.navKhata, icon: BookOpen, badge: '4' },
+    { id: 'inventory', label: t.navInventory, icon: Package },
+    { id: 'settings', label: t.navSettings, icon: Settings },
   ];
 
   return (

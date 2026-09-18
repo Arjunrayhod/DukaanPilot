@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import { BookOpen, Send, ArrowRight, Check } from 'lucide-react';
+import { Lang, translations } from '../i18n/translations';
 
-export function KhataSummaryCard() {
+interface KhataSummaryCardProps {
+  lang: Lang;
+}
+
+export function KhataSummaryCard({ lang }: KhataSummaryCardProps) {
+  const t = translations[lang];
   const [remindedList, setRemindedList] = useState<number[]>([]);
 
   const khataRows = [
@@ -9,9 +15,9 @@ export function KhataSummaryCard() {
       id: 1,
       initials: 'RK',
       colorClass: 'bg-blue-100 text-blue-800',
-      name: 'रमेश कुमार (Ramesh)',
+      name: lang === 'hi' ? 'रमेश कुमार (Ramesh)' : 'Ramesh Kumar',
       amount: '₹1,450',
-      status: '2 दिन पहले लिया',
+      status: t.daysAgo,
       statusClass: 'text-slate-500',
       phone: '9876543210',
     },
@@ -19,9 +25,9 @@ export function KhataSummaryCard() {
       id: 2,
       initials: 'SV',
       colorClass: 'bg-emerald-100 text-emerald-800',
-      name: 'सुनीता वर्मा (Sunita V.)',
+      name: lang === 'hi' ? 'सुनीता वर्मा (Sunita V.)' : 'Sunita Verma',
       amount: '₹820',
-      status: 'आज देय',
+      status: t.dueToday,
       statusClass: 'text-amber-700 font-semibold',
       phone: '9876543211',
     },
@@ -29,9 +35,9 @@ export function KhataSummaryCard() {
       id: 3,
       initials: 'MK',
       colorClass: 'bg-indigo-100 text-indigo-800',
-      name: 'महेंद्र किराना (B2B)',
+      name: lang === 'hi' ? 'महेंद्र किराना (B2B)' : 'Mahendra Kirana (B2B)',
       amount: '₹3,100',
-      status: '1 हफ्ता लेट',
+      status: t.weekLate,
       statusClass: 'text-rose-600 font-semibold',
       phone: '9876543212',
     },
@@ -39,7 +45,7 @@ export function KhataSummaryCard() {
 
   const handleSendReminder = (id: number, name: string, amount: string) => {
     setRemindedList((prev) => [...prev, id]);
-    alert(`व्हाट्सएप तकादा भेज दिया गया: ${name} (${amount})`);
+    alert(`WhatsApp reminder sent to: ${name} (${amount})`);
   };
 
   return (
@@ -50,16 +56,15 @@ export function KhataSummaryCard() {
             <BookOpen className="w-5 h-5" />
           </div>
           <div className="truncate">
-            <h3 className="text-base font-bold text-slate-900 truncate">बकाया ग्राहक खाता</h3>
-            <span className="text-xs text-slate-500 font-medium">Pending Khata Ledger</span>
+            <h3 className="text-base font-bold text-slate-900 truncate">{t.pendingKhata}</h3>
+            <span className="text-xs text-slate-500 font-medium">{t.pendingKhataSub}</span>
           </div>
         </div>
         <span className="px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-extrabold">
-          कुल: ₹18,650
+          {t.totalDue}
         </span>
       </div>
 
-      {/* Customer Rows List */}
       <div className="space-y-2.5 pt-1">
         {khataRows.map((row) => {
           const isReminded = remindedList.includes(row.id);
@@ -77,7 +82,7 @@ export function KhataSummaryCard() {
                 <div className="min-w-0">
                   <div className="text-sm font-bold text-slate-900 truncate">{row.name}</div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                    <span className="text-rose-600 font-bold">{row.amount} बकाया</span>
+                    <span className="text-rose-600 font-bold">{row.amount} {t.due}</span>
                     <span>&bull;</span>
                     <span className={row.statusClass}>{row.status}</span>
                   </div>
@@ -96,12 +101,12 @@ export function KhataSummaryCard() {
                 {isReminded ? (
                   <>
                     <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>भेजा गया</span>
+                    <span>{t.reminded}</span>
                   </>
                 ) : (
                   <>
                     <Send className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>तकादा</span>
+                    <span>{t.remindBtn}</span>
                   </>
                 )}
               </button>
@@ -110,12 +115,11 @@ export function KhataSummaryCard() {
         })}
       </div>
 
-      {/* View All CTA */}
       <button
         className="w-full h-11 rounded-xl bg-blue-50 border border-blue-100 text-blue-800 text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-blue-100 transition-colors active:scale-98"
         type="button"
       >
-        <span>सभी 14 खाते देखें (View All Ledger)</span>
+        <span>{t.viewAllLedger}</span>
         <ArrowRight className="w-4 h-4" />
       </button>
     </section>

@@ -1,39 +1,45 @@
 import React, { useState } from 'react';
 import { AlertTriangle, Truck, Check } from 'lucide-react';
+import { Lang, translations } from '../i18n/translations';
 
-export function LowStockAlerts() {
+interface LowStockAlertsProps {
+  lang: Lang;
+}
+
+export function LowStockAlerts({ lang }: LowStockAlertsProps) {
+  const t = translations[lang];
   const [orderedItems, setOrderedItems] = useState<number[]>([]);
 
   const stockAlerts = [
     {
       id: 1,
-      title: 'टाटा नमक (Tata Salt 1kg)',
-      remaining: '4 पैकेट बचे',
-      minThreshold: '(न्यूनतम 25)',
-      supplier: 'सप्लायर: बालाजी एजेंसीज़',
-      orderQty: '50 पैकेट ऑर्डर',
+      title: lang === 'hi' ? 'टाटा नमक (Tata Salt 1kg)' : 'Tata Salt 1kg',
+      remaining: `4 ${t.packetsLeft}`,
+      minThreshold: `(${t.minText} 25)`,
+      supplier: `${t.supplier}: ${lang === 'hi' ? 'बालाजी एजेंसीज़' : 'Balaji Agencies'}`,
+      orderQty: `50 ${t.packetsLeft} ${t.orderBtn}`,
     },
     {
       id: 2,
-      title: 'फॉर्च्यून सनफ्लावर ऑयल 1L',
-      remaining: '2 बोतल बची',
-      minThreshold: '(न्यूनतम 12)',
-      supplier: 'सप्लायर: मेट्रो होलसेल',
-      orderQty: '24 बोतल ऑर्डर',
+      title: lang === 'hi' ? 'फॉर्च्यून सनफ्लावर ऑयल 1L' : 'Fortune Sunflower Oil 1L',
+      remaining: `2 ${t.bottlesLeft}`,
+      minThreshold: `(${t.minText} 12)`,
+      supplier: `${t.supplier}: ${lang === 'hi' ? 'मेट्रो होलसेल' : 'Metro Wholesale'}`,
+      orderQty: `24 ${t.bottlesLeft} ${t.orderBtn}`,
     },
     {
       id: 3,
-      title: 'आशीर्वाद चक्की आटा 5kg',
-      remaining: '3 बैग बचे',
-      minThreshold: '(न्यूनतम 15)',
-      supplier: 'सप्लायर: आईटीसी डायरेक्ट',
-      orderQty: '20 बैग ऑर्डर',
+      title: lang === 'hi' ? 'आशीर्वाद चक्की आटा 5kg' : 'Aashirvaad Chakki Atta 5kg',
+      remaining: `3 ${t.bagsLeft}`,
+      minThreshold: `(${t.minText} 15)`,
+      supplier: `${t.supplier}: ${lang === 'hi' ? 'आईटीसी डायरेक्ट' : 'ITC Direct'}`,
+      orderQty: `20 ${t.bagsLeft} ${t.orderBtn}`,
     },
   ];
 
   const handleOrder = (id: number, title: string, qty: string) => {
     setOrderedItems((prev) => [...prev, id]);
-    alert(`सप्लायर को ऑर्डर भेज दिया गया: ${title} (${qty})`);
+    alert(`Order sent to supplier: ${title} (${qty})`);
   };
 
   return (
@@ -44,16 +50,15 @@ export function LowStockAlerts() {
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div className="truncate">
-            <h3 className="text-base font-bold text-slate-900 truncate">कम स्टॉक अलर्ट</h3>
-            <span className="text-xs text-slate-500 font-medium">Smart Low Stock Watch</span>
+            <h3 className="text-base font-bold text-slate-900 truncate">{t.lowStockTitle}</h3>
+            <span className="text-xs text-slate-500 font-medium">{t.lowStockSub}</span>
           </div>
         </div>
         <span className="px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-extrabold">
-          3 आइटम्स कम
+          {t.itemsLow}
         </span>
       </div>
 
-      {/* Stock Alerts List */}
       <div className="space-y-2.5 pt-1">
         {stockAlerts.map((item) => {
           const isOrdered = orderedItems.includes(item.id);
@@ -85,7 +90,7 @@ export function LowStockAlerts() {
                 {isOrdered ? (
                   <>
                     <Check className="w-3.5 h-3.5" />
-                    <span>ऑर्डर भेजा</span>
+                    <span>{t.orderedBtn}</span>
                   </>
                 ) : (
                   <>
