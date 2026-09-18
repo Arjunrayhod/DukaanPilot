@@ -6,6 +6,7 @@ import { LowStockAlerts } from './components/LowStockAlerts';
 import { KhataSummaryCard } from './components/KhataSummaryCard';
 import { ActiveOrdersFeed } from './components/ActiveOrdersFeed';
 import { PosBillingView } from './components/PosBillingView';
+import { InventoryView } from './components/InventoryView';
 import { AuthModal } from './components/AuthModal';
 import { checkHealth } from './services/api';
 import { Home, Package, ShoppingCart, BookOpen, Bot, User } from 'lucide-react';
@@ -36,7 +37,7 @@ export function App() {
 
   const navItems = [
     { id: 'home', label: 'Home', icon: Home },
-    { id: 'inventory', label: 'Inventory', icon: Package, badge: '2' },
+    { id: 'inventory', label: 'Inventory', icon: Package, badge: 'Alerts' },
     { id: 'copilot', label: 'AI Copilot', icon: Bot, isCenter: true },
     { id: 'orders', label: 'Orders', icon: ShoppingCart, badge: '3' },
     { id: 'khata', label: 'Khata', icon: BookOpen, badge: '18' },
@@ -57,7 +58,9 @@ export function App() {
 
       {/* Main Workspace Container */}
       <main className="max-w-7xl mx-auto px-4 py-4 w-full flex-1">
-        {activeView === 'pos' ? (
+        {activeTab === 'inventory' ? (
+          <InventoryView />
+        ) : activeView === 'pos' ? (
           <PosBillingView />
         ) : (
           <div className="max-w-2xl mx-auto space-y-4">

@@ -33,3 +33,39 @@ export async function registerOwner(data: {
   });
   return await res.json();
 }
+
+export async function fetchProducts(search = '', categoryId = '') {
+  try {
+    let url = `${API_BASE_URL}/products?limit=100`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (categoryId && categoryId !== 'All') url += `&categoryId=${encodeURIComponent(categoryId)}`;
+    const res = await fetch(url);
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: { message: err.message } };
+  }
+}
+
+export async function fetchLowStockAlerts() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/inventory/alerts`);
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: { message: err.message } };
+  }
+}
+
+export async function adjustStock(productId: string, delta: number, reason: string, token?: string) {
+  try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(`${API_BASE_URL}/inventory/adjust`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ productId, delta, reason }),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: { message: err.message } };
+  }
+}

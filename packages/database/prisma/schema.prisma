@@ -24,6 +24,14 @@ enum ShopCategory {
   OTHER
 }
 
+enum MovementType {
+  PURCHASE_IN
+  SALE_OUT
+  ADJUSTMENT
+  RETURN
+  WASTAGE
+}
+
 model User {
   id           String     @id @default(uuid())
   phone        String     @unique
@@ -46,26 +54,30 @@ model User {
 }
 
 model Shop {
-  id           String       @id @default(uuid())
-  name         String
-  ownerId      String
-  category     ShopCategory @default(KIRANA_GROCERY)
-  phone        String
-  address      String?
-  city         String?
-  state        String?
-  pincode      String?
-  upiId        String?
-  gstNumber    String?
-  currency     String       @default("INR")
-  isActive     Boolean      @default(true)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id             String          @id @default(uuid())
+  name           String
+  ownerId        String
+  category       ShopCategory    @default(KIRANA_GROCERY)
+  phone          String
+  address        String?
+  city           String?
+  state          String?
+  pincode        String?
+  upiId          String?
+  gstNumber      String?
+  currency       String          @default("INR")
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   // Relations
-  owner        User         @relation("ShopOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  staff        Staff[]
-  auditLogs    AuditLog[]
+  owner          User            @relation("ShopOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  staff          Staff[]
+  categories     Category[]
+  products       Product[]
+  suppliers      Supplier[]
+  stockMovements StockMovement[]
+  auditLogs      AuditLog[]
 
   @@index([ownerId])
   @@index([phone])
@@ -86,6 +98,99 @@ model Staff {
   @@index([shopId])
 }
 
+model Category {
+  id           String    @id @default(uuid())
+  shopId       String
+  name         String
+  nameHindi    String?
+  icon         String?
+  displayOrder Int       @default(0)
+  createdAt    DateTime  @default(now())
+
+  shop         Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  products     Product[]
+
+  @@index([shopId])
+  @@index([name])
+}
+
+model Supplier {
+  id            String    @id @default(uuid())
+  shopId        String
+  name          String
+  contactPerson String?
+  phone         String
+  email         String?
+  address       String?
+  gstNumber     String?
+  paymentTerms  String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  shop          Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  products      Product[]
+
+  @@index([shopId])
+  @@index([phone])
+}
+
+model Product {
+  id           String          @id @default(uuid())
+  shopId       String
+  categoryId   String?
+  supplierId   String?
+  name         String
+  nameHindi    String?
+  barcode      String?
+  sku          String?
+  brand        String?
+  unit         String          @default("packet")
+  costPrice    Float           @default(0.0)
+  sellingPrice Float           @default(0.0)
+  mrp          Float           @default(0.0)
+  gstRate      Float           @default(0.0)
+  currentStock Float           @default(0.0)
+  minThreshold Float           @default(5.0)
+  reorderQty   Float           @default(10.0)
+  imageUrl     String?
+  isActive     Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  shop         Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  category     Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  supplier     Supplier?       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  movements    StockMovement[]
+
+  @@index([shopId])
+  @@index([barcode])
+  @@index([categoryId])
+  @@index([name])
+}
+
+model StockMovement {
+  id             String       @id @default(uuid())
+  shopId         String
+  productId      String
+  quantityBefore Float
+  deltaQuantity  Float
+  quantityAfter  Float
+  type           MovementType @default(ADJUSTMENT)
+  referenceId    String?
+  reason         String?
+  userId         String?
+  createdAt      DateTime     @default(now())
+
+  shop           Shop         @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([shopId])
+  @@index([productId])
+  @@index([type])
+  @@index([createdAt])
+}
+
 model AuditLog {
   id          String   @id @default(uuid())
   shopId      String?
@@ -93,7 +198,7 @@ model AuditLog {
   action      String
   entity      String
   entityId    String?
-  metadata    String?  // JSON stringified payload
+  metadata    String?
   ipAddress   String?
   createdAt   DateTime @default(now())
 

@@ -1,9 +1,9 @@
 "use strict";
 /**
- * DukaanPilot - Shared Domain Types and Enums
+ * DukaanPilot - Shared Domain Types, Enums and DTOs
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ShopCategory = exports.UserRole = void 0;
+exports.MovementType = exports.ShopCategory = exports.UserRole = void 0;
 var UserRole;
 (function (UserRole) {
     UserRole["OWNER"] = "OWNER";
@@ -21,4 +21,12 @@ var ShopCategory;
     ShopCategory["DAIRY_SWEETS"] = "DAIRY_SWEETS";
     ShopCategory["OTHER"] = "OTHER";
 })(ShopCategory || (exports.ShopCategory = ShopCategory = {}));
+var MovementType;
+(function (MovementType) {
+    MovementType["PURCHASE_IN"] = "PURCHASE_IN";
+    MovementType["SALE_OUT"] = "SALE_OUT";
+    MovementType["ADJUSTMENT"] = "ADJUSTMENT";
+    MovementType["RETURN"] = "RETURN";
+    MovementType["WASTAGE"] = "WASTAGE";
+})(MovementType || (exports.MovementType = MovementType = {}));
 //# sourceMappingURL=index.js.map

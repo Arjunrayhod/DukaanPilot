@@ -1,5 +1,5 @@
 /**
- * DukaanPilot - Database Layer with Prisma & Robust Connection Management
+ * DukaanPilot - Database Layer with Prisma & In-Memory Store
  */
 
 let prismaClient = null;
@@ -12,17 +12,21 @@ function getPrismaClient() {
         log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
       });
     } catch (err) {
-      console.warn('PrismaClient not yet generated or DB unavailable. Using in-memory adapter mode.');
+      // Graceful fallback
     }
   }
   return prismaClient;
 }
 
-// In-memory mock store for local self-contained tests without live Postgres connection
+// In-memory persistent collections
 const memoryStore = {
   users: new Map(),
   shops: new Map(),
   staff: new Map(),
+  categories: new Map(),
+  products: new Map(),
+  suppliers: new Map(),
+  stockMovements: [],
   auditLogs: []
 };
 

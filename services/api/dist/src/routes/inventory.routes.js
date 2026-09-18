@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.inventoryRoutes = void 0;
+const express_1 = require("express");
+const inventory_controller_1 = require("../controllers/inventory.controller");
+const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
+router.get('/alerts', inventory_controller_1.InventoryController.getLowStockAlerts);
+router.get('/movements', inventory_controller_1.InventoryController.getMovements);
+router.post('/adjust', auth_1.requireAuth, inventory_controller_1.InventoryController.adjust);
+exports.inventoryRoutes = router;

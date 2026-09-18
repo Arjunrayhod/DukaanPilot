@@ -9,5 +9,9 @@ export const memoryStore: {
   users: Map<string, any>;
   shops: Map<string, any>;
   staff: Map<string, any>;
+  categories: Map<string, any>;
+  products: Map<string, any>;
+  suppliers: Map<string, any>;
+  stockMovements: any[];
   auditLogs: any[];
 };
