@@ -60,17 +60,17 @@ export function App() {
       />
 
       {/* Main Content Workspace */}
-      <main className="max-w-4xl mx-auto px-3.5 sm:px-6 py-4 w-full flex-1">
+      <main className="max-w-7xl mx-auto px-3.5 sm:px-6 py-4 w-full flex-1">
         {activeTab === 'inventory' ? (
-          <InventoryView />
+          <InventoryView lang={lang} />
         ) : activeTab === 'khata' ? (
-          <div className="space-y-4">
+          <div className="max-w-4xl mx-auto space-y-4">
             <KhataSummaryCard lang={lang} />
           </div>
         ) : activeView === 'pos' ? (
-          <PosBillingView />
+          <PosBillingView lang={lang} />
         ) : (
-          <div className="space-y-4">
+          <div className="max-w-4xl mx-auto space-y-4">
             {/* 1. Voice AI POS Hero Banner */}
             <VoiceHeroBanner lang={lang} onCommandTrigger={(cmd) => console.log('Voice Command:', cmd)} />
 
