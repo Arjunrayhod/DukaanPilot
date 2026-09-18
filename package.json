@@ -1,0 +1,32 @@
+{
+  "name": "dukaanpilot-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-Powered Autonomous Local Business Operating System",
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "dev:api": "npm run dev --workspace=@dukaanpilot/api",
+    "dev:web": "npm run dev --workspace=@dukaanpilot/web",
+    "project-size": "node scripts/project-size.js",
+    "db:generate": "npm run generate --workspace=@dukaanpilot/database",
+    "db:migrate": "npm run migrate --workspace=@dukaanpilot/database",
+    "db:seed": "npm run seed --workspace=@dukaanpilot/database"
+  },
+  "keywords": [
+    "ai",
+    "kirana",
+    "pos",
+    "retail",
+    "localbiz",
+    "voice-ai"
+  ],
+  "author": "DukaanPilot Team",
+  "license": "MIT"
+}
