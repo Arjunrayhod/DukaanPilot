@@ -26,6 +26,8 @@ import { getCleanHindiName } from '../utils/productFormat';
 import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
 import { parseVoiceInput, ParsedVoiceCommand } from '../utils/nlpParser';
 import { speakHindi } from '../utils/voiceFeedback';
+import { ReceiptModal } from './ReceiptModal';
+import { ReceiptData } from '../utils/receiptGenerator';
 
 interface CartItem {
   id: string | number;
@@ -51,7 +53,14 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
   ]);
 
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedPayment, setSelectedPayment] = useState<'cash' | 'upi' | 'khata'>('upi');
+  const [selectedPayment, setSelectedPayment] = useState<'cash' | 'upi' | 'khata' | 'split'>('cash');
+  const [splitCash, setSplitCash] = useState<number>(0);
+  const [splitUpi, setSplitUpi] = useState<number>(0);
+  const [splitKhata, setSplitKhata] = useState<number>(0);
+  const [customerName, setCustomerName] = useState('रमेश कुमार (Ramesh Kumar)');
+  const [customerPhone, setCustomerPhone] = useState('9823456789');
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const [currentReceipt, setCurrentReceipt] = useState<ReceiptData | null>(null);
   const [voiceInput, setVoiceInput] = useState('3 packet doodh, 2 kg cheeni, 1 bread add karo');
   const [barcodeQuery, setBarcodeQuery] = useState('');
   const [products, setProducts] = useState<any[]>([]);
@@ -194,7 +203,47 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
   const grandTotal = subtotal + gstAmount;
 
   const handleCompleteBill = () => {
-    alert(lang === 'hi' ? `बिल प्रिंट हो रहा है! कुल राशि: ₹${grandTotal}` : `Bill Printing! Total: ₹${grandTotal}`);
+    if (cart.length === 0) {
+      alert(lang === 'hi' ? 'कृपया पहले कार्ट में सामान जोड़ें!' : 'Please add items to cart first!');
+      return;
+    }
+
+    const receipt: ReceiptData = {
+      invoiceNo: `${Math.floor(1000 + Math.random() * 9000)}`,
+      date: new Date().toLocaleDateString('en-IN'),
+      time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+      shopName: 'श्री गणेश किराना स्टोर (Shree Ganesh Kirana)',
+      shopAddress: 'दुकान नं. 4, मुख्य बाजार, दिल्ली',
+      shopPhone: '+91 98765 43210',
+      shopGst: '07AAAAA0000A1Z5',
+      shopUpiId: 'shreeganesh@sbi',
+      customerName,
+      customerPhone,
+      items: cart.map((c) => ({
+        id: c.id,
+        name: c.name,
+        hindi: c.hindi,
+        qty: c.qty,
+        price: c.price,
+        unit: c.unit,
+      })),
+      subtotal,
+      gstAmount,
+      roundOff: 0,
+      grandTotal,
+      paymentMode: selectedPayment,
+      splitBreakdown:
+        selectedPayment === 'split'
+          ? {
+              cash: splitCash || 0,
+              upi: splitUpi || 0,
+              khata: splitKhata || Math.max(0, grandTotal - (splitCash || 0) - (splitUpi || 0)),
+            }
+          : undefined,
+    };
+
+    setCurrentReceipt(receipt);
+    setIsReceiptModalOpen(true);
   };
 
   return (
@@ -468,63 +517,136 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
             </div>
 
             {/* Payment Method Selector Grid */}
-            <div className="grid grid-cols-3 gap-2 pt-1">
+            <div className="grid grid-cols-4 gap-1.5 pt-1">
               <button
+                type="button"
                 onClick={() => setSelectedPayment('cash')}
-                className={`flex flex-col items-center justify-center p-2.5 rounded-xl border transition-all text-xs font-bold ${
+                className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all text-[11px] font-bold cursor-pointer ${
                   selectedPayment === 'cash'
                     ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-sm ring-2 ring-emerald-200'
                     : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
                 }`}
               >
                 <Banknote className="w-4 h-4 text-emerald-600 mb-1" />
-                <span>{lang === 'hi' ? 'नकद (F4)' : 'Cash (F4)'}</span>
+                <span>{lang === 'hi' ? 'नकद' : 'Cash'}</span>
               </button>
 
               <button
+                type="button"
                 onClick={() => setSelectedPayment('upi')}
-                className={`flex flex-col items-center justify-center p-2.5 rounded-xl border transition-all text-xs font-bold ${
+                className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all text-[11px] font-bold cursor-pointer ${
                   selectedPayment === 'upi'
                     ? 'bg-blue-50 border-blue-600 text-blue-900 shadow-sm ring-2 ring-blue-200'
                     : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
                 }`}
               >
                 <QrCode className="w-4 h-4 text-blue-600 mb-1" />
-                <span>{lang === 'hi' ? 'UPI QR (F8)' : 'UPI QR (F8)'}</span>
+                <span>{lang === 'hi' ? 'UPI QR' : 'UPI QR'}</span>
               </button>
 
               <button
+                type="button"
                 onClick={() => setSelectedPayment('khata')}
-                className={`flex flex-col items-center justify-center p-2.5 rounded-xl border transition-all text-xs font-bold ${
+                className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all text-[11px] font-bold cursor-pointer ${
                   selectedPayment === 'khata'
                     ? 'bg-amber-50 border-amber-500 text-amber-900 shadow-sm ring-2 ring-amber-200'
                     : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
                 }`}
               >
                 <BookOpen className="w-4 h-4 text-amber-600 mb-1" />
-                <span>{lang === 'hi' ? 'उधार (F9)' : 'Khata (F9)'}</span>
+                <span>{lang === 'hi' ? 'खाता' : 'Khata'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedPayment('split');
+                  setSplitCash(Math.floor(grandTotal / 2));
+                  setSplitUpi(grandTotal - Math.floor(grandTotal / 2));
+                }}
+                className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all text-[11px] font-bold cursor-pointer ${
+                  selectedPayment === 'split'
+                    ? 'bg-purple-50 border-purple-600 text-purple-900 shadow-sm ring-2 ring-purple-200'
+                    : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <Zap className="w-4 h-4 text-purple-600 mb-1" />
+                <span>{lang === 'hi' ? 'स्प्लिट' : 'Split'}</span>
               </button>
             </div>
 
+            {/* Split Payment Detailed Inputs (Only when Split is selected) */}
+            {selectedPayment === 'split' && (
+              <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-2.5 space-y-2 text-xs">
+                <span className="font-bold text-purple-950 block text-[11px]">
+                  {lang === 'hi' ? 'स्प्लिट पेमेंट ब्रेकडाउन (₹' + grandTotal + ' कुल):' : 'Split Breakdown (₹' + grandTotal + ' Total):'}
+                </span>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-[10px] text-slate-600 font-bold block">Cash ₹:</label>
+                    <input
+                      type="number"
+                      value={splitCash}
+                      onChange={(e) => setSplitCash(parseFloat(e.target.value) || 0)}
+                      className="w-full p-1.5 bg-white border border-slate-300 rounded font-mono font-bold text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-600 font-bold block">UPI ₹:</label>
+                    <input
+                      type="number"
+                      value={splitUpi}
+                      onChange={(e) => setSplitUpi(parseFloat(e.target.value) || 0)}
+                      className="w-full p-1.5 bg-white border border-slate-300 rounded font-mono font-bold text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-600 font-bold block">खाता ₹:</label>
+                    <input
+                      type="number"
+                      value={splitKhata}
+                      onChange={(e) => setSplitKhata(parseFloat(e.target.value) || 0)}
+                      className="w-full p-1.5 bg-white border border-slate-300 rounded font-mono font-bold text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Big Action Buttons */}
             <button
+              type="button"
               onClick={handleCompleteBill}
-              className="w-full flex items-center justify-center gap-2 bg-blue-900 hover:bg-blue-800 text-white py-3.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2 bg-blue-900 hover:bg-blue-800 text-white py-3.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer"
             >
               <Printer className="w-4 h-4" />
-              <span>{lang === 'hi' ? 'प्रिंट & बिल पूरा करें (Enter)' : 'Complete & Print Bill (Enter)'}</span>
+              <span>{lang === 'hi' ? 'प्रिंट & डिजिटल बिल पूरा करें' : 'Complete & Print Bill'}</span>
             </button>
 
             <button
-              onClick={() => alert(lang === 'hi' ? 'WhatsApp पर रसीद भेजी गई!' : 'WhatsApp receipt sent!')}
-              className="w-full flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 py-2.5 rounded-xl font-bold text-xs transition-colors active:scale-95"
+              type="button"
+              onClick={handleCompleteBill}
+              className="w-full flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 py-2.5 rounded-xl font-bold text-xs transition-colors active:scale-95 cursor-pointer"
             >
               <MessageSquare className="w-3.5 h-3.5 text-emerald-700" />
-              <span>{lang === 'hi' ? 'WhatsApp पर बिल भेजें (Alt+W)' : 'Send Bill on WhatsApp (Alt+W)'}</span>
+              <span>{lang === 'hi' ? 'व्हाट्सएप रसीद भेजें' : 'Send WhatsApp Receipt'}</span>
             </button>
           </div>
         </div>
       </div>
+
+      {/* Thermal & Digital Receipt Modal */}
+      <ReceiptModal
+        lang={lang}
+        isOpen={isReceiptModalOpen}
+        onClose={() => setIsReceiptModalOpen(false)}
+        receiptData={currentReceipt}
+        onNewBill={() => {
+          setCart([]);
+          setIsReceiptModalOpen(false);
+          speakHindi(lang === 'hi' ? 'नया बिल शुरू किया गया' : 'New bill started');
+        }}
+      />
     </div>
   );
 };
