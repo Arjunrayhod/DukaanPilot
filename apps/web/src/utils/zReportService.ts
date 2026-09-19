@@ -1,4 +1,4 @@
-﻿export interface DailySalesSummary {
+export interface DailySalesSummary {
   date: string;
   totalSales: number;
   totalCost: number;
@@ -121,6 +121,58 @@ export const TODAY_ANALYTICS_DATA: DailySalesSummary = {
     { hour: '06:00 PM', sales: 2100, bills: 14 },
     { hour: '08:00 PM', sales: 1640, bills: 7 }
   ]
+};
+
+export const PERIOD_ANALYTICS_DATA: Record<'today' | 'yesterday' | 'week' | 'month', DailySalesSummary> = {
+  today: TODAY_ANALYTICS_DATA,
+  yesterday: {
+    date: '18 Sep 2026',
+    totalSales: 7400,
+    totalCost: 5820,
+    grossProfit: 1580,
+    profitMarginPercent: 21.3,
+    totalBills: 52,
+    avgBillValue: 142.3,
+    cashCollected: 2100,
+    upiCollected: 4500,
+    khataGiven: 800,
+    khataRecovered: 350,
+    topSellingItems: TODAY_ANALYTICS_DATA.topSellingItems,
+    categoryBreakdown: TODAY_ANALYTICS_DATA.categoryBreakdown,
+    hourlyTrend: TODAY_ANALYTICS_DATA.hourlyTrend
+  },
+  week: {
+    date: '13-19 Sep 2026',
+    totalSales: 56200,
+    totalCost: 44100,
+    grossProfit: 12100,
+    profitMarginPercent: 21.5,
+    totalBills: 395,
+    avgBillValue: 142.27,
+    cashCollected: 16800,
+    upiCollected: 34200,
+    khataGiven: 5200,
+    khataRecovered: 4100,
+    topSellingItems: TODAY_ANALYTICS_DATA.topSellingItems,
+    categoryBreakdown: TODAY_ANALYTICS_DATA.categoryBreakdown,
+    hourlyTrend: TODAY_ANALYTICS_DATA.hourlyTrend
+  },
+  month: {
+    date: 'Sep 2026',
+    totalSales: 238500,
+    totalCost: 187300,
+    grossProfit: 51200,
+    profitMarginPercent: 21.46,
+    totalBills: 1680,
+    avgBillValue: 141.96,
+    cashCollected: 71500,
+    upiCollected: 145000,
+    khataGiven: 22000,
+    khataRecovered: 18500,
+    topSellingItems: TODAY_ANALYTICS_DATA.topSellingItems,
+    categoryBreakdown: TODAY_ANALYTICS_DATA.categoryBreakdown,
+    hourlyTrend: TODAY_ANALYTICS_DATA.hourlyTrend
+  }
 };
 
 /**

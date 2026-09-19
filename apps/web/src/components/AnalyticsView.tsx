@@ -5,7 +5,7 @@ import {
   Sparkles, Award, PieChart, BarChart3, Clock, Check
 } from 'lucide-react';
 import { Lang } from '../i18n/translations';
-import { TODAY_ANALYTICS_DATA } from '../utils/zReportService';
+import { TODAY_ANALYTICS_DATA, PERIOD_ANALYTICS_DATA } from '../utils/zReportService';
 import { DailyZReportModal } from './DailyZReportModal';
 
 interface AnalyticsViewProps {
@@ -23,7 +23,7 @@ export function AnalyticsView({
   const [timeRange, setTimeRange] = useState<'today' | 'yesterday' | 'week' | 'month'>('today');
   const [isZReportOpen, setIsZReportOpen] = useState(false);
 
-  const data = TODAY_ANALYTICS_DATA;
+  const data = PERIOD_ANALYTICS_DATA[timeRange] || TODAY_ANALYTICS_DATA;
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -119,7 +119,15 @@ export function AnalyticsView({
           </div>
           <div className="text-xs text-emerald-600 font-bold flex items-center gap-1">
             <ArrowUpRight className="w-3.5 h-3.5" />
-            <span>+14.2% {isHi ? 'कल की तुलना में' : 'vs yesterday'}</span>
+            <span>
+              {timeRange === 'today'
+                ? (isHi ? '+14.2% कल की तुलना में' : '+14.2% vs yesterday')
+                : timeRange === 'yesterday'
+                ? (isHi ? 'पिछले दिन की क्लोजिंग' : 'Yesterday Close')
+                : timeRange === 'week'
+                ? (isHi ? '7 दिनों का कुल रिकॉर्ड' : 'Last 7 days record')
+                : (isHi ? 'चालू माह का कुल रिकॉर्ड' : 'Current month record')}
+            </span>
           </div>
         </div>
 
@@ -170,10 +178,10 @@ export function AnalyticsView({
             </span>
           </div>
           <div className="text-2xl sm:text-3xl font-black text-blue-900 font-mono tracking-tight">
-            61.2%
+            {((data.upiCollected / data.totalSales) * 100).toFixed(1)}%
           </div>
           <div className="text-xs text-slate-500 font-semibold">
-            UPI: <span className="font-bold text-blue-700 font-mono">₹{data.upiCollected}</span> &bull; Cash: <span className="font-bold font-mono">₹{data.cashCollected}</span>
+            UPI: <span className="font-bold text-blue-700 font-mono">₹{data.upiCollected.toLocaleString('en-IN')}</span> &bull; Cash: <span className="font-bold font-mono">₹{data.cashCollected.toLocaleString('en-IN')}</span>
           </div>
         </div>
       </div>
