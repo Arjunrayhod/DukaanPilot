@@ -19,6 +19,8 @@ import {
   Receipt,
   PauseCircle,
   HelpCircle,
+  Tag,
+  Camera,
 } from 'lucide-react';
 import { fetchProducts, fetchCategories } from '../services/api';
 import { Lang, translations } from '../i18n/translations';
@@ -28,6 +30,10 @@ import { parseVoiceInput, ParsedVoiceCommand } from '../utils/nlpParser';
 import { speakHindi } from '../utils/voiceFeedback';
 import { ReceiptModal } from './ReceiptModal';
 import { ReceiptData } from '../utils/receiptGenerator';
+import { BarcodeScannerModal } from './BarcodeScannerModal';
+import { BarcodeGeneratorModal } from './BarcodeGeneratorModal';
+import { useBarcodeScanner } from '../hooks/useBarcodeScanner';
+import { findProductByBarcode, playScannerBeep, BarcodeProduct } from '../utils/barcodeService';
 
 interface CartItem {
   id: string | number;
@@ -67,6 +73,54 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastVoiceResult, setLastVoiceResult] = useState('');
+  const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
+  const [isBarcodeGeneratorOpen, setIsBarcodeGeneratorOpen] = useState(false);
+
+  // Handle Barcode Scanned (Camera or USB Scanner)
+  const handleProductBarcodeScanned = (product: BarcodeProduct) => {
+    const prodName = product.name;
+    const prodHindi = product.hindi;
+    const prodPrice = product.price;
+    const prodUnit = product.unit;
+
+    setCart((prev) => {
+      const existingIdx = prev.findIndex(
+        (p) => String(p.id) === String(product.barcode) || p.name === prodName
+      );
+      if (existingIdx >= 0) {
+        return prev.map((p, idx) => (idx === existingIdx ? { ...p, qty: p.qty + 1 } : p));
+      } else {
+        return [
+          ...prev,
+          {
+            id: product.barcode,
+            name: prodName,
+            hindi: prodHindi,
+            price: prodPrice,
+            qty: 1,
+            unit: prodUnit,
+          },
+        ];
+      }
+    });
+
+    const speechMsg = `${prodHindi || prodName} ₹${prodPrice}`;
+    speakHindi(speechMsg);
+  };
+
+  // Global Hardware USB / Bluetooth Barcode Gun Listener
+  useBarcodeScanner({
+    onScan: (scannedCode) => {
+      const product = findProductByBarcode(scannedCode);
+      playScannerBeep();
+      if (product) {
+        handleProductBarcodeScanned(product);
+      } else {
+        speakHindi(lang === 'hi' ? `बारकोड ${scannedCode} नहीं मिला` : `Barcode not found`);
+      }
+    },
+    enabled: true
+  });
 
   const defaultCategories = [
     { id: 'All', name: 'All Items', nameHindi: 'सभी सामान' },
@@ -371,12 +425,23 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
                 />
               </div>
               <button
-                onClick={() => alert(lang === 'hi' ? 'बारकोड स्कैनर चालू है!' : 'Barcode Scanner Ready!')}
-                className="flex items-center gap-1.5 bg-slate-900/85 hover:bg-slate-900 text-white backdrop-blur-xl border border-white/20 px-4 py-2.5 rounded-full text-xs font-bold shadow-md transition-all shrink-0 cursor-pointer"
+                type="button"
+                onClick={() => setIsBarcodeScannerOpen(true)}
+                className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-md transition-all shrink-0 cursor-pointer active:scale-95"
+                title={lang === 'hi' ? 'कैमरा बारकोड स्कैनर खोलें' : 'Open Camera Barcode Scanner'}
               >
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
-                <Barcode className="w-4 h-4 text-slate-200" />
-                <span>{lang === 'hi' ? 'F2: बारकोड स्कैन' : 'F2: Scan Barcode'}</span>
+                <Camera className="w-4 h-4 text-white" />
+                <span>{lang === 'hi' ? 'कैमरा स्कैन' : 'Scan'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsBarcodeGeneratorOpen(true)}
+                className="flex items-center gap-1.5 bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer active:scale-95"
+                title={lang === 'hi' ? 'खुले सामान का बारकोड लेबल बनाएं' : 'Generate Loose Item Barcode'}
+              >
+                <Tag className="w-4 h-4 text-amber-600" />
+                <span className="hidden sm:inline">{lang === 'hi' ? 'लेबल बनाएं' : 'Label'}</span>
               </button>
             </div>
 
@@ -729,6 +794,22 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
           setIsReceiptModalOpen(false);
           speakHindi(lang === 'hi' ? 'नया बिल शुरू किया गया' : 'New bill started');
         }}
+      />
+
+      {/* Live Camera Barcode Scanner Modal */}
+      <BarcodeScannerModal
+        isOpen={isBarcodeScannerOpen}
+        onClose={() => setIsBarcodeScannerOpen(false)}
+        onProductScanned={handleProductBarcodeScanned}
+        lang={lang}
+      />
+
+      {/* Loose Kirana Barcode Generator Modal */}
+      <BarcodeGeneratorModal
+        isOpen={isBarcodeGeneratorOpen}
+        onClose={() => setIsBarcodeGeneratorOpen(false)}
+        onBarcodeCreated={handleProductBarcodeScanned}
+        lang={lang}
       />
     </div>
   );
