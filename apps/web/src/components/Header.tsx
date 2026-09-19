@@ -59,7 +59,7 @@ export function Header({
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">
               <h1 className="font-extrabold text-base sm:text-lg text-slate-900 truncate tracking-tight font-display">
-                {lang === 'hi' ? 'श्री गणेश किराना' : storeName}
+                {storeName || (lang === 'hi' ? 'श्री गणेश किराना स्टोर' : 'Shree Ganesh Kirana')}
               </h1>
               <span className="inline-flex items-center text-blue-600 shrink-0" title="Verified Merchant">
                 <ShieldCheck className="w-4 h-4 fill-blue-50" />

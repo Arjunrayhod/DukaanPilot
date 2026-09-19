@@ -109,13 +109,13 @@ export function KhataStatementModal({
                 आधिकारिक खाता बही विवरणी (OFFICIAL LEDGER STATEMENT)
               </span>
               <h2 className="text-2xl font-black text-slate-950 mt-0.5">
-                श्री गणेश किराना स्टोर
+                {localStorage.getItem('dukaanpilot_shop_name') || 'श्री गणेश किराना स्टोर'}
               </h2>
               <p className="text-xs text-slate-600 font-medium mt-1">
-                मेन बाजार, गांधी चौक, जयपुर, राजस्थान - 302001 &bull; GSTIN: 08AABCS1429B1Z2
+                मेन बाजार &bull; डिजिटल किराना खाता रिकॉर्ड
               </p>
               <p className="text-xs text-slate-600 font-mono">
-                हेल्पलाइन / फोन: +91 98765 43210 &bull; UPI ID: shreeganesh@sbi
+                हेल्पलाइन / फोन: {localStorage.getItem('dukaanpilot_shop_phone') || '+91 98765 43210'} &bull; UPI ID: {localStorage.getItem('dukaanpilot_shop_upi') || 'shreeganesh@sbi'}
               </p>
             </div>
 

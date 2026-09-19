@@ -36,21 +36,40 @@ export function App() {
   const [pendingOrderToBill, setPendingOrderToBill] = useState<any>(null);
   const { isOnline, pendingCount, isSyncing, syncNow } = useOfflineSync();
   
-  // Dual User State: Shopkeeper vs Customer
+  // Dual User State: Shopkeeper vs Customer with Persistent Storage
   const [currentUser, setCurrentUser] = useState<any>(() => {
+    try {
+      const savedUser = localStorage.getItem('dukaanpilot_current_user');
+      if (savedUser) {
+        return JSON.parse(savedUser);
+      }
+    } catch (e) {}
+
+    const savedShopName = localStorage.getItem('dukaanpilot_shop_name') || 'श्री गणेश किराना स्टोर';
     const savedUpi = localStorage.getItem('dukaanpilot_shop_upi') || 'shreeganesh@sbi';
     const savedQr = localStorage.getItem('dukaanpilot_custom_qr') || undefined;
+    const savedPhone = localStorage.getItem('dukaanpilot_shop_phone') || '9876543210';
     return {
       id: 'usr_owner_01',
       name: 'Ramesh Ganesh',
-      shopName: 'Shree Ganesh Kirana',
-      phone: '9876543210',
+      shopName: savedShopName,
+      phone: savedPhone,
       upiId: savedUpi,
       customQrImage: savedQr,
       role: 'OWNER', // 'OWNER' | 'CUSTOMER'
       khataDue: 0,
     };
   });
+
+  const updateCurrentUser = (userObj: any) => {
+    setCurrentUser(userObj);
+    try {
+      localStorage.setItem('dukaanpilot_current_user', JSON.stringify(userObj));
+      if (userObj.shopName) localStorage.setItem('dukaanpilot_shop_name', userObj.shopName);
+      if (userObj.upiId) localStorage.setItem('dukaanpilot_shop_upi', userObj.upiId);
+      if (userObj.phone && userObj.role === 'OWNER') localStorage.setItem('dukaanpilot_shop_phone', userObj.phone);
+    } catch (e) {}
+  };
 
   useEffect(() => {
     async function loadHealth() {
@@ -74,28 +93,30 @@ export function App() {
   };
 
   const handleQuickToggleRole = () => {
+    const currentShopName = localStorage.getItem('dukaanpilot_shop_name') || currentUser.shopName || 'श्री गणेश किराना स्टोर';
     const currentShopUpi = localStorage.getItem('dukaanpilot_shop_upi') || currentUser.upiId || 'shreeganesh@sbi';
     const currentShopQr = localStorage.getItem('dukaanpilot_custom_qr') || currentUser.customQrImage;
+    const currentShopPhone = localStorage.getItem('dukaanpilot_shop_phone') || '9876543210';
 
     if (currentUser.role === 'OWNER') {
       // Switch to Customer mode
-      setCurrentUser({
+      updateCurrentUser({
         id: 'usr_cust_01',
         name: 'रमेश कुमार (Ramesh Kumar)',
-        shopName: currentUser.shopName || 'Shree Ganesh Kirana',
+        shopName: currentShopName,
         phone: '9823456789',
         upiId: currentShopUpi,
         customQrImage: currentShopQr,
         role: 'CUSTOMER',
-        khataDue: 1250,
+        khataDue: 1450,
       });
     } else {
       // Switch to Shopkeeper mode
-      setCurrentUser({
+      updateCurrentUser({
         id: 'usr_owner_01',
         name: 'Ramesh Ganesh',
-        shopName: currentUser.shopName || 'Shree Ganesh Kirana',
-        phone: '9876543210',
+        shopName: currentShopName,
+        phone: currentShopPhone,
         upiId: currentShopUpi,
         customQrImage: currentShopQr,
         role: 'OWNER',
@@ -108,7 +129,7 @@ export function App() {
     <div className="min-h-screen bg-[#f8f9ff] text-[#0b1c30] flex flex-col font-sans pb-20 md:pb-12">
       {/* Top Universal Header */}
       <Header
-        storeName={currentUser?.shopName || 'Shree Ganesh Kirana'}
+        storeName={currentUser?.shopName || 'श्री गणेश किराना स्टोर'}
         isOnline={isOnline}
         lang={lang}
         onToggleLang={toggleLanguage}
@@ -172,8 +193,8 @@ export function App() {
             customer={{
               name: currentUser.name,
               phone: currentUser.phone,
-              khataDue: currentUser.khataDue || 1250,
-              shopName: currentUser.shopName || 'Shree Ganesh Kirana',
+              khataDue: currentUser.khataDue || 1450,
+              shopName: currentUser.shopName || 'श्री गणेश किराना स्टोर',
               upiId: currentUser.upiId || 'shreeganesh@sbi',
             }}
             onOpenQr={() => setIsQrOpen(true)}
@@ -183,6 +204,9 @@ export function App() {
           activeTab === 'pos' ? (
             <PosBillingView
               lang={lang}
+              storeName={currentUser?.shopName}
+              storePhone={currentUser?.phone}
+              storeUpiId={currentUser?.upiId}
               initialVoiceText={posVoiceTrigger}
               pendingOrderToBill={pendingOrderToBill}
               onClearPendingOrder={() => setPendingOrderToBill(null)}
@@ -261,15 +285,15 @@ export function App() {
         userRole={currentUser?.role}
         isOpen={isQrOpen}
         onClose={() => setIsQrOpen(false)}
-        shopName={currentUser?.shopName || 'Shree Ganesh Kirana'}
+        shopName={currentUser?.shopName || 'श्री गणेश किराना स्टोर'}
         upiId={currentUser?.upiId || 'shreeganesh@sbi'}
         customQrImage={currentUser?.customQrImage}
         onUpdateQr={(newUpi, newImg) => {
-          setCurrentUser((prev: any) => ({
-            ...prev,
+          updateCurrentUser({
+            ...currentUser,
             upiId: newUpi,
             customQrImage: newImg,
-          }));
+          });
         }}
       />
 
@@ -278,15 +302,16 @@ export function App() {
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
         onSuccess={(data) => {
-          setCurrentUser({
+          const userObj = {
             id: data.user.id,
             name: data.user.name,
-            shopName: data.shop?.name || 'Shree Ganesh Kirana',
+            shopName: data.shop?.name || currentUser?.shopName || 'श्री गणेश किराना स्टोर',
             phone: data.user.phone,
-            upiId: data.shop?.upiId || 'shreeganesh@sbi',
+            upiId: data.shop?.upiId || currentUser?.upiId || 'shreeganesh@sbi',
             role: data.user.role || 'OWNER',
             khataDue: data.user.khataDue || 0,
-          });
+          };
+          updateCurrentUser(userObj);
         }}
       />
 
@@ -295,7 +320,7 @@ export function App() {
         isOpen={isZReportOpen}
         onClose={() => setIsZReportOpen(false)}
         lang={lang}
-        shopName={currentUser?.shopName || 'Shree Ganesh Kirana'}
+        shopName={currentUser?.shopName || 'श्री गणेश किराना स्टोर'}
         shopPhone={currentUser?.phone || '+91 98765 43210'}
       />
 

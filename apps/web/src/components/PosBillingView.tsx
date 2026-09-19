@@ -59,6 +59,9 @@ type PaymentMode = 'cash' | 'upi' | 'khata' | 'split';
 
 interface PosBillingViewProps {
   lang?: Lang;
+  storeName?: string;
+  storePhone?: string;
+  storeUpiId?: string;
   soundboxEnabled?: boolean;
   initialVoiceText?: string;
   onBackToDashboard?: () => void;
@@ -70,6 +73,9 @@ interface PosBillingViewProps {
 
 export const PosBillingView: React.FC<PosBillingViewProps> = ({
   lang = 'hi',
+  storeName,
+  storePhone,
+  storeUpiId,
   soundboxEnabled = true,
   initialVoiceText = '',
   onBackToDashboard,
@@ -385,15 +391,19 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
       });
     }
 
+    const activeShopName = storeName || localStorage.getItem('dukaanpilot_shop_name') || 'श्री गणेश किराना स्टोर';
+    const activeShopPhone = storePhone || localStorage.getItem('dukaanpilot_shop_phone') || '+91 98765 43210';
+    const activeShopUpi = storeUpiId || localStorage.getItem('dukaanpilot_shop_upi') || 'shreeganesh@sbi';
+
     const receipt: ReceiptData = {
       invoiceNo: `${Math.floor(1000 + Math.random() * 9000)}`,
       date: new Date().toLocaleDateString('en-IN'),
       time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-      shopName: 'श्री गणेश किराना स्टोर (Shree Ganesh Kirana)',
+      shopName: activeShopName,
       shopAddress: 'दुकान नं. 4, मुख्य बाजार, दिल्ली',
-      shopPhone: '+91 98765 43210',
+      shopPhone: activeShopPhone,
       shopGst: '07AAAAA0000A1Z5',
-      shopUpiId: 'shreeganesh@sbi',
+      shopUpiId: activeShopUpi,
       customerName,
       customerPhone,
       items: cart.map((c) => ({

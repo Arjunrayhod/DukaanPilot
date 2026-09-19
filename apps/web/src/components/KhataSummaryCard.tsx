@@ -32,6 +32,10 @@ export function KhataSummaryCard({ lang, onOpenKhata }: KhataSummaryCardProps) {
 
   const handleSendReminder = (id: string, name: string, phone: string, amountNum: number) => {
     setRemindedList((prev) => [...prev, id]);
+    const shopName = localStorage.getItem('dukaanpilot_shop_name') || (isHi ? 'श्री गणेश किराना स्टोर' : 'Shree Ganesh Kirana');
+    const shopPhone = localStorage.getItem('dukaanpilot_shop_phone') || '+91 98765 43210';
+    const shopUpi = localStorage.getItem('dukaanpilot_shop_upi') || 'shreeganesh@sbi';
+
     const url = generateKhataWhatsAppUrl(
       {
         phone,
@@ -39,9 +43,9 @@ export function KhataSummaryCard({ lang, onOpenKhata }: KhataSummaryCardProps) {
         currentDue: amountNum,
       },
       {
-        name: isHi ? 'श्री गणेश किराना स्टोर' : 'Shree Ganesh Kirana',
-        phone: '+91 98765 43210',
-        upiId: 'shreeganesh@sbi',
+        name: shopName,
+        phone: shopPhone,
+        upiId: shopUpi,
       },
       lang
     );

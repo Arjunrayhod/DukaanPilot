@@ -82,6 +82,9 @@ export function SupplierOrderModal({
       notes
     };
 
+    const shopName = localStorage.getItem('dukaanpilot_shop_name') || 'श्री गणेश किराना स्टोर';
+    const shopPhone = localStorage.getItem('dukaanpilot_shop_phone') || '+91 98765 43210';
+
     const url = generateSupplierWhatsAppUrl(
       {
         poNumber,
@@ -94,9 +97,9 @@ export function SupplierOrderModal({
         notes
       },
       {
-        name: 'श्री गणेश किराना स्टोर (Shree Ganesh Kirana)',
-        phone: '+91 98765 43210',
-        address: 'दुकान नं. 4, मेन मार्केट, नई दिल्ली'
+        name: shopName,
+        phone: shopPhone,
+        address: 'दुकान नं. 4, मेन मार्केट'
       },
       lang
     );
@@ -111,6 +114,9 @@ export function SupplierOrderModal({
   };
 
   const handleCopyText = () => {
+    const shopName = localStorage.getItem('dukaanpilot_shop_name') || 'श्री गणेश किराना स्टोर';
+    const shopPhone = localStorage.getItem('dukaanpilot_shop_phone') || '+91 98765 43210';
+
     const text = formatSupplierWhatsAppPO(
       {
         poNumber,
@@ -122,9 +128,9 @@ export function SupplierOrderModal({
         notes
       },
       {
-        name: 'श्री गणेश किराना स्टोर (Shree Ganesh Kirana)',
-        phone: '+91 98765 43210',
-        address: 'दुकान नं. 4, मेन मार्केट, नई दिल्ली'
+        name: shopName,
+        phone: shopPhone,
+        address: 'दुकान नं. 4, मेन मार्केट'
       },
       lang
     );
