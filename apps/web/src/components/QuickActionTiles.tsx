@@ -10,6 +10,8 @@ interface QuickActionTilesProps {
   onAddProduct: () => void;
   onDailyReport: () => void;
   onPromotions?: () => void;
+  onOpenAiCopilot?: () => void;
+  onOpenGstTax?: () => void;
 }
 
 export function QuickActionTiles({
@@ -20,6 +22,8 @@ export function QuickActionTiles({
   onAddProduct,
   onDailyReport,
   onPromotions,
+  onOpenAiCopilot,
+  onOpenGstTax,
 }: QuickActionTilesProps) {
   const t = translations[lang];
 
@@ -71,6 +75,30 @@ export function QuickActionTiles({
 
       {/* Secondary Counter Shortcuts - Dark Translucent Capsule Pills */}
       <div className="flex items-center gap-2.5 overflow-x-auto py-1 no-scrollbar">
+        {onOpenAiCopilot && (
+          <button
+            onClick={onOpenAiCopilot}
+            className="h-10 px-4 rounded-full bg-gradient-to-r from-indigo-900 to-blue-900 hover:from-indigo-800 hover:to-blue-800 text-white backdrop-blur-xl border border-indigo-400/30 text-xs font-black flex items-center gap-2 shrink-0 shadow-md transition-all active:scale-95 cursor-pointer"
+            type="button"
+          >
+            <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></div>
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            <span>{lang === 'hi' ? '🤖 AI किराना कोपायलट' : '🤖 AI Copilot'}</span>
+          </button>
+        )}
+
+        {onOpenGstTax && (
+          <button
+            onClick={onOpenGstTax}
+            className="h-10 px-4 rounded-full bg-slate-900/85 hover:bg-slate-900 text-white backdrop-blur-xl border border-white/20 text-xs font-bold flex items-center gap-2 shrink-0 shadow-md transition-all active:scale-95 cursor-pointer"
+            type="button"
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+            <FileSpreadsheet className="w-4 h-4 text-emerald-300" />
+            <span>{lang === 'hi' ? 'जीएसटी टैक्स रिपोर्ट' : 'GST Reports'}</span>
+          </button>
+        )}
+
         <button
           onClick={onShowQr}
           className="h-10 px-4 rounded-full bg-slate-900/85 hover:bg-slate-900 text-white backdrop-blur-xl border border-white/20 text-xs font-bold flex items-center gap-2 shrink-0 shadow-md transition-all active:scale-95 cursor-pointer"

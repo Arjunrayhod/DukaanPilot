@@ -18,6 +18,8 @@ import { DailyZReportModal } from './components/DailyZReportModal';
 import { CustomerPortal } from './components/CustomerPortal';
 import { AuthModal } from './components/AuthModal';
 import { PromotionsModal } from './components/PromotionsModal';
+import { AiKiranaCopilotModal } from './components/AiKiranaCopilotModal';
+import { GstTaxReportModal } from './components/GstTaxReportModal';
 import { checkHealth } from './services/api';
 import { Lang } from './i18n/translations';
 
@@ -32,6 +34,8 @@ export function App() {
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isZReportOpen, setIsZReportOpen] = useState(false);
   const [isPromotionsOpen, setIsPromotionsOpen] = useState(false);
+  const [isAiCopilotOpen, setIsAiCopilotOpen] = useState(false);
+  const [isGstTaxOpen, setIsGstTaxOpen] = useState(false);
   const [posVoiceTrigger, setPosVoiceTrigger] = useState('');
   const [pendingOrderToBill, setPendingOrderToBill] = useState<any>(null);
   const { isOnline, pendingCount, isSyncing, syncNow } = useOfflineSync();
@@ -243,6 +247,8 @@ export function App() {
                 onAddProduct={() => setActiveTab('inventory')}
                 onDailyReport={() => setIsZReportOpen(true)}
                 onPromotions={() => setIsPromotionsOpen(true)}
+                onOpenAiCopilot={() => setIsAiCopilotOpen(true)}
+                onOpenGstTax={() => setIsGstTaxOpen(true)}
               />
 
               {/* 3. Live Incoming Online Customer Orders */}
@@ -332,6 +338,41 @@ export function App() {
         shopInfo={{
           name: currentUser?.shopName || 'श्री गणेश किराना स्टोर',
           phone: currentUser?.phone || '+91 98765 43210'
+        }}
+      />
+
+      {/* AI Kirana Copilot & WhatsApp Grocery List Parser */}
+      <AiKiranaCopilotModal
+        isOpen={isAiCopilotOpen}
+        onClose={() => setIsAiCopilotOpen(false)}
+        lang={lang}
+        onLoadCartItems={(items) => {
+          setPendingOrderToBill({
+            customerName: 'WhatsApp ग्राहक',
+            customerPhone: '9876543210',
+            paymentStatus: 'PENDING_CASH',
+            items: items.map((it: any) => ({
+              id: it.id,
+              name: it.name,
+              hindiName: it.nameHindi || it.name,
+              price: it.price,
+              qty: it.qty,
+              unit: it.unit || 'packet',
+            }))
+          });
+          setActiveTab('pos');
+        }}
+      />
+
+      {/* GST Tax Report & GSTR-1 Invoicing Modal */}
+      <GstTaxReportModal
+        isOpen={isGstTaxOpen}
+        onClose={() => setIsGstTaxOpen(false)}
+        lang={lang}
+        shopInfo={{
+          name: currentUser?.shopName || 'श्री गणेश किराना स्टोर',
+          gstin: '07AAAAA0000A1Z5',
+          state: 'Delhi (07)',
         }}
       />
     </div>
