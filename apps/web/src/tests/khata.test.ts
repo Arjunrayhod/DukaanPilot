@@ -131,5 +131,14 @@ describe('Khata Ledger & WhatsApp Reminder Tests', () => {
     assert.strictEqual(res6.matchedCustomer?.name.includes('अर्जुन'), true);
     assert.strictEqual(res6.amount, 500);
     assert.strictEqual(res6.notes, 'आटा');
+
+    // Case 7: Spoken Hindi words for numbers (पांच सौ, दो हजार, सौ)
+    const res7 = parseVoiceKhataCommand('रमेश कुमार पांच सौ रुपये उधार', INITIAL_KHATA_CUSTOMERS);
+    assert.strictEqual(res7.amount, 500);
+    assert.strictEqual(res7.type, 'DEBIT');
+
+    const res8 = parseVoiceKhataCommand('सुनील बंसल दो हजार जमा', INITIAL_KHATA_CUSTOMERS);
+    assert.strictEqual(res8.amount, 2000);
+    assert.strictEqual(res8.type, 'CREDIT');
   });
 });

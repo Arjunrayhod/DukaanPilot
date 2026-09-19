@@ -28,6 +28,22 @@ export function useVoiceRecognition(options: UseVoiceRecognitionOptions = {}) {
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
 
+  // Buffer to capture interim speech in case isFinal never fires before onend
+  const latestTranscriptRef = useRef<string>('');
+  const hasProcessedFinalRef = useRef<boolean>(false);
+  const silenceTimerRef = useRef<any>(null);
+
+  const commitTranscript = useCallback((text: string) => {
+    const cleanText = text.trim();
+    if (!cleanText || hasProcessedFinalRef.current) return;
+    hasProcessedFinalRef.current = true;
+    setTranscript(cleanText);
+    setInterimTranscript('');
+    if (onResultRef.current) {
+      onResultRef.current(cleanText, true);
+    }
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -44,10 +60,13 @@ export function useVoiceRecognition(options: UseVoiceRecognitionOptions = {}) {
     recognition.continuous = continuous;
     recognition.interimResults = true;
     recognition.lang = lang;
+    recognition.maxAlternatives = 5;
 
     recognition.onstart = () => {
       setIsListening(true);
       setError(null);
+      hasProcessedFinalRef.current = false;
+      latestTranscriptRef.current = '';
     };
 
     recognition.onresult = (event: any) => {
@@ -63,23 +82,39 @@ export function useVoiceRecognition(options: UseVoiceRecognitionOptions = {}) {
         }
       }
 
+      const activeText = currentFinal || currentInterim;
+      if (activeText) {
+        latestTranscriptRef.current = activeText.trim();
+      }
+
       if (currentFinal) {
-        setTranscript(currentFinal.trim());
-        setInterimTranscript('');
-        if (onResultRef.current) onResultRef.current(currentFinal.trim(), true);
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        commitTranscript(currentFinal);
       } else {
         setInterimTranscript(currentInterim.trim());
-        if (onResultRef.current) onResultRef.current(currentInterim.trim(), false);
+        if (onResultRef.current) {
+          onResultRef.current(currentInterim.trim(), false);
+        }
+
+        // Auto-commit on 1.4s of silence after speech is detected
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        if (currentInterim.trim().length >= 2) {
+          silenceTimerRef.current = setTimeout(() => {
+            if (latestTranscriptRef.current && !hasProcessedFinalRef.current) {
+              commitTranscript(latestTranscriptRef.current);
+            }
+          }, 1400);
+        }
       }
     };
 
     recognition.onerror = (event: any) => {
-      console.warn('Speech recognition error:', event.error);
+      console.warn('Speech recognition event:', event.error);
       if (event.error === 'no-speech') {
-        setError('आवाज़ नहीं सुनाई दी (No speech detected)');
+        // Soft warning, do not block subsequent interactions
       } else if (event.error === 'not-allowed') {
         setError('माइक्रोफ़ोन की अनुमति दें (Mic permission denied)');
-      } else {
+      } else if (event.error !== 'aborted') {
         setError(`वॉइस एरर: ${event.error}`);
       }
       setIsListening(false);
@@ -88,43 +123,73 @@ export function useVoiceRecognition(options: UseVoiceRecognitionOptions = {}) {
 
     recognition.onend = () => {
       setIsListening(false);
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+
+      // Fallback: If session ended and we have buffered spoken words that weren't finalized, commit them now
+      if (latestTranscriptRef.current && !hasProcessedFinalRef.current) {
+        commitTranscript(latestTranscriptRef.current);
+      }
     };
 
     recognitionRef.current = recognition;
 
     return () => {
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       if (recognitionRef.current) {
-        recognitionRef.current.abort();
+        try {
+          recognitionRef.current.abort();
+        } catch (_) {}
       }
     };
-  }, [lang, continuous]);
+  }, [lang, continuous, commitTranscript]);
 
   const startListening = useCallback(() => {
+    // Stop ongoing speech synthesis immediately so it doesn't feed into microphone
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (_) {}
+    }
+
     if (!recognitionRef.current) {
-      // If browser doesn't have native speech API, prompt or simulate
       setIsListening(true);
       return;
     }
+
     try {
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      hasProcessedFinalRef.current = false;
+      latestTranscriptRef.current = '';
       setTranscript('');
       setInterimTranscript('');
       setError(null);
       recognitionRef.current.start();
-    } catch (err) {
-      console.warn('Recognition start warning:', err);
+    } catch (err: any) {
+      // If already started, restart cleanly
+      try {
+        recognitionRef.current.stop();
+        setTimeout(() => {
+          try {
+            recognitionRef.current.start();
+          } catch (_) {}
+        }, 150);
+      } catch (_) {}
     }
   }, []);
 
   const stopListening = useCallback(() => {
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
-      } catch (err) {
-        console.warn('Recognition stop warning:', err);
-      }
+      } catch (_) {}
+    }
+    // If we have buffered text, commit it on manual stop
+    if (latestTranscriptRef.current && !hasProcessedFinalRef.current) {
+      commitTranscript(latestTranscriptRef.current);
     }
     setIsListening(false);
-  }, []);
+  }, [commitTranscript]);
 
   const toggleListening = useCallback(() => {
     if (isListening) {

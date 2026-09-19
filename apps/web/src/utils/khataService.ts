@@ -260,11 +260,56 @@ export interface ParsedVoiceKhataResult {
 }
 
 /**
+ * Extracts numeric amount from digits or Hindi/English spoken words
+ */
+export function extractAmountFromSpoken(text: string): number {
+  if (!text) return 0;
+  const lower = text.toLowerCase();
+  
+  // 1. Check for explicit digits e.g. 500, ₹1000, 50
+  const digitMatch = lower.match(/(?:₹|rs|rupee|rupaye|inr)?\s*(\d+)/i);
+  if (digitMatch && parseInt(digitMatch[1], 10) > 0) {
+    return parseInt(digitMatch[1], 10);
+  }
+
+  // 2. Check for Hindi words for thousands (हजार, हज़ार, hazaar)
+  if (/दस\s*(?:हजार|हज़ार|hazar|hazaar)/i.test(lower)) return 10000;
+  if (/पांच\s*(?:हजार|हज़ार|hazar|hazaar)|पाँच\s*(?:हजार|हज़ार)/i.test(lower)) return 5000;
+  if (/चार\s*(?:हजार|हज़ार|hazar|hazaar)/i.test(lower)) return 4000;
+  if (/तीन\s*(?:हजार|हज़ार|hazar|hazaar)/i.test(lower)) return 3000;
+  if (/दो\s*(?:हजार|हज़ार|hazar|hazaar)/i.test(lower)) return 2000;
+  if (/डेढ़\s*(?:हजार|हज़ार|hazar|hazaar)/i.test(lower)) return 1500;
+  if (/(?:एक\s*)?(?:हजार|हज़ार|hazar|hazaar)/i.test(lower)) return 1000;
+
+  // 3. Check for Hindi words for hundreds (सौ, sau)
+  if (/नौ\s*सौ|nau\s*sau/i.test(lower)) return 900;
+  if (/आठ\s*सौ|aath\s*sau/i.test(lower)) return 800;
+  if (/सात\s*सौ|saat\s*sau/i.test(lower)) return 700;
+  if (/छह\s*सौ|chhe\s*sau/i.test(lower)) return 600;
+  if (/पांच\s*सौ|पाँच\s*सौ|panch\s*sau|paanch\s*sau/i.test(lower)) return 500;
+  if (/चार\s*सौ|char\s*sau/i.test(lower)) return 400;
+  if (/तीन\s*सौ|teen\s*sau/i.test(lower)) return 300;
+  if (/ढाई\s*सौ|dhai\s*sau/i.test(lower)) return 250;
+  if (/दो\s*सौ|do\s*sau/i.test(lower)) return 200;
+  if (/डेढ़\s*सौ|dedh\s*sau/i.test(lower)) return 150;
+  if (/(?:एक\s*)?सौ|one\s*hundred|sau/i.test(lower)) return 100;
+
+  // 4. Smaller numbers
+  if (/पचास|pachas|fifty/i.test(lower)) return 50;
+  if (/चालीस|chalis|forty/i.test(lower)) return 40;
+  if (/तीस|tees|thirty/i.test(lower)) return 30;
+  if (/बीस|bees|twenty/i.test(lower)) return 20;
+  if (/दस|das|ten/i.test(lower)) return 10;
+
+  return 0;
+}
+
+/**
  * Smart NLP parser for Voice Khata Commands
  * Handles sentences like:
  * - "अर्जुन राठौड़ ने 500 रुपए जमा करवाए" -> Match Arjun Rathore, Amount 500, CREDIT
  * - "अर्जुन राठौड़ ने 50 रुपए का धनिया लिया" -> Match Arjun Rathore, Amount 50, DEBIT, Note: धनिया
- * - "रमेश कुमार 500 रुपये उधार लिखो" -> Match Ramesh Kumar, Amount 500, DEBIT
+ * - "रमेश कुमार पांच सौ रुपये उधार लिखो" -> Match Ramesh Kumar, Amount 500, DEBIT
  */
 export function parseVoiceKhataCommand(
   rawSpoken: string,
@@ -288,9 +333,8 @@ export function parseVoiceKhataCommand(
 
   const type: 'DEBIT' | 'CREDIT' = isJama ? 'CREDIT' : 'DEBIT';
 
-  // 2. Amount Extraction
-  const numMatch = normalized.match(/(\d+)/);
-  const amount = numMatch ? parseInt(numMatch[1], 10) : 0;
+  // 2. Amount Extraction (both digits and spoken words)
+  const amount = extractAmountFromSpoken(normalized);
 
   // 3. Match against existing customers
   let bestCustomer: KhataCustomer | undefined;
