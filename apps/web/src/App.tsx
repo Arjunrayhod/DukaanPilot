@@ -21,6 +21,9 @@ import { PromotionsModal } from './components/PromotionsModal';
 import { checkHealth } from './services/api';
 import { Lang } from './i18n/translations';
 
+import { useOfflineSync } from './utils/offlineSyncService';
+import { WifiOff, RefreshCw, CheckCircle2 } from 'lucide-react';
+
 export function App() {
   const [lang, setLang] = useState<Lang>('hi');
   const [activeTab, setActiveTab] = useState('home');
@@ -30,6 +33,7 @@ export function App() {
   const [isZReportOpen, setIsZReportOpen] = useState(false);
   const [isPromotionsOpen, setIsPromotionsOpen] = useState(false);
   const [posVoiceTrigger, setPosVoiceTrigger] = useState('');
+  const { isOnline, pendingCount, isSyncing, syncNow } = useOfflineSync();
   
   // Dual User State: Shopkeeper vs Customer
   const [currentUser, setCurrentUser] = useState<any>(() => {
@@ -104,7 +108,7 @@ export function App() {
       {/* Top Universal Header */}
       <Header
         storeName={currentUser?.shopName || 'Shree Ganesh Kirana'}
-        isOnline={true}
+        isOnline={isOnline}
         lang={lang}
         onToggleLang={toggleLanguage}
         systemHealth={systemHealth}
@@ -115,6 +119,48 @@ export function App() {
         userName={currentUser.name}
         onQuickToggleRole={handleQuickToggleRole}
       />
+
+      {/* Offline Status & Cloud Sync Banner */}
+      {!isOnline && (
+        <div className="bg-gradient-to-r from-amber-600 to-amber-700 text-white text-xs font-bold py-2 px-4 shadow-sm flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 max-w-7xl mx-auto w-full">
+            <WifiOff className="w-4 h-4 text-amber-200 shrink-0" />
+            <span>
+              {lang === 'hi'
+                ? '📡 ऑफलाइन मोड (Offline Active): इंटरनेट बंद है, लेकिन आपकी बिलिंग, बारकोड व स्टॉक अपडेट बिना रुके चल रहे हैं।'
+                : '📡 Offline Mode Active: Internet disconnected. Local POS billing and inventory continue working seamlessly.'}
+            </span>
+            {pendingCount > 0 && (
+              <span className="bg-amber-800/80 px-2 py-0.5 rounded-full text-[11px] font-mono">
+                {pendingCount} {lang === 'hi' ? 'लेन-देन पेंडिंग' : 'pending sync'}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Background Cloud Syncing Toast */}
+      {isOnline && pendingCount > 0 && (
+        <div className="bg-indigo-900 text-white text-xs font-bold py-1.5 px-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 max-w-7xl mx-auto w-full justify-between">
+            <div className="flex items-center gap-2">
+              <RefreshCw className={`w-3.5 h-3.5 text-indigo-300 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>
+                {lang === 'hi'
+                  ? `इंटरनेट वापस आ गया! ${pendingCount} ऑफलाइन रिकॉर्ड्स क्लाउड से सिंक हो रहे हैं...`
+                  : `Back Online! Syncing ${pendingCount} offline records with cloud...`}
+              </span>
+            </div>
+            <button
+              onClick={syncNow}
+              disabled={isSyncing}
+              className="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold cursor-pointer transition-colors"
+            >
+              {isSyncing ? (lang === 'hi' ? 'सिंक जारी...' : 'Syncing...') : (lang === 'hi' ? 'अभी सिंक करें' : 'Sync Now')}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Workspace */}
       <main className="max-w-7xl mx-auto px-3.5 sm:px-6 py-4 w-full flex-1">

@@ -42,6 +42,7 @@ import { INITIAL_INVENTORY_ITEMS, decrementStockOnSale, InventoryItem } from '..
 import { INITIAL_LOYALTY_ACCOUNTS, calculateEarnedPoints, LoyaltyAccount } from '../utils/loyaltyService';
 import { recordCompletedBill } from '../utils/salesService';
 import { announceSoundboxPayment } from '../utils/soundboxService';
+import { enqueueOfflineAction } from '../utils/offlineSyncService';
 
 interface CartItem {
   id: string | number;
@@ -409,7 +410,15 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
     // 4. Clear cart for next sale
     setCart([]);
 
-    // 5. Smart Soundbox Voice Alert & Chime
+    // 5. Offline Cloud Sync Enqueue
+    enqueueOfflineAction('BILL_CREATED', {
+      invoiceNo: receipt.invoiceNo,
+      grandTotal,
+      paymentMode: selectedPayment,
+      itemsCount: cart.length
+    });
+
+    // 6. Smart Soundbox Voice Alert & Chime
     announceSoundboxPayment({
       amount: grandTotal,
       mode: selectedPayment,
