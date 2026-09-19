@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   Truck, Search, Plus, Phone, Building2, Package, Check, 
-  AlertTriangle, Calendar, MessageSquare, ArrowRight, Sparkles, X, ChevronRight
+  AlertTriangle, Calendar, MessageSquare, ArrowRight, Sparkles, X, ChevronRight,
+  FileText, Banknote, ShieldCheck
 } from 'lucide-react';
 import { Lang, translations } from '../i18n/translations';
 import { 
@@ -12,6 +13,8 @@ import {
   PurchaseOrder
 } from '../utils/restockService';
 import { SupplierOrderModal } from './SupplierOrderModal';
+import { SupplierInwardModal } from './SupplierInwardModal';
+import { useSupplierInward, formatSupplierPaymentReceipt } from '../utils/inwardService';
 import { speakHindi } from '../utils/voiceFeedback';
 
 interface SupplierManagementViewProps {
@@ -19,7 +22,7 @@ interface SupplierManagementViewProps {
 }
 
 export function SupplierManagementView({ lang = 'hi' }: SupplierManagementViewProps) {
-  const isHi = lang === 'hi';
+  const isHi = lang === 'hi' || lang === 'gu' || lang === 'mr';
   const t = translations[lang];
 
   const [suppliers, setSuppliers] = useState<Supplier[]>(INITIAL_SUPPLIERS);
@@ -28,8 +31,10 @@ export function SupplierManagementView({ lang = 'hi' }: SupplierManagementViewPr
   const [selectedSupplierForPO, setSelectedSupplierForPO] = useState<Supplier | null>(null);
   const [poItems, setPoItems] = useState<RestockItem[]>([]);
   const [isAddSupplierOpen, setIsAddSupplierOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'suppliers' | 'lowstock'>('lowstock');
+  const [isInwardModalOpen, setIsInwardModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'lowstock' | 'suppliers' | 'inward'>('lowstock');
   const [recentOrders, setRecentOrders] = useState<PurchaseOrder[]>([]);
+  const { inwardEntries, recordPayment } = useSupplierInward();
 
   // Add Supplier Form
   const [newSupName, setNewSupName] = useState('');
@@ -131,19 +136,29 @@ export function SupplierManagementView({ lang = 'hi' }: SupplierManagementViewPr
             </div>
           </div>
 
-          <button
-            onClick={() => setIsAddSupplierOpen(true)}
-            className="px-4 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-bold flex items-center gap-2 transition-all cursor-pointer backdrop-blur-md active:scale-95"
-          >
-            <Plus className="w-4 h-4" />
-            <span>{isHi ? 'नया सप्लायर जोड़ें' : 'Add Distributor'}</span>
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setIsInwardModalOpen(true)}
+              className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black flex items-center gap-2 shadow-lg transition-all cursor-pointer active:scale-95 border border-white/20"
+            >
+              <Package className="w-4 h-4" />
+              <span>{isHi ? '📦 नया माल इनवर्ड करें (GRN)' : '📦 Receive Stock (GRN)'}</span>
+            </button>
+
+            <button
+              onClick={() => setIsAddSupplierOpen(true)}
+              className="px-4 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/20 text-white text-xs font-bold flex items-center gap-2 transition-all cursor-pointer backdrop-blur-md active:scale-95"
+            >
+              <Plus className="w-4 h-4" />
+              <span>{isHi ? 'नया सप्लायर जोड़ें' : 'Add Distributor'}</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Tabs Strip */}
-      <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setActiveTab('lowstock')}
             className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
@@ -166,8 +181,21 @@ export function SupplierManagementView({ lang = 'hi' }: SupplierManagementViewPr
             }`}
           >
             <Building2 className="w-4 h-4" />
-            <span>{isHi ? 'सप्लायर / डिस्ट्रीब्यूटर सूची' : 'Distributors List'}</span>
+            <span>{isHi ? 'सप्लायर व उधारी लेजर' : 'Distributors & AP'}</span>
             <span className="px-2 py-0.5 rounded-full bg-white/20 text-xs font-mono">{suppliers.length}</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('inward')}
+            className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+              activeTab === 'inward'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            <span>{isHi ? 'खरीद चालान व इनवर्ड' : 'Purchase Inward (GRN)'}</span>
+            <span className="px-2 py-0.5 rounded-full bg-white/20 text-xs font-mono">{inwardEntries.length}</span>
           </button>
         </div>
 
@@ -312,6 +340,87 @@ export function SupplierManagementView({ lang = 'hi' }: SupplierManagementViewPr
           })}
         </div>
       )}
+
+      {/* View: Inward / GRN Bills Tab */}
+      {activeTab === 'inward' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-black text-slate-900">
+              {isHi ? 'सप्लायर खरीद चालान व इनवर्ड इतिहास (GRN Records)' : 'Purchase Inward & GRN History'}
+            </h3>
+            <button
+              onClick={() => setIsInwardModalOpen(true)}
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{isHi ? 'नया इनवर्ड दर्ज करें' : 'New Inward'}</span>
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {inwardEntries.map((entry) => (
+              <div
+                key={entry.id}
+                className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md transition-all space-y-3"
+              >
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-black font-mono">
+                        {entry.grnNumber}
+                      </span>
+                      <span className="text-xs text-slate-500 font-bold font-mono">
+                        {isHi ? 'चालान:' : 'Inv:'} #{entry.invoiceNumber}
+                      </span>
+                      <span className="text-slate-300">&bull;</span>
+                      <span className="text-xs text-slate-500 font-medium">
+                        {entry.receivedDate} {entry.receivedTime}
+                      </span>
+                    </div>
+                    <h4 className="text-base font-black text-slate-900 mt-1 font-display">
+                      {entry.supplierName}
+                    </h4>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-base sm:text-lg font-black text-slate-900 font-mono">
+                      ₹{entry.totalAmount.toLocaleString('en-IN')}
+                    </div>
+                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      entry.pendingAmount === 0
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-amber-50 text-amber-800 border border-amber-200'
+                    }`}>
+                      {entry.pendingAmount === 0 
+                        ? (isHi ? 'पूर्ण भुगतान' : 'Fully Paid')
+                        : (isHi ? `बकाया: ₹${entry.pendingAmount}` : `Due: ₹${entry.pendingAmount}`)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Items preview */}
+                <div className="p-3 rounded-2xl bg-slate-50/80 border border-slate-200/60 flex flex-wrap gap-3 text-xs">
+                  {entry.items.map((it, i) => (
+                    <div key={i} className="flex items-center gap-1.5 font-medium text-slate-700">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      <span className="font-bold">{it.nameHindi || it.name}</span>
+                      <span className="text-slate-500 font-mono">({it.qtyReceived} {it.unit} @ ₹{it.costPrice})</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Supplier Inward Modal */}
+      <SupplierInwardModal
+        isOpen={isInwardModalOpen}
+        onClose={() => setIsInwardModalOpen(false)}
+        lang={lang}
+        suppliers={suppliers}
+      />
 
       {/* PO Order Modal */}
       {selectedSupplierForPO && (
