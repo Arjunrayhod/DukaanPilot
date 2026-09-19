@@ -496,7 +496,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
           <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-900">
-                {lang === 'hi' ? 'हालिया लेन-देन' : 'Recent Ledger History'}
+                {lang === 'hi' ? 'हालिया लेन-देन व उधारी' : 'Recent Ledger & Khata History'}
               </h3>
               <button
                 onClick={() => setActiveTab('bills')}
@@ -508,28 +508,61 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
             </div>
 
             <div className="divide-y divide-slate-100">
-              {bills.map((b) => (
-                <div key={b.id} className="py-3 flex items-center justify-between gap-2 text-xs">
-                  <div>
-                    <div className="font-bold text-slate-900">{b.id}</div>
-                    <div className="text-slate-500 text-[11px] truncate max-w-[200px] sm:max-w-md">{b.items}</div>
-                    <div className="text-slate-400 text-[10px]">{b.date}</div>
-                  </div>
+              {matchedKhataCust && matchedKhataCust.transactions && matchedKhataCust.transactions.length > 0 ? (
+                matchedKhataCust.transactions.slice(0, 4).map((tx) => (
+                  <div key={tx.id} className="py-3 flex items-center justify-between gap-2 text-xs">
+                    <div>
+                      <div className="font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
+                        <span>{tx.notes}</span>
+                        {tx.billNo && (
+                          <span className="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.2 rounded font-mono">
+                            {tx.billNo}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-slate-400 text-[10px] mt-0.5">{tx.date} at {tx.time}</div>
+                    </div>
 
-                  <div className="text-right shrink-0">
-                    <div className="font-mono font-bold text-slate-900 text-sm">₹{b.total}</div>
-                    <span
-                      className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        b.status === 'paid'
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : 'bg-rose-50 text-rose-700 border border-rose-200'
-                      }`}
-                    >
-                      {b.status === 'paid' ? t.paidStatus : t.dueStatus}
-                    </span>
+                    <div className="text-right shrink-0">
+                      <div className={`font-mono font-bold text-sm ${tx.type === 'DEBIT' ? 'text-rose-600' : 'text-emerald-600'}`}>
+                        {tx.type === 'DEBIT' ? `+ ₹${tx.amount}` : `- ₹${tx.amount}`}
+                      </div>
+                      <span
+                        className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          tx.type === 'CREDIT'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-rose-50 text-rose-700 border border-rose-200'
+                        }`}
+                      >
+                        {tx.type === 'CREDIT' ? (isHi ? 'जमा भुगतान' : 'Paid') : (isHi ? 'उधार बकाया' : 'Due')}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                bills.map((b) => (
+                  <div key={b.id} className="py-3 flex items-center justify-between gap-2 text-xs">
+                    <div>
+                      <div className="font-bold text-slate-900">{b.id}</div>
+                      <div className="text-slate-500 text-[11px] truncate max-w-[200px] sm:max-w-md">{b.items}</div>
+                      <div className="text-slate-400 text-[10px]">{b.date}</div>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <div className="font-mono font-bold text-slate-900 text-sm">₹{b.total}</div>
+                      <span
+                        className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          b.status === 'paid'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-rose-50 text-rose-700 border border-rose-200'
+                        }`}
+                      >
+                        {b.status === 'paid' ? t.paidStatus : t.dueStatus}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -1010,47 +1043,84 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
         </div>
       )}
 
-      {/* 6. TAB 4: My Bills */}
+      {/* 6. TAB 4: My Bills & Khata History */}
       {activeTab === 'bills' && (
         <div className="space-y-3">
           <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
             <div>
-              <h3 className="text-base font-bold text-slate-900">{t.myBillsTitle}</h3>
-              <p className="text-xs text-slate-500">{t.myBillsSub}</p>
+              <h3 className="text-base font-bold text-slate-900">
+                {isHi ? 'मेरे बिल व खाता लेन-देन इतिहास' : t.myBillsTitle}
+              </h3>
+              <p className="text-xs text-slate-500">
+                {isHi ? 'दुकान से की गई खरीदारी और खाता बही का पूरा विवरण' : t.myBillsSub}
+              </p>
             </div>
 
             <div className="space-y-3">
-              {bills.map((b) => (
-                <div key={b.id} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-2 text-xs">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="font-black text-slate-900">{b.id}</span>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          b.status === 'paid'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-rose-100 text-rose-800'
-                        }`}
-                      >
-                        {b.status === 'paid' ? t.paidStatus : t.dueStatus}
+              {matchedKhataCust && matchedKhataCust.transactions && matchedKhataCust.transactions.length > 0 ? (
+                matchedKhataCust.transactions.map((tx) => (
+                  <div key={tx.id} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-black text-slate-900">{tx.billNo || tx.id}</span>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            tx.type === 'CREDIT'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-rose-100 text-rose-800'
+                          }`}
+                        >
+                          {tx.type === 'CREDIT' ? (isHi ? '✓ जमा भुगतान' : 'Credit / Paid') : (isHi ? '📖 उधार खरीद' : 'Debit / Due')}
+                        </span>
+                      </div>
+                      <span className={`font-mono font-black text-base ${tx.type === 'DEBIT' ? 'text-rose-600' : 'text-emerald-600'}`}>
+                        {tx.type === 'DEBIT' ? `+ ₹${tx.amount}` : `- ₹${tx.amount}`}
                       </span>
                     </div>
-                    <span className="font-mono font-black text-base text-slate-900">₹{b.total}</span>
-                  </div>
 
-                  <div className="text-slate-600 text-xs">{b.items}</div>
+                    <div className="text-slate-700 text-xs font-medium">{tx.notes}</div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-[11px] text-slate-400">
-                    <span>{b.date} &bull; Mode: {b.mode}</span>
-                    <button
-                      onClick={() => alert(`Receipt for ${b.id}\nTotal: ₹${b.total}\nItems: ${b.items}`)}
-                      className="text-blue-700 font-bold hover:underline cursor-pointer"
-                    >
-                      {t.billReceipt}
-                    </button>
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-[11px] text-slate-500 font-mono">
+                      <span>{tx.date} at {tx.time}</span>
+                      <span className="font-bold text-slate-800">
+                        {isHi ? `बैलेंस: ₹${tx.balanceAfter}` : `Balance: ₹${tx.balanceAfter}`}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                bills.map((b) => (
+                  <div key={b.id} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-slate-900">{b.id}</span>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            b.status === 'paid'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-rose-100 text-rose-800'
+                          }`}
+                        >
+                          {b.status === 'paid' ? t.paidStatus : t.dueStatus}
+                        </span>
+                      </div>
+                      <span className="font-mono font-black text-base text-slate-900">₹{b.total}</span>
+                    </div>
+
+                    <div className="text-slate-600 text-xs">{b.items}</div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-[11px] text-slate-400">
+                      <span>{b.date} &bull; Mode: {b.mode}</span>
+                      <button
+                        onClick={() => alert(`Receipt for ${b.id}\nTotal: ₹${b.total}\nItems: ${b.items}`)}
+                        className="text-blue-700 font-bold hover:underline cursor-pointer"
+                      >
+                        {t.billReceipt}
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

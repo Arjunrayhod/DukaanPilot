@@ -184,20 +184,115 @@ export const INITIAL_KHATA_CUSTOMERS: KhataCustomer[] = [
 const STORAGE_KEY = 'dukaanpilot_khata_customers';
 let inMemoryCustomers: KhataCustomer[] | null = null;
 
+export function syncPendingKhataOrders(customers: KhataCustomer[]): { synced: boolean; customers: KhataCustomer[] } {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return { synced: false, customers };
+    }
+    const ordersRaw = localStorage.getItem('dukaanpilot_online_orders');
+    if (!ordersRaw) return { synced: false, customers };
+    const orders: any[] = JSON.parse(ordersRaw);
+    let modified = false;
+    const workingList = [...customers];
+
+    for (const ord of orders) {
+      if (ord.paymentStatus === 'KHATA_PENDING' && ord.status !== 'REJECTED') {
+        const orderNum = ord.orderNumber || '';
+        const billTag = `#${orderNum}`;
+        const cleanPhone = (ord.customerPhone || '').replace(/[^\d]/g, '');
+        const searchName = (ord.customerName || '').toLowerCase().trim();
+
+        let custIndex = workingList.findIndex((c) => {
+          const cPhone = c.phone.replace(/[^\d]/g, '');
+          if (cleanPhone && cPhone && (cPhone.includes(cleanPhone) || cleanPhone.includes(cPhone))) return true;
+          const cName = c.name.toLowerCase();
+          return cName.includes(searchName) || searchName.includes(cName.replace(/\(.*?\)/g, '').trim());
+        });
+
+        const itemsSummary = (ord.items || []).map((i: any) => `${i.qty}x ${i.hindiName || i.name}`).join(', ');
+        const notesText = `ऑनलाइन ऑर्डर #${orderNum}${itemsSummary ? ` (${itemsSummary})` : ''}`;
+        const dateStr = ord.createdAt?.includes('आज') ? new Date().toLocaleDateString('en-IN') : (ord.date || new Date().toLocaleDateString('en-IN'));
+        const timeStr = new Date(ord.timestamp || Date.now()).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+        if (custIndex >= 0) {
+          const cust = workingList[custIndex];
+          const hasTx = cust.transactions.some(
+            (t) => (t.billNo && (t.billNo === billTag || t.billNo.includes(orderNum))) || (t.notes && t.notes.includes(orderNum))
+          );
+          if (!hasTx) {
+            const newBal = cust.currentDue + ord.totalAmount;
+            const newTx: KhataTransaction = {
+              id: `tx_ord_${orderNum}_${Date.now()}`,
+              date: dateStr,
+              time: timeStr,
+              type: 'DEBIT',
+              amount: ord.totalAmount,
+              balanceAfter: newBal,
+              notes: notesText,
+              billNo: billTag
+            };
+            workingList[custIndex] = {
+              ...cust,
+              currentDue: newBal,
+              lastDebitDate: dateStr,
+              transactions: [newTx, ...cust.transactions]
+            };
+            modified = true;
+          }
+        } else {
+          const newTx: KhataTransaction = {
+            id: `tx_ord_${orderNum}_${Date.now()}`,
+            date: dateStr,
+            time: timeStr,
+            type: 'DEBIT',
+            amount: ord.totalAmount,
+            balanceAfter: ord.totalAmount,
+            notes: notesText,
+            billNo: billTag
+          };
+          const newCust: KhataCustomer = {
+            id: `khata_cust_${Date.now()}`,
+            name: ord.customerName || 'ग्राहक',
+            phone: ord.customerPhone || '9999999999',
+            currentDue: ord.totalAmount,
+            creditLimit: 5000,
+            lastDebitDate: dateStr,
+            overdueDays: 0,
+            transactions: [newTx]
+          };
+          workingList.push(newCust);
+          modified = true;
+        }
+      }
+    }
+
+    return { synced: modified, customers: workingList };
+  } catch (e) {
+    console.error('Error in syncPendingKhataOrders:', e);
+    return { synced: false, customers };
+  }
+}
+
 export function getKhataCustomers(): KhataCustomer[] {
+  let loaded = INITIAL_KHATA_CUSTOMERS;
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
       const data = localStorage.getItem(STORAGE_KEY);
       if (data) {
-        return JSON.parse(data);
+        loaded = JSON.parse(data);
       }
     } else if (inMemoryCustomers !== null) {
-      return inMemoryCustomers;
+      loaded = inMemoryCustomers;
     }
   } catch (e) {
     console.error('Failed to load khata customers:', e);
   }
-  return INITIAL_KHATA_CUSTOMERS;
+
+  const { synced, customers } = syncPendingKhataOrders(loaded);
+  if (synced && typeof window !== 'undefined' && window.localStorage) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
+  }
+  return customers;
 }
 
 export function saveKhataCustomers(customers: KhataCustomer[]): KhataCustomer[] {

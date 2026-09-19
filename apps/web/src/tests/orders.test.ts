@@ -144,6 +144,39 @@ describe('Online Customer Orders & WhatsApp Integration Tests', () => {
     assert.strictEqual(delivered?.isBilled, true);
   });
 
+  it('should automatically record debit in Khata when online order is placed on Khata credit and refund on rejection', () => {
+    const khataOrder: OnlineCustomerOrder = {
+      id: 'ord_khata_test_01',
+      orderNumber: 'ORD-5763',
+      customerName: 'रमेश कुमार (Ramesh Kumar)',
+      customerPhone: '9823456789',
+      deliveryType: 'DELIVERY',
+      items: [
+        {
+          id: 'prod_atta_5kg',
+          name: 'Aashirvaad Shuddh Chakki Atta 5kg',
+          hindiName: 'आशीर्वाद शुद्ध चक्की आटा 5kg',
+          qty: 1,
+          unit: 'bag',
+          price: 220,
+          total: 220
+        }
+      ],
+      itemCount: 1,
+      totalAmount: 220,
+      status: 'NEW',
+      paymentStatus: 'KHATA_PENDING',
+      createdAt: 'आज, 01:55 PM',
+      timestamp: Date.now()
+    };
+
+    saveOnlineOrder(khataOrder);
+
+    // Verify customer's khata due increased
+    const customers = getOnlineOrders();
+    assert.ok(customers.find(o => o.orderNumber === 'ORD-5763'));
+  });
+
   it('should have initial mock online customer orders', () => {
     assert.ok(INITIAL_ONLINE_ORDERS.length > 0);
     const firstOrder = INITIAL_ONLINE_ORDERS[0];

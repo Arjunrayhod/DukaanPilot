@@ -6,7 +6,7 @@ import {
   getStockLogs, 
   saveStockLogs 
 } from './inventoryService.ts';
-import { recordKhataDebit } from './khataService.ts';
+import { recordKhataDebit, recordKhataCredit } from './khataService.ts';
 
 export interface OrderItem {
   id: string;
@@ -98,10 +98,25 @@ export function getOnlineOrders(): OnlineCustomerOrder[] {
 export function saveOnlineOrder(order: OnlineCustomerOrder): OnlineCustomerOrder[] {
   try {
     const existing = getOnlineOrders();
+    const isNew = !existing.some((o) => o.id === order.id);
     const updated = [order, ...existing.filter((o) => o.id !== order.id)];
+
+    // If order was newly placed on Khata credit, record debit in Khata ledger immediately
+    if (isNew && order.paymentStatus === 'KHATA_PENDING') {
+      const itemsSummary = order.items.map((i) => `${i.qty}x ${i.hindiName || i.name}`).join(', ');
+      recordKhataDebit({
+        customerName: order.customerName,
+        customerPhone: order.customerPhone,
+        amount: order.totalAmount,
+        notes: `ऑनलाइन ऑर्डर #${order.orderNumber}${itemsSummary ? ` (${itemsSummary})` : ''}`,
+        billNo: `#${order.orderNumber}`
+      });
+    }
+
     if (typeof window !== 'undefined' && window.localStorage) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       window.dispatchEvent(new CustomEvent('dukaanpilot_new_order', { detail: order }));
+      window.dispatchEvent(new CustomEvent('dukaanpilot_orders_updated', { detail: updated }));
     } else {
       inMemoryOrders = updated;
     }
@@ -149,17 +164,6 @@ export function updateOrderStatus(orderId: string, status: OnlineCustomerOrder['
         });
         generatedBillId = bill.id;
 
-        // If order was on Khata credit, record debit in Khata Ledger
-        if (target.paymentStatus === 'KHATA_PENDING') {
-          recordKhataDebit({
-            customerName: target.customerName,
-            customerPhone: target.customerPhone,
-            amount: target.totalAmount,
-            notes: `ऑनलाइन ऑर्डर #${target.orderNumber}`,
-            billNo: `#${target.orderNumber}`
-          });
-        }
-
         // Decrement stock in inventory
         const { updatedInventory, logs } = decrementStockOnSale(
           inventory,
@@ -172,6 +176,17 @@ export function updateOrderStatus(orderId: string, status: OnlineCustomerOrder['
         saveInventoryItems(updatedInventory);
         const existingLogs = getStockLogs();
         saveStockLogs([...logs, ...existingLogs]);
+      }
+    } else if (status === 'REJECTED') {
+      const target = existing.find((o) => o.id === orderId);
+      if (target && target.paymentStatus === 'KHATA_PENDING') {
+        recordKhataCredit({
+          customerName: target.customerName,
+          customerPhone: target.customerPhone,
+          amount: target.totalAmount,
+          notes: `रद्द ऑनलाइन ऑर्डर रिफंड #${target.orderNumber}`,
+          paymentMode: 'other'
+        });
       }
     }
 
