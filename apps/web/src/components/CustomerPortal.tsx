@@ -41,6 +41,7 @@ import {
   OnlineCustomerOrder,
   OrderItem
 } from '../utils/orderService';
+import { getKhataCustomers, KhataCustomer } from '../utils/khataService';
 import { speakHindi } from '../utils/voiceFeedback';
 
 interface CustomerPortalProps {
@@ -75,6 +76,29 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   const [hasPaidOnline, setHasPaidOnline] = useState(false);
   const [orderNotes, setOrderNotes] = useState('');
   const [customerOrders, setCustomerOrders] = useState<OnlineCustomerOrder[]>(() => getOnlineOrders());
+  const [khataCustomers, setKhataCustomers] = useState<KhataCustomer[]>(() => getKhataCustomers());
+
+  useEffect(() => {
+    const handleKhataUpdate = () => {
+      setKhataCustomers(getKhataCustomers());
+    };
+    window.addEventListener('dukaanpilot_khata_updated', handleKhataUpdate);
+    return () => {
+      window.removeEventListener('dukaanpilot_khata_updated', handleKhataUpdate);
+    };
+  }, []);
+
+  const cleanCustomerPhone = (customer.phone || '').replace(/[^\d]/g, '');
+  const matchedKhataCust = khataCustomers.find((c) => {
+    const cPhone = c.phone.replace(/[^\d]/g, '');
+    if (cleanCustomerPhone && cPhone && (cPhone.includes(cleanCustomerPhone) || cleanCustomerPhone.includes(cPhone))) {
+      return true;
+    }
+    const cName = c.name.toLowerCase();
+    const custName = (customer.name || '').toLowerCase();
+    return cName.includes(custName) || custName.includes(cName.replace(/\(.*?\)/g, '').trim());
+  });
+  const liveKhataDue = matchedKhataCust ? matchedKhataCust.currentDue : (customer.khataDue || 0);
 
   useEffect(() => {
     const handleOrdersUpdate = () => {
@@ -433,7 +457,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 </span>
                 <div className="flex items-baseline gap-2 mt-1">
                   <span className="text-3xl font-black font-display text-rose-600">
-                    ₹{customer.khataDue.toLocaleString('en-IN')}
+                    ₹{liveKhataDue.toLocaleString('en-IN')}
                   </span>
                   <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                     {lang === 'hi' ? 'देय बकाया' : 'Outstanding Due'}
@@ -1277,7 +1301,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                         {lang === 'hi' ? 'खाता लेजर (उधार / बाद में दें)' : 'Khata Credit (Pay Later)'}
                       </div>
                       <div className="text-[11px] text-slate-500">
-                        {lang === 'hi' ? `मौजूदा खाता बकाया: ₹${customer.khataDue || 0} • बिल खाते में जुड़ेगा` : `Current due: ₹${customer.khataDue || 0} • Add to khata`}
+                        {lang === 'hi' ? `मौजूदा खाता बकाया: ₹${liveKhataDue.toLocaleString('en-IN')} • बिल खाते में जुड़ेगा` : `Current due: ₹${liveKhataDue.toLocaleString('en-IN')} • Add to khata`}
                       </div>
                     </div>
                   </div>

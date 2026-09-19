@@ -4,7 +4,10 @@ import {
   formatKhataReminderMessage,
   generateKhataWhatsAppUrl,
   INITIAL_KHATA_CUSTOMERS,
-  parseVoiceKhataCommand
+  parseVoiceKhataCommand,
+  recordKhataDebit,
+  recordKhataCredit,
+  getKhataCustomers
 } from '../utils/khataService.ts';
 import type { KhataCustomer } from '../utils/khataService.ts';
 
@@ -140,5 +143,38 @@ describe('Khata Ledger & WhatsApp Reminder Tests', () => {
     const res8 = parseVoiceKhataCommand('सुनील बंसल दो हजार जमा', INITIAL_KHATA_CUSTOMERS);
     assert.strictEqual(res8.amount, 2000);
     assert.strictEqual(res8.type, 'CREDIT');
+  });
+
+  it('should automatically record debit transaction and increase customer due balance', () => {
+    const initialDue = getKhataCustomers().find((c: any) => c.phone.includes('9823456789'))?.currentDue || 0;
+    
+    const { customer } = recordKhataDebit({
+      customerName: 'रमेश कुमार',
+      customerPhone: '9823456789',
+      amount: 350,
+      notes: 'POS बिल #4050',
+      billNo: '#4050'
+    });
+
+    assert.strictEqual(customer.currentDue, initialDue + 350);
+    assert.strictEqual(customer.transactions[0].type, 'DEBIT');
+    assert.strictEqual(customer.transactions[0].amount, 350);
+  });
+
+  it('should automatically record credit transaction and decrease customer due balance', () => {
+    const custBefore = getKhataCustomers().find((c: any) => c.phone.includes('9823456789'));
+    const dueBefore = custBefore?.currentDue || 1000;
+
+    const { customer } = recordKhataCredit({
+      customerName: 'रमेश कुमार',
+      customerPhone: '9823456789',
+      amount: 200,
+      notes: 'UPI से भुगतान',
+      paymentMode: 'upi'
+    });
+
+    assert.strictEqual(customer.currentDue, Math.max(0, dueBefore - 200));
+    assert.strictEqual(customer.transactions[0].type, 'CREDIT');
+    assert.strictEqual(customer.transactions[0].amount, 200);
   });
 });

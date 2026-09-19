@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   BookOpen,
   Search,
@@ -31,6 +31,8 @@ import {
   KhataCustomer,
   KhataTransaction,
   INITIAL_KHATA_CUSTOMERS,
+  getKhataCustomers,
+  saveKhataCustomers,
   generateKhataWhatsAppUrl,
   formatKhataReminderMessage,
   parseVoiceKhataCommand
@@ -47,10 +49,24 @@ export function KhataView({ lang }: KhataViewProps) {
   const t = translations[lang];
   const isHi = lang === 'hi';
 
-  const [customers, setCustomers] = useState<KhataCustomer[]>(INITIAL_KHATA_CUSTOMERS);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string>(INITIAL_KHATA_CUSTOMERS[0].id);
+  const [customers, setCustomers] = useState<KhataCustomer[]>(() => getKhataCustomers());
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>(() => {
+    const list = getKhataCustomers();
+    return list.length > 0 ? list[0].id : 'khata_cust_00';
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'overdue' | 'high' | 'settled'>('all');
+
+  useEffect(() => {
+    const handleKhataUpdate = () => {
+      const updated = getKhataCustomers();
+      setCustomers(updated);
+    };
+    window.addEventListener('dukaanpilot_khata_updated', handleKhataUpdate);
+    return () => {
+      window.removeEventListener('dukaanpilot_khata_updated', handleKhataUpdate);
+    };
+  }, []);
 
   const customersRef = useRef(customers);
   customersRef.current = customers;
@@ -104,6 +120,7 @@ export function KhataView({ lang }: KhataViewProps) {
     if (window.confirm(isHi ? `क्या आप सचमुच "${cust.name}" का खाता हटाना चाहते हैं?` : `Are you sure you want to delete khata for "${cust.name}"?`)) {
       const remaining = customers.filter(c => c.id !== customerId);
       setCustomers(remaining);
+      saveKhataCustomers(remaining);
       if (remaining.length > 0) {
         setSelectedCustomerId(remaining[0].id);
       }
@@ -158,7 +175,9 @@ export function KhataView({ lang }: KhataViewProps) {
         };
         newCust.transactions = [newTx];
 
-        setCustomers(prev => [newCust, ...prev]);
+        const updatedList = [newCust, ...currentCustomerList];
+        setCustomers(updatedList);
+        saveKhataCustomers(updatedList);
         setSelectedCustomerId(newCust.id);
 
         const speech = isHi 
@@ -180,42 +199,43 @@ export function KhataView({ lang }: KhataViewProps) {
     let finalCalculatedDue = 0;
     let targetCustName = targetCustomer.name;
 
-    setCustomers(prev =>
-      prev.map(c => {
-        if (c.id === targetId) {
-          targetCustName = c.name;
-          let newDue = c.currentDue;
-          if (parsed.type === 'DEBIT') {
-            newDue += parsed.amount;
-          } else {
-            newDue = Math.max(0, newDue - parsed.amount);
-          }
-          finalCalculatedDue = newDue;
-
-          const newTx: KhataTransaction = {
-            id: `tx_${Date.now()}`,
-            date: dateStr,
-            time: timeStr,
-            type: parsed.type,
-            amount: parsed.amount,
-            balanceAfter: newDue,
-            notes: parsed.notes,
-            paymentMode: parsed.type === 'CREDIT' ? 'cash' : undefined,
-            billNo: parsed.type === 'DEBIT' ? `Bill #${Math.floor(2000 + Math.random() * 900)}` : undefined
-          };
-
-          return {
-            ...c,
-            currentDue: newDue,
-            overdueDays: parsed.type === 'DEBIT' ? (c.overdueDays || 1) : (newDue === 0 ? 0 : c.overdueDays),
-            lastDebitDate: parsed.type === 'DEBIT' ? dateStr : c.lastDebitDate,
-            lastPaymentDate: parsed.type === 'CREDIT' ? dateStr : c.lastPaymentDate,
-            transactions: [newTx, ...c.transactions]
-          };
+    const updatedList = currentCustomerList.map(c => {
+      if (c.id === targetId) {
+        targetCustName = c.name;
+        let newDue = c.currentDue;
+        if (parsed.type === 'DEBIT') {
+          newDue += parsed.amount;
+        } else {
+          newDue = Math.max(0, newDue - parsed.amount);
         }
-        return c;
-      })
-    );
+        finalCalculatedDue = newDue;
+
+        const newTx: KhataTransaction = {
+          id: `tx_${Date.now()}`,
+          date: dateStr,
+          time: timeStr,
+          type: parsed.type,
+          amount: parsed.amount,
+          balanceAfter: newDue,
+          notes: parsed.notes,
+          paymentMode: parsed.type === 'CREDIT' ? 'cash' : undefined,
+          billNo: parsed.type === 'DEBIT' ? `Bill #${Math.floor(2000 + Math.random() * 900)}` : undefined
+        };
+
+        return {
+          ...c,
+          currentDue: newDue,
+          overdueDays: parsed.type === 'DEBIT' ? (c.overdueDays || 1) : (newDue === 0 ? 0 : c.overdueDays),
+          lastDebitDate: parsed.type === 'DEBIT' ? dateStr : c.lastDebitDate,
+          lastPaymentDate: parsed.type === 'CREDIT' ? dateStr : c.lastPaymentDate,
+          transactions: [newTx, ...c.transactions]
+        };
+      }
+      return c;
+    });
+
+    setCustomers(updatedList);
+    saveKhataCustomers(updatedList);
 
     const calculatedSpeechDue = parsed.type === 'DEBIT'
       ? targetCustomer.currentDue + parsed.amount
@@ -261,41 +281,42 @@ export function KhataView({ lang }: KhataViewProps) {
 
     let finalDue = 0;
 
-    setCustomers((prev) =>
-      prev.map((c) => {
-        if (c.id === targetId) {
-          let newDue = c.currentDue;
-          if (txType === 'DEBIT') {
-            newDue += amountNum;
-          } else {
-            newDue = Math.max(0, newDue - amountNum);
-          }
-          finalDue = newDue;
-
-          const newTx: KhataTransaction = {
-            id: newTxId,
-            date: dateStr,
-            time: timeStr,
-            type: txType,
-            amount: amountNum,
-            balanceAfter: newDue,
-            notes: txNotes || (txType === 'DEBIT' ? 'सामान उधारी' : 'भुगतान प्राप्ति'),
-            paymentMode: txType === 'CREDIT' ? txPaymentMode : undefined,
-            billNo: txType === 'DEBIT' ? `Bill #${Math.floor(2000 + Math.random() * 900)}` : undefined
-          };
-
-          return {
-            ...c,
-            currentDue: newDue,
-            overdueDays: txType === 'DEBIT' ? c.overdueDays : (newDue === 0 ? 0 : c.overdueDays),
-            lastDebitDate: txType === 'DEBIT' ? dateStr : c.lastDebitDate,
-            lastPaymentDate: txType === 'CREDIT' ? dateStr : c.lastPaymentDate,
-            transactions: [newTx, ...c.transactions]
-          };
+    const updated = customers.map((c) => {
+      if (c.id === targetId) {
+        let newDue = c.currentDue;
+        if (txType === 'DEBIT') {
+          newDue += amountNum;
+        } else {
+          newDue = Math.max(0, newDue - amountNum);
         }
-        return c;
-      })
-    );
+        finalDue = newDue;
+
+        const newTx: KhataTransaction = {
+          id: newTxId,
+          date: dateStr,
+          time: timeStr,
+          type: txType,
+          amount: amountNum,
+          balanceAfter: newDue,
+          notes: txNotes || (txType === 'DEBIT' ? 'सामान उधारी' : 'भुगतान प्राप्ति'),
+          paymentMode: txType === 'CREDIT' ? txPaymentMode : undefined,
+          billNo: txType === 'DEBIT' ? `Bill #${Math.floor(2000 + Math.random() * 900)}` : undefined
+        };
+
+        return {
+          ...c,
+          currentDue: newDue,
+          overdueDays: txType === 'DEBIT' ? c.overdueDays : (newDue === 0 ? 0 : c.overdueDays),
+          lastDebitDate: txType === 'DEBIT' ? dateStr : c.lastDebitDate,
+          lastPaymentDate: txType === 'CREDIT' ? dateStr : c.lastPaymentDate,
+          transactions: [newTx, ...c.transactions]
+        };
+      }
+      return c;
+    });
+
+    setCustomers(updated);
+    saveKhataCustomers(updated);
 
     const speechText = txType === 'DEBIT'
       ? `${selectedCustomer.name} का ₹${amountNum} उधार दर्ज हुआ`
@@ -325,7 +346,9 @@ export function KhataView({ lang }: KhataViewProps) {
       transactions: []
     };
 
-    setCustomers((prev) => [newCust, ...prev]);
+    const updated = [newCust, ...customers];
+    setCustomers(updated);
+    saveKhataCustomers(updated);
     setSelectedCustomerId(newCust.id);
     setIsAddCustomerOpen(false);
     setNewCustName('');

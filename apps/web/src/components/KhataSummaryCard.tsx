@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BookOpen, ArrowRight, Check, MessageSquare } from 'lucide-react';
 import { Lang, translations } from '../i18n/translations';
-import { generateKhataWhatsAppUrl } from '../utils/khataService';
+import { generateKhataWhatsAppUrl, getKhataCustomers, KhataCustomer } from '../utils/khataService';
 
 interface KhataSummaryCardProps {
   lang: Lang;
@@ -10,45 +10,27 @@ interface KhataSummaryCardProps {
 
 export function KhataSummaryCard({ lang, onOpenKhata }: KhataSummaryCardProps) {
   const t = translations[lang];
-  const [remindedList, setRemindedList] = useState<number[]>([]);
+  const isHi = lang === 'hi';
+  const [remindedList, setRemindedList] = useState<string[]>([]);
+  const [customers, setCustomers] = useState<KhataCustomer[]>(() => getKhataCustomers());
 
-  const khataRows = [
-    {
-      id: 1,
-      initials: 'RK',
-      colorClass: 'bg-blue-100 text-blue-800',
-      name: lang === 'hi' ? 'रमेश कुमार' : 'Ramesh Kumar',
-      amount: '₹1,450',
-      amountNum: 1450,
-      status: t.daysAgo,
-      statusClass: 'text-slate-500',
-      phone: '9876543210',
-    },
-    {
-      id: 2,
-      initials: 'SV',
-      colorClass: 'bg-emerald-100 text-emerald-800',
-      name: lang === 'hi' ? 'सुनीता वर्मा' : 'Sunita Verma',
-      amount: '₹820',
-      amountNum: 820,
-      status: t.dueToday,
-      statusClass: 'text-amber-700 font-semibold',
-      phone: '9876543211',
-    },
-    {
-      id: 3,
-      initials: 'MK',
-      colorClass: 'bg-indigo-100 text-indigo-800',
-      name: lang === 'hi' ? 'महेंद्र किराना' : 'Mahendra Kirana',
-      amount: '₹3,100',
-      amountNum: 3100,
-      status: t.weekLate,
-      statusClass: 'text-rose-600 font-semibold',
-      phone: '9876543212',
-    },
-  ];
+  useEffect(() => {
+    const handleKhataUpdate = () => {
+      setCustomers(getKhataCustomers());
+    };
+    window.addEventListener('dukaanpilot_khata_updated', handleKhataUpdate);
+    return () => {
+      window.removeEventListener('dukaanpilot_khata_updated', handleKhataUpdate);
+    };
+  }, []);
 
-  const handleSendReminder = (id: number, name: string, phone: string, amountNum: number) => {
+  const pendingCustomers = customers
+    .filter((c) => c.currentDue > 0)
+    .sort((a, b) => b.currentDue - a.currentDue);
+
+  const totalDueAmount = customers.reduce((sum, c) => sum + c.currentDue, 0);
+
+  const handleSendReminder = (id: string, name: string, phone: string, amountNum: number) => {
     setRemindedList((prev) => [...prev, id]);
     const url = generateKhataWhatsAppUrl(
       {
@@ -57,7 +39,7 @@ export function KhataSummaryCard({ lang, onOpenKhata }: KhataSummaryCardProps) {
         currentDue: amountNum,
       },
       {
-        name: lang === 'hi' ? 'श्री गणेश किराना स्टोर' : 'Shree Ganesh Kirana',
+        name: isHi ? 'श्री गणेश किराना स्टोर' : 'Shree Ganesh Kirana',
         phone: '+91 98765 43210',
         upiId: 'shreeganesh@sbi',
       },
@@ -65,6 +47,23 @@ export function KhataSummaryCard({ lang, onOpenKhata }: KhataSummaryCardProps) {
     );
     window.open(url, '_blank');
   };
+
+  const getInitials = (name: string) => {
+    const clean = name.replace(/\(.*?\)/g, '').trim();
+    const parts = clean.split(' ').filter(Boolean);
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return (clean.slice(0, 2) || 'KH').toUpperCase();
+  };
+
+  const colors = [
+    'bg-blue-100 text-blue-800',
+    'bg-emerald-100 text-emerald-800',
+    'bg-indigo-100 text-indigo-800',
+    'bg-amber-100 text-amber-800',
+    'bg-purple-100 text-purple-800'
+  ];
 
   return (
     <section className="rounded-3xl bg-white border border-slate-200/90 p-6 sm:p-7 shadow-sm hover:shadow-md transition-all space-y-5">
@@ -79,59 +78,68 @@ export function KhataSummaryCard({ lang, onOpenKhata }: KhataSummaryCardProps) {
           </div>
         </div>
         <span className="px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-black font-mono">
-          {t.totalDue}
+          {isHi ? `कुल बकाया: ₹${totalDueAmount.toLocaleString('en-IN')}` : `Total Due: ₹${totalDueAmount.toLocaleString('en-IN')}`}
         </span>
       </div>
 
       <div className="space-y-3 pt-1">
-        {khataRows.map((row) => {
-          const isReminded = remindedList.includes(row.id);
-          return (
-            <div
-              key={row.id}
-              className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/70 flex items-center justify-between gap-4 hover:bg-slate-50 transition-all shadow-xs"
-            >
-              <div className="flex items-center gap-3.5 min-w-0">
-                <div
-                  className={`w-11 h-11 rounded-2xl flex items-center justify-center text-sm font-black shrink-0 ${row.colorClass}`}
-                >
-                  {row.initials}
-                </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-bold text-slate-900 truncate font-display">{row.name}</div>
-                  <div className="flex items-center gap-2 text-xs text-slate-500 font-medium mt-0.5">
-                    <span className="text-rose-600 font-black font-mono">{row.amount} {t.due}</span>
-                    <span>&bull;</span>
-                    <span className={row.statusClass}>{row.status}</span>
+        {pendingCustomers.length === 0 ? (
+          <div className="py-6 text-center text-xs text-slate-500 bg-slate-50 rounded-2xl border border-slate-200/60">
+            {isHi ? '✨ कोई बकाया उधारी नहीं है • सभी खाते चुकता हैं' : '✨ No outstanding dues • All accounts settled'}
+          </div>
+        ) : (
+          pendingCustomers.slice(0, 4).map((row, idx) => {
+            const isReminded = remindedList.includes(row.id);
+            const colorClass = colors[idx % colors.length];
+            return (
+              <div
+                key={row.id}
+                className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/70 flex items-center justify-between gap-4 hover:bg-slate-50 transition-all shadow-xs"
+              >
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div
+                    className={`w-11 h-11 rounded-2xl flex items-center justify-center text-sm font-black shrink-0 ${colorClass}`}
+                  >
+                    {getInitials(row.name)}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-slate-900 truncate font-display">{row.name}</div>
+                    <div className="flex items-center gap-2 text-xs text-slate-500 font-medium mt-0.5">
+                      <span className="text-rose-600 font-black font-mono">₹{row.currentDue.toLocaleString('en-IN')} {t.due}</span>
+                      <span>&bull;</span>
+                      <span className={row.overdueDays >= 7 ? 'text-rose-600 font-semibold' : 'text-slate-500'}>
+                        {row.overdueDays > 0 ? `${row.overdueDays} ${isHi ? 'दिन पहले' : 'days ago'}` : (isHi ? 'आज का' : 'Recent')}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <button
-                onClick={() => handleSendReminder(row.id, row.name, row.phone, row.amountNum)}
-                className={`h-9 px-4 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all shrink-0 cursor-pointer ${
-                  isReminded
-                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
-                    : 'bg-slate-900/85 hover:bg-slate-900 text-white backdrop-blur-xl border border-white/15 active:scale-95'
-                }`}
-                type="button"
-              >
-                {isReminded ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>{t.reminded}</span>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
-                    <MessageSquare className="w-3.5 h-3.5 text-emerald-300" />
-                    <span>{t.remindBtn}</span>
-                  </>
-                )}
-              </button>
-            </div>
-          );
-        })}
+                <button
+                  onClick={() => handleSendReminder(row.id, row.name, row.phone, row.currentDue)}
+                  className={`h-9 px-4 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all shrink-0 cursor-pointer ${
+                    isReminded
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
+                      : 'bg-slate-900/85 hover:bg-slate-900 text-white backdrop-blur-xl border border-white/15 active:scale-95'
+                  }`}
+                  type="button"
+                >
+                  {isReminded ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>{t.reminded}</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                      <MessageSquare className="w-3.5 h-3.5 text-emerald-300" />
+                      <span>{t.remindBtn}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            );
+          })
+        )}
       </div>
 
       <button

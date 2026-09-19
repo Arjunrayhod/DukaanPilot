@@ -181,6 +181,196 @@ export const INITIAL_KHATA_CUSTOMERS: KhataCustomer[] = [
   }
 ];
 
+const STORAGE_KEY = 'dukaanpilot_khata_customers';
+let inMemoryCustomers: KhataCustomer[] | null = null;
+
+export function getKhataCustomers(): KhataCustomer[] {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const data = localStorage.getItem(STORAGE_KEY);
+      if (data) {
+        return JSON.parse(data);
+      }
+    } else if (inMemoryCustomers !== null) {
+      return inMemoryCustomers;
+    }
+  } catch (e) {
+    console.error('Failed to load khata customers:', e);
+  }
+  return INITIAL_KHATA_CUSTOMERS;
+}
+
+export function saveKhataCustomers(customers: KhataCustomer[]): KhataCustomer[] {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
+      window.dispatchEvent(new CustomEvent('dukaanpilot_khata_updated', { detail: customers }));
+    } else {
+      inMemoryCustomers = customers;
+    }
+  } catch (e) {
+    console.error('Failed to save khata customers:', e);
+  }
+  return customers;
+}
+
+export function recordKhataDebit(params: {
+  customerId?: string;
+  customerName?: string;
+  customerPhone?: string;
+  amount: number;
+  notes?: string;
+  billNo?: string;
+}): { updatedCustomers: KhataCustomer[]; customer: KhataCustomer } {
+  const customers = getKhataCustomers();
+  const cleanPhone = (params.customerPhone || '').replace(/[^\d]/g, '');
+  
+  let targetIndex = -1;
+  if (params.customerId) {
+    targetIndex = customers.findIndex(c => c.id === params.customerId);
+  }
+  if (targetIndex === -1 && cleanPhone && cleanPhone.length >= 10) {
+    targetIndex = customers.findIndex(c => c.phone.replace(/[^\d]/g, '') === cleanPhone);
+  }
+  if (targetIndex === -1 && params.customerName) {
+    const searchName = params.customerName.toLowerCase().trim();
+    targetIndex = customers.findIndex(c => {
+      const cName = c.name.toLowerCase();
+      return cName.includes(searchName) || searchName.includes(cName.replace(/\(.*?\)/g, '').trim());
+    });
+  }
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-IN');
+  const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+  let targetCustomer: KhataCustomer;
+
+  if (targetIndex >= 0) {
+    targetCustomer = { ...customers[targetIndex] };
+    const newBalance = targetCustomer.currentDue + params.amount;
+    const newTx: KhataTransaction = {
+      id: `tx_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      date: dateStr,
+      time: timeStr,
+      type: 'DEBIT',
+      amount: params.amount,
+      balanceAfter: newBalance,
+      notes: params.notes || 'सामान उधारी (Khata Purchase)',
+      billNo: params.billNo
+    };
+
+    targetCustomer.currentDue = newBalance;
+    targetCustomer.lastDebitDate = dateStr;
+    targetCustomer.transactions = [newTx, ...(targetCustomer.transactions || [])];
+    customers[targetIndex] = targetCustomer;
+  } else {
+    // Create new Khata customer
+    const newBalance = params.amount;
+    const newTx: KhataTransaction = {
+      id: `tx_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      date: dateStr,
+      time: timeStr,
+      type: 'DEBIT',
+      amount: params.amount,
+      balanceAfter: newBalance,
+      notes: params.notes || 'सामान उधारी (Khata Purchase)',
+      billNo: params.billNo
+    };
+
+    targetCustomer = {
+      id: `khata_cust_${Date.now()}`,
+      name: params.customerName || 'ग्राहक',
+      phone: params.customerPhone || '9999999999',
+      currentDue: newBalance,
+      creditLimit: 5000,
+      lastDebitDate: dateStr,
+      overdueDays: 0,
+      transactions: [newTx]
+    };
+    customers.push(targetCustomer);
+  }
+
+  saveKhataCustomers(customers);
+  return { updatedCustomers: customers, customer: targetCustomer };
+}
+
+export function recordKhataCredit(params: {
+  customerId?: string;
+  customerName?: string;
+  customerPhone?: string;
+  amount: number;
+  notes?: string;
+  paymentMode?: 'cash' | 'upi' | 'other';
+}): { updatedCustomers: KhataCustomer[]; customer: KhataCustomer } {
+  const customers = getKhataCustomers();
+  const cleanPhone = (params.customerPhone || '').replace(/[^\d]/g, '');
+  
+  let targetIndex = -1;
+  if (params.customerId) {
+    targetIndex = customers.findIndex(c => c.id === params.customerId);
+  }
+  if (targetIndex === -1 && cleanPhone && cleanPhone.length >= 10) {
+    targetIndex = customers.findIndex(c => c.phone.replace(/[^\d]/g, '') === cleanPhone);
+  }
+  if (targetIndex === -1 && params.customerName) {
+    const searchName = params.customerName.toLowerCase().trim();
+    targetIndex = customers.findIndex(c => c.name.toLowerCase().includes(searchName));
+  }
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-IN');
+  const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+  if (targetIndex >= 0) {
+    const targetCustomer = { ...customers[targetIndex] };
+    const newBalance = Math.max(0, targetCustomer.currentDue - params.amount);
+    const newTx: KhataTransaction = {
+      id: `tx_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      date: dateStr,
+      time: timeStr,
+      type: 'CREDIT',
+      amount: params.amount,
+      balanceAfter: newBalance,
+      notes: params.notes || 'जमा भुगतान (Payment Received)',
+      paymentMode: params.paymentMode || 'cash'
+    };
+
+    targetCustomer.currentDue = newBalance;
+    targetCustomer.lastPaymentDate = dateStr;
+    targetCustomer.overdueDays = newBalance === 0 ? 0 : targetCustomer.overdueDays;
+    targetCustomer.transactions = [newTx, ...(targetCustomer.transactions || [])];
+    customers[targetIndex] = targetCustomer;
+    saveKhataCustomers(customers);
+    return { updatedCustomers: customers, customer: targetCustomer };
+  } else {
+    // If not found, create settled customer
+    const newTx: KhataTransaction = {
+      id: `tx_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      date: dateStr,
+      time: timeStr,
+      type: 'CREDIT',
+      amount: params.amount,
+      balanceAfter: 0,
+      notes: params.notes || 'जमा भुगतान',
+      paymentMode: params.paymentMode || 'cash'
+    };
+    const targetCustomer: KhataCustomer = {
+      id: `khata_cust_${Date.now()}`,
+      name: params.customerName || 'ग्राहक',
+      phone: params.customerPhone || '9999999999',
+      currentDue: 0,
+      creditLimit: 5000,
+      lastPaymentDate: dateStr,
+      overdueDays: 0,
+      transactions: [newTx]
+    };
+    customers.push(targetCustomer);
+    saveKhataCustomers(customers);
+    return { updatedCustomers: customers, customer: targetCustomer };
+  }
+}
+
 /**
  * Formats a polite and effective WhatsApp Payment Reminder Message
  */

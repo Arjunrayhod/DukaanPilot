@@ -44,6 +44,7 @@ import { recordCompletedBill } from '../utils/salesService';
 import { announceSoundboxPayment } from '../utils/soundboxService';
 import { enqueueOfflineAction } from '../utils/offlineSyncService';
 import { updateOrderStatus } from '../utils/orderService';
+import { recordKhataDebit } from '../utils/khataService';
 
 interface CartItem {
   id: string | number;
@@ -455,6 +456,18 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
             }
           : undefined,
     });
+
+    // 3.5 Record Khata Debit if payment mode is Khata or Split with Khata
+    const khataDueAmount = selectedPayment === 'khata' ? grandTotal : selectedPayment === 'split' ? (splitKhata || Math.max(0, grandTotal - (splitCash || 0) - (splitUpi || 0))) : 0;
+    if (khataDueAmount > 0) {
+      recordKhataDebit({
+        customerName: customerName || 'ग्राहक',
+        customerPhone: customerPhone || '9999999999',
+        amount: khataDueAmount,
+        notes: `POS बिल #${receipt.invoiceNo} (${cart.length} सामान)`,
+        billNo: `#${receipt.invoiceNo}`
+      });
+    }
 
     // 4. Clear cart for next sale & mark pending online order delivered if any
     setCart([]);

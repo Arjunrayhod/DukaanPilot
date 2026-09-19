@@ -6,6 +6,7 @@ import {
   getStockLogs, 
   saveStockLogs 
 } from './inventoryService.ts';
+import { recordKhataDebit } from './khataService.ts';
 
 export interface OrderItem {
   id: string;
@@ -147,6 +148,17 @@ export function updateOrderStatus(orderId: string, status: OnlineCustomerOrder['
           paymentMode: target.paymentStatus === 'PAID_UPI' ? 'upi' : target.paymentStatus === 'KHATA_PENDING' ? 'khata' : 'cash'
         });
         generatedBillId = bill.id;
+
+        // If order was on Khata credit, record debit in Khata Ledger
+        if (target.paymentStatus === 'KHATA_PENDING') {
+          recordKhataDebit({
+            customerName: target.customerName,
+            customerPhone: target.customerPhone,
+            amount: target.totalAmount,
+            notes: `ऑनलाइन ऑर्डर #${target.orderNumber}`,
+            billNo: `#${target.orderNumber}`
+          });
+        }
 
         // Decrement stock in inventory
         const { updatedInventory, logs } = decrementStockOnSale(
