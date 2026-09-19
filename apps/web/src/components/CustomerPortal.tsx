@@ -689,9 +689,13 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                   <h3 className="text-base sm:text-lg font-black text-slate-900 font-display">
                     {lang === 'hi' ? 'मेरे ऑनलाइन ऑर्डर्स व लाइव ट्रैकिंग' : 'My Orders & Live Tracking'}
                   </h3>
-                  {activeOrdersCount > 0 && (
-                    <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black uppercase tracking-wider animate-pulse">
-                      {activeOrdersCount} {lang === 'hi' ? 'सक्रिय' : 'Active'}
+                  {activeOrdersCount > 0 ? (
+                    <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-black uppercase tracking-wider animate-pulse">
+                      {activeOrdersCount} {lang === 'hi' ? 'प्रगति पर (In Progress)' : 'In Progress'}
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold">
+                      {customerOrders.length} {lang === 'hi' ? 'कुल ऑर्डर्स' : 'Total Orders'}
                     </span>
                   )}
                 </div>
@@ -702,14 +706,34 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setActiveTab('catalog')}
-                className="px-4 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-black flex items-center gap-1.5 shadow-sm transition-all cursor-pointer self-start sm:self-auto"
-              >
-                <Plus className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{lang === 'hi' ? '+ नया ऑर्डर' : '+ New Order'}</span>
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                {customerOrders.some(o => o.status === 'DELIVERED' || o.status === 'REJECTED') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const activeOnly = customerOrders.filter(o => o.status !== 'DELIVERED' && o.status !== 'REJECTED');
+                      localStorage.setItem('dukaanpilot_online_orders', JSON.stringify(activeOnly));
+                      setCustomerOrders(activeOnly);
+                      window.dispatchEvent(new CustomEvent('dukaanpilot_orders_updated', { detail: activeOnly }));
+                      speakHindi(lang === 'hi' ? 'पुराने पूर्ण ऑर्डर्स साफ कर दिए गए हैं' : 'Completed orders cleared', lang);
+                    }}
+                    className="px-3 py-1.5 rounded-full bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700 text-[11px] font-bold border border-slate-200 flex items-center gap-1 transition-colors cursor-pointer"
+                    title={lang === 'hi' ? 'पूर्ण हो चुके पुराने ऑर्डर्स हटाएं' : 'Clear completed test orders'}
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>{lang === 'hi' ? 'पूर्ण ऑर्डर्स साफ करें' : 'Clear Completed'}</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('catalog')}
+                  className="px-4 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-black flex items-center gap-1.5 shadow-sm transition-all cursor-pointer self-start sm:self-auto"
+                >
+                  <Plus className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>{lang === 'hi' ? '+ नया ऑर्डर' : '+ New Order'}</span>
+                </button>
+              </div>
             </div>
 
             {customerOrders.length === 0 ? (
@@ -747,26 +771,32 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                     <div
                       key={ord.id}
                       className={`p-5 rounded-3xl border transition-all space-y-4 ${
-                        isDelivered
-                          ? 'bg-slate-50/60 border-slate-200'
-                          : 'bg-gradient-to-br from-indigo-50/60 via-blue-50/30 to-white border-indigo-200 shadow-sm ring-1 ring-indigo-400/20'
+                        isNew
+                          ? 'bg-gradient-to-br from-blue-50/70 via-indigo-50/40 to-white border-blue-300 shadow-md ring-2 ring-blue-500/20'
+                          : isAccepted
+                          ? 'bg-gradient-to-br from-amber-50/70 via-yellow-50/30 to-white border-amber-300 shadow-md ring-2 ring-amber-500/20'
+                          : isPacked
+                          ? 'bg-gradient-to-br from-purple-50/70 via-indigo-50/30 to-white border-purple-300 shadow-md ring-2 ring-purple-500/20'
+                          : 'bg-slate-50/60 border-slate-200'
                       }`}
                     >
                       {/* Order Header */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200/70">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-2xl bg-blue-100 text-blue-900 font-black text-xs flex items-center justify-center font-mono shadow-xs">
+                          <div className={`w-10 h-10 rounded-2xl font-black text-xs flex items-center justify-center font-mono shadow-xs ${
+                            isNew ? 'bg-blue-600 text-white animate-pulse' : isAccepted ? 'bg-amber-600 text-white' : isPacked ? 'bg-purple-600 text-white' : 'bg-emerald-100 text-emerald-900'
+                          }`}>
                             #{ord.orderNumber.replace('ORD-', '')}
                           </div>
                           <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-extrabold text-slate-900 text-sm font-display">
                                 #{ord.orderNumber}
                               </span>
                               <span
                                 className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
                                   isNew
-                                    ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                                    ? 'bg-blue-100 text-blue-800 border border-blue-300 animate-pulse'
                                     : isAccepted
                                     ? 'bg-amber-100 text-amber-800 border border-amber-300'
                                     : isPacked
@@ -777,14 +807,14 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                                 }`}
                               >
                                 {isNew
-                                  ? (lang === 'hi' ? '1. नया ऑर्डर दर्ज' : '1. NEW ORDER')
+                                  ? (lang === 'hi' ? '🔵 1. नया ऑर्डर दर्ज (स्वीकृति बाकी)' : '🔵 1. Placed (Pending Acceptance)')
                                   : isAccepted
-                                  ? (lang === 'hi' ? '2. स्वीकृत हुआ' : '2. ACCEPTED')
+                                  ? (lang === 'hi' ? '🟡 2. स्वीकृत (सामान निकाला जा रहा है)' : '🟡 2. Accepted (Preparing)')
                                   : isPacked
-                                  ? (lang === 'hi' ? '3. पैक हो गया' : '3. PACKED & READY')
+                                  ? (lang === 'hi' ? '🟣 3. पैक व तैयार (डिलीवरी/पिकअप)' : '🟣 3. Packed & Ready')
                                   : isDelivered
-                                  ? (lang === 'hi' ? '✓ डिलीवर पूरा' : '✓ DELIVERED')
-                                  : (lang === 'hi' ? 'रद्द' : 'CANCELLED')}
+                                  ? (lang === 'hi' ? '🟢 ✓ डिलीवर पूरा (Completed)' : '🟢 ✓ Delivered')
+                                  : (lang === 'hi' ? 'रद्द' : 'Cancelled')}
                               </span>
                             </div>
                             <div className="text-xs text-slate-500 font-mono flex items-center gap-2 mt-0.5">
@@ -812,8 +842,8 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                       {/* 4-Step Visual Progress Stepper */}
                       {!isRejected && (
                         <div className="p-3.5 bg-white rounded-2xl border border-slate-200/80">
-                          <div className="grid grid-cols-4 gap-2 text-center text-[11px] font-bold">
-                            {/* Step 1 */}
+                          <div className="grid grid-cols-4 gap-2 text-center text-[10px] sm:text-[11px] font-bold">
+                            {/* Step 1: Placed */}
                             <div className="space-y-1">
                               <div className={`w-7 h-7 rounded-full mx-auto flex items-center justify-center font-mono text-xs font-black ${
                                 currentStep >= 1 ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 text-slate-400'
@@ -821,43 +851,43 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                                 {currentStep > 1 ? '✓' : '1'}
                               </div>
                               <span className={currentStep >= 1 ? 'text-blue-950 font-black' : 'text-slate-400'}>
-                                {lang === 'hi' ? 'ऑर्डर दर्ज' : 'Placed'}
+                                {lang === 'hi' ? '1. ऑर्डर दर्ज' : 'Placed'}
                               </span>
                             </div>
 
-                            {/* Step 2 */}
+                            {/* Step 2: Accepted */}
                             <div className="space-y-1">
                               <div className={`w-7 h-7 rounded-full mx-auto flex items-center justify-center font-mono text-xs font-black ${
                                 currentStep >= 2 ? 'bg-amber-600 text-white shadow-xs' : 'bg-slate-100 text-slate-400'
                               }`}>
-                                {currentStep > 2 ? '✓' : '2'}
+                                {currentStep > 2 ? '✓' : currentStep === 2 ? '2' : '⏳'}
                               </div>
                               <span className={currentStep >= 2 ? 'text-amber-950 font-black' : 'text-slate-400'}>
-                                {lang === 'hi' ? 'स्वीकार' : 'Accepted'}
+                                {lang === 'hi' ? (currentStep >= 2 ? '2. स्वीकृत' : 'स्वीकृति') : 'Accepted'}
                               </span>
                             </div>
 
-                            {/* Step 3 */}
+                            {/* Step 3: Packed */}
                             <div className="space-y-1">
                               <div className={`w-7 h-7 rounded-full mx-auto flex items-center justify-center font-mono text-xs font-black ${
                                 currentStep >= 3 ? 'bg-purple-600 text-white shadow-xs' : 'bg-slate-100 text-slate-400'
                               }`}>
-                                {currentStep > 3 ? '✓' : '3'}
+                                {currentStep > 3 ? '✓' : currentStep === 3 ? '3' : '⏳'}
                               </div>
                               <span className={currentStep >= 3 ? 'text-purple-950 font-black' : 'text-slate-400'}>
-                                {lang === 'hi' ? 'पैक व तैयार' : 'Packed'}
+                                {lang === 'hi' ? (currentStep >= 3 ? '3. पैक तैयार' : 'पैकिंग') : 'Packed'}
                               </span>
                             </div>
 
-                            {/* Step 4 */}
+                            {/* Step 4: Delivered */}
                             <div className="space-y-1">
                               <div className={`w-7 h-7 rounded-full mx-auto flex items-center justify-center font-mono text-xs font-black ${
                                 currentStep >= 4 ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-400'
                               }`}>
-                                {currentStep >= 4 ? '✓' : '4'}
+                                {currentStep >= 4 ? '✓' : '⏳'}
                               </div>
                               <span className={currentStep >= 4 ? 'text-emerald-950 font-black' : 'text-slate-400'}>
-                                {lang === 'hi' ? 'डिलीवर' : 'Delivered'}
+                                {lang === 'hi' ? (currentStep >= 4 ? '4. डिलीवर' : 'डिलीवरी') : 'Delivered'}
                               </span>
                             </div>
                           </div>
