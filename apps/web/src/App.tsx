@@ -60,14 +60,18 @@ export function App() {
   };
 
   const handleQuickToggleRole = () => {
+    const currentShopUpi = localStorage.getItem('dukaanpilot_shop_upi') || currentUser.upiId || 'shreeganesh@sbi';
+    const currentShopQr = localStorage.getItem('dukaanpilot_custom_qr') || currentUser.customQrImage;
+
     if (currentUser.role === 'OWNER') {
       // Switch to Customer mode
       setCurrentUser({
         id: 'usr_cust_01',
         name: 'रमेश कुमार (Ramesh Kumar)',
-        shopName: 'Shree Ganesh Kirana',
+        shopName: currentUser.shopName || 'Shree Ganesh Kirana',
         phone: '9823456789',
-        upiId: 'shreeganesh@sbi',
+        upiId: currentShopUpi,
+        customQrImage: currentShopQr,
         role: 'CUSTOMER',
         khataDue: 1250,
       });
@@ -76,9 +80,10 @@ export function App() {
       setCurrentUser({
         id: 'usr_owner_01',
         name: 'Ramesh Ganesh',
-        shopName: 'Shree Ganesh Kirana',
+        shopName: currentUser.shopName || 'Shree Ganesh Kirana',
         phone: '9876543210',
-        upiId: 'shreeganesh@sbi',
+        upiId: currentShopUpi,
+        customQrImage: currentShopQr,
         role: 'OWNER',
         khataDue: 0,
       });
