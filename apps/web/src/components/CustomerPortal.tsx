@@ -20,6 +20,8 @@ import {
 import { fetchProducts, fetchCategories } from '../services/api';
 import { Lang, translations } from '../i18n/translations';
 import { getCleanHindiName } from '../utils/productFormat';
+import { saveOnlineOrder, formatWhatsAppOrderText, OnlineCustomerOrder } from '../utils/orderService';
+import { speakHindi } from '../utils/voiceFeedback';
 
 interface CustomerPortalProps {
   lang: Lang;
@@ -104,20 +106,61 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   }, 0);
 
   const handleSendWhatsAppOrder = () => {
-    const itemsList = Object.entries(cart)
-      .map(([id, count]) => {
-        const item = products.find((c) => String(c.id) === String(id));
-        const itemName = item ? (lang === 'hi' && (item.hindi || item.nameHindi) ? (item.hindi || item.nameHindi) : item.name) : 'Item';
-        const price = item ? (item.sellingPrice || item.price || 0) : 0;
-        return `- ${count}x ${itemName} (₹${price * count})`;
-      })
-      .join('\n');
+    const orderNumber = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+    const orderItems = Object.entries(cart).map(([id, count]) => {
+      const item = products.find((c) => String(c.id) === String(id));
+      const hindiTitle = item ? (item.hindi || item.nameHindi) : undefined;
+      const name = item ? item.name : 'Item';
+      const price = item ? (item.sellingPrice || item.price || 0) : 0;
+      const unit = item ? (item.unit || 'packet') : 'packet';
+      return {
+        id: String(id),
+        name,
+        hindiName: hindiTitle,
+        qty: count,
+        unit,
+        price,
+        total: price * count,
+      };
+    });
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+    const newOrder: OnlineCustomerOrder = {
+      id: `ord_${Date.now()}`,
+      orderNumber,
+      customerName: customer.name,
+      customerPhone: customer.phone,
+      items: orderItems,
+      itemCount: cartTotalCount,
+      totalAmount: cartTotalPrice,
+      status: 'NEW',
+      paymentStatus: 'COD',
+      createdAt: `आज, ${timeStr}`,
+      timestamp: Date.now(),
+      notes: 'कस्टमर पोर्टल से प्राप्त ऑनलाइन आर्डर'
+    };
+
+    saveOnlineOrder(newOrder);
 
     const message = encodeURIComponent(
-      `नमस्ते! मैं ${customer.name} (Phone: ${customer.phone}) श्री गणेश किराना से यह सामान ऑर्डर करना चाहता हूँ:\n\n${itemsList}\n\nकुल राशि: ₹${cartTotalPrice}\nकृपया तैयार रखें या डिलीवर करें। धन्यवाद!`
+      formatWhatsAppOrderText(
+        {
+          orderNumber,
+          customerName: customer.name,
+          customerPhone: customer.phone,
+          items: orderItems,
+          totalAmount: cartTotalPrice,
+          notes: 'कस्टमर पोर्टल से प्राप्त ऑनलाइन आर्डर'
+        },
+        customer.shopName || 'श्री गणेश किराना स्टोर'
+      )
     );
 
-    window.open(`https://wa.me/919876543210?text=${message}`, '_blank');
+    window.open(`https://api.whatsapp.com/send?phone=919876543210&text=${message}`, '_blank');
+    setCart({});
+    speakHindi(lang === 'hi' ? 'ऑर्डर व्हाट्सएप पर भेजा गया और दुकानदार डैशबोर्ड पर दर्ज हो गया है' : 'Order sent to WhatsApp and registered on merchant dashboard');
   };
 
   // Previous bills

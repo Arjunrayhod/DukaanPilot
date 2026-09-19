@@ -12,6 +12,7 @@ import { PosBillingView } from './components/PosBillingView';
 import { InventoryView } from './components/InventoryView';
 import { KhataView } from './components/KhataView';
 import { SupplierManagementView } from './components/SupplierManagementView';
+import { OnlineOrdersCard } from './components/OnlineOrdersCard';
 import { CustomerPortal } from './components/CustomerPortal';
 import { AuthModal } from './components/AuthModal';
 import { checkHealth } from './services/api';
@@ -142,16 +143,26 @@ export function App() {
                 onDailyReport={() => alert(lang === 'hi' ? 'डेली Z-रिपोर्ट: आज की कुल सेल ₹8,450 | 60 ट्रांजैक्शन' : 'Daily Z-Report: Today\'s Total Sale ₹8,450 | 60 Transactions')}
               />
 
-              {/* 3. Financial Overview: Today's Collection Card */}
+              {/* 3. Live Incoming Online Customer Orders */}
+              <OnlineOrdersCard
+                lang={lang}
+                onConvertToPosBill={(order) => {
+                  const billCmd = `${order.customerName} ${order.items.map(i => `${i.qty} ${i.hindiName || i.name}`).join(' ')}`;
+                  setPosVoiceTrigger(billCmd);
+                  setActiveView('pos');
+                }}
+              />
+
+              {/* 4. Financial Overview: Today's Collection Card */}
               <SalesSummaryCard lang={lang} />
 
-              {/* 4. Khata Credit Ledger Widget */}
+              {/* 5. Khata Credit Ledger Widget */}
               <KhataSummaryCard lang={lang} onOpenKhata={() => setActiveTab('khata')} />
 
-              {/* 5. Low Stock Watch with WhatsApp PO */}
+              {/* 6. Low Stock Watch with WhatsApp PO */}
               <LowStockAlerts lang={lang} onOpenSupplierManager={() => setActiveTab('suppliers')} />
 
-              {/* 6. Daily Kirana Insights Strip */}
+              {/* 7. Daily Kirana Insights Strip */}
               <DailyInsightsStrip lang={lang} />
             </div>
           )
