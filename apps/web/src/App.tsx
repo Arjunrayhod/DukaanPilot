@@ -212,6 +212,7 @@ export function App() {
               storePhone={currentUser?.phone}
               storeUpiId={currentUser?.upiId}
               initialVoiceText={posVoiceTrigger}
+              onClearVoiceTrigger={() => setPosVoiceTrigger('')}
               pendingOrderToBill={pendingOrderToBill}
               onClearPendingOrder={() => setPendingOrderToBill(null)}
               onBackToDashboard={() => setActiveTab('home')}
@@ -239,8 +240,14 @@ export function App() {
               {/* 2. Fast Counter POS Actions & Shortcuts */}
               <QuickActionTiles
                 lang={lang}
-                onNewBill={() => setActiveTab('pos')}
+                onNewBill={() => {
+                  setPosVoiceTrigger('');
+                  setPendingOrderToBill(null);
+                  setActiveTab('pos');
+                }}
                 onScanBarcode={() => {
+                  setPosVoiceTrigger('');
+                  setPendingOrderToBill(null);
                   setActiveTab('pos');
                 }}
                 onShowQr={() => setIsQrOpen(true)}

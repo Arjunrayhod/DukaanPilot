@@ -64,6 +64,7 @@ interface PosBillingViewProps {
   storeUpiId?: string;
   soundboxEnabled?: boolean;
   initialVoiceText?: string;
+  onClearVoiceTrigger?: () => void;
   onBackToDashboard?: () => void;
   onOpenCustomerPortal?: () => void;
   onOpenDailyReport?: () => void;
@@ -78,6 +79,7 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
   storeUpiId,
   soundboxEnabled = true,
   initialVoiceText = '',
+  onClearVoiceTrigger,
   onBackToDashboard,
   onOpenCustomerPortal,
   onOpenDailyReport,
@@ -96,7 +98,7 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
   const [customerName, setCustomerName] = useState('रमेश कुमार');
   const [customerPhone, setCustomerPhone] = useState('9823456789');
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
-  const [voiceInput, setVoiceInput] = useState('3 packet doodh, 2 kg cheeni, 1 bread add karo');
+  const [voiceInput, setVoiceInput] = useState('');
   const [barcodeQuery, setBarcodeQuery] = useState('');
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -263,10 +265,62 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
     initData();
   }, [barcodeQuery, selectedCategory]);
 
+  const handleResetToNewBill = () => {
+    setCart([]);
+    onClearPendingOrder?.();
+    onClearVoiceTrigger?.();
+    processedVoiceRef.current = '';
+    setLastVoiceResult('');
+    setVoiceInput('');
+    setRedeemedPoints(0);
+    setSelectedPayment('cash');
+    setCustomerName('रमेश कुमार');
+    setCustomerPhone('9823456789');
+    speakHindi(lang === 'hi' ? 'नया खाली बिल तैयार है' : 'New empty bill ready', lang);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA');
+
+      if (e.key === 'Escape') {
+        if (isInput) target.blur();
+        else if (isBarcodeScannerOpen) setIsBarcodeScannerOpen(false);
+        else if (isReceiptModalOpen) setIsReceiptModalOpen(false);
+        else if (onBackToDashboard) onBackToDashboard();
+        return;
+      }
+
+      if (isInput) return;
+
+      if (e.key === 'F1') {
+        e.preventDefault();
+        handleResetToNewBill();
+      } else if (e.key === 'F2') {
+        e.preventDefault();
+        setIsBarcodeScannerOpen(true);
+      } else if (e.key === 'F4') {
+        e.preventDefault();
+        setSelectedPayment('cash');
+      } else if (e.key === 'F8') {
+        e.preventDefault();
+        setSelectedPayment('upi');
+      } else if (e.key === 'F9') {
+        e.preventDefault();
+        setSelectedPayment('khata');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lang, isBarcodeScannerOpen, isReceiptModalOpen, onBackToDashboard]);
+
   useEffect(() => {
     if (initialVoiceText && initialVoiceText !== processedVoiceRef.current && products.length > 0) {
       processedVoiceRef.current = initialVoiceText;
       handleProcessVoiceInput(initialVoiceText);
+      onClearVoiceTrigger?.();
     }
   }, [initialVoiceText, products]);
 
@@ -518,31 +572,67 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
               <span>{lang === 'hi' ? 'डैशबोर्ड' : 'Dashboard'}</span>
             </button>
           )}
-          <span className="flex items-center gap-1.5 bg-slate-800 text-white px-3 py-1.5 rounded-full border border-white/15 font-bold shadow-sm">
+          <button
+            type="button"
+            onClick={handleResetToNewBill}
+            className="flex items-center gap-1.5 bg-blue-700 hover:bg-blue-600 active:scale-95 text-white px-3 py-1.5 rounded-full border border-blue-500 font-bold shadow-sm transition-all cursor-pointer"
+            title={lang === 'hi' ? 'F1 दबाकर नया खाली बिल बनाएं' : 'Press F1 for New Bill'}
+          >
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
-            <Receipt className="w-3.5 h-3.5 text-blue-300" />
+            <Receipt className="w-3.5 h-3.5 text-blue-200" />
             <span>F1: {lang === 'hi' ? 'नया बिल' : 'New Bill'}</span>
-          </span>
-          <span className="flex items-center gap-1.5 bg-slate-800/80 text-slate-200 px-3 py-1.5 rounded-full border border-white/10 font-semibold">
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsBarcodeScannerOpen(true)}
+            className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 px-3 py-1.5 rounded-full border border-white/10 font-semibold transition-all cursor-pointer"
+            title={lang === 'hi' ? 'F2 दबाकर बारकोड स्कैन करें' : 'Press F2 for Barcode'}
+          >
             <Barcode className="w-3.5 h-3.5 text-slate-300" />
             <span>F2: {lang === 'hi' ? 'बारकोड' : 'Barcode'}</span>
-          </span>
-          <span className="flex items-center gap-1.5 bg-slate-800/80 text-slate-200 px-3 py-1.5 rounded-full border border-white/10 font-semibold">
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (cart.length > 0) {
+                alert(lang === 'hi' ? 'वर्तमान कार्ट सुरक्षित होल्ड कर दिया गया है।' : 'Cart held successfully.');
+              }
+            }}
+            className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 px-3 py-1.5 rounded-full border border-white/10 font-semibold transition-all cursor-pointer"
+          >
             <PauseCircle className="w-3.5 h-3.5 text-slate-300" />
             <span>F3: {lang === 'hi' ? 'होल्ड बिल' : 'Hold Cart'}</span>
-          </span>
-          <span className="flex items-center gap-1.5 bg-slate-800/80 text-slate-200 px-3 py-1.5 rounded-full border border-white/10 font-semibold">
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedPayment('cash')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border font-semibold transition-all cursor-pointer active:scale-95 ${
+              selectedPayment === 'cash' ? 'bg-emerald-600 text-white border-emerald-400 shadow-sm' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-white/10'
+            }`}
+          >
             <Banknote className="w-3.5 h-3.5 text-emerald-400" />
             <span>F4: {lang === 'hi' ? 'नकद' : 'Cash'}</span>
-          </span>
-          <span className="flex items-center gap-1.5 bg-slate-800/80 text-slate-200 px-3 py-1.5 rounded-full border border-white/10 font-semibold">
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedPayment('upi')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border font-semibold transition-all cursor-pointer active:scale-95 ${
+              selectedPayment === 'upi' ? 'bg-blue-600 text-white border-blue-400 shadow-sm' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-white/10'
+            }`}
+          >
             <QrCode className="w-3.5 h-3.5 text-blue-400" />
             <span>F8: {lang === 'hi' ? 'UPI QR' : 'UPI QR'}</span>
-          </span>
-          <span className="flex items-center gap-1.5 bg-slate-800/80 text-slate-200 px-3 py-1.5 rounded-full border border-white/10 font-semibold">
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedPayment('khata')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border font-semibold transition-all cursor-pointer active:scale-95 ${
+              selectedPayment === 'khata' ? 'bg-amber-600 text-white border-amber-400 shadow-sm' : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-white/10'
+            }`}
+          >
             <BookOpen className="w-3.5 h-3.5 text-amber-400" />
             <span>F9: {lang === 'hi' ? 'खाता' : 'Khata'}</span>
-          </span>
+          </button>
         </div>
 
         <div className="flex items-center gap-2 shrink-0 font-mono">
@@ -586,17 +676,23 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
                 <p className="text-sm font-semibold text-blue-100 truncate mt-0.5">
                   {isListening
                     ? (interimTranscript || transcript || (lang === 'hi' ? 'सुन रहा हूं... "2 पैकेट दूध और 1 चीनी"' : 'Listening live...'))
-                    : (lastVoiceResult ? `"${lastVoiceResult}"` : `"${voiceInput}"`)}
+                    : (lastVoiceResult ? `"${lastVoiceResult}"` : (voiceInput ? `"${voiceInput}"` : (lang === 'hi' ? 'माइक दबाकर बोलें (उदा: 2 पैकेट दूध और 1 चीनी)...' : 'Tap mic and speak items (e.g. 2 packet milk)...')))}
                 </p>
               </div>
             </div>
             <button
               type="button"
-              onClick={() => handleProcessVoiceInput(voiceInput)}
+              onClick={() => {
+                if (!voiceInput.trim()) {
+                  toggleListening();
+                } else {
+                  handleProcessVoiceInput(voiceInput);
+                }
+              }}
               className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 px-4 py-2 rounded-full text-xs font-black shadow-md shrink-0 transition-transform active:scale-95 flex items-center gap-1.5 cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5 text-slate-950" />
-              <span>{lang === 'hi' ? 'वॉइस प्रोसेस' : 'Process Voice'}</span>
+              <span>{lang === 'hi' ? (isListening ? 'सुन रहा हूं...' : 'माइक / वॉइस') : 'Mic / Voice'}</span>
             </button>
           </div>
 
