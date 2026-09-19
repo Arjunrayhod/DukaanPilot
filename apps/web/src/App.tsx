@@ -6,7 +6,6 @@ import { SalesSummaryCard } from './components/SalesSummaryCard';
 import { KhataSummaryCard } from './components/KhataSummaryCard';
 import { LowStockAlerts } from './components/LowStockAlerts';
 import { DailyInsightsStrip } from './components/DailyInsightsStrip';
-import { FloatingGlassBar } from './components/FloatingGlassBar';
 import { BottomNavBar } from './components/BottomNavBar';
 import { QrModal } from './components/QrModal';
 import { PosBillingView } from './components/PosBillingView';
@@ -78,7 +77,7 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9ff] text-[#0b1c30] flex flex-col font-sans pb-36 md:pb-24">
+    <div className="min-h-screen bg-[#f8f9ff] text-[#0b1c30] flex flex-col font-sans pb-20 md:pb-12">
       {/* Top Universal Header */}
       <Header
         storeName={currentUser?.shopName || 'Shree Ganesh Kirana'}
@@ -149,15 +148,6 @@ export function App() {
           )
         )}
       </main>
-
-      {/* Modern Frosted Translucent Glassmorphism Floating Action Bar (Shopkeeper Only) */}
-      {currentUser.role === 'OWNER' && (
-        <FloatingGlassBar
-          lang={lang}
-          onQuickAdd={() => setActiveTab('inventory')}
-          onSubmitPrompt={(prompt) => console.log('Floating prompt:', prompt)}
-        />
-      )}
 
       {/* Docked Bottom Navigation Bar (Shopkeeper Only) */}
       {currentUser.role === 'OWNER' && (

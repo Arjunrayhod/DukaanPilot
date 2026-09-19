@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { fetchProducts, adjustStock, createProduct, updateProduct, deleteProduct, fetchCategories, createCategory } from '../services/api';
 import { Lang, translations } from '../i18n/translations';
+import { formatProductTitle, getCleanHindiName } from '../utils/productFormat';
 
 interface InventoryViewProps {
   lang?: Lang;
@@ -410,7 +411,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4">
                         <div className="font-bold text-slate-900">
-                          {lang === 'hi' && (item.nameHindi || item.hindiName) ? `${item.nameHindi || item.hindiName} (${item.name})` : item.name}
+                          {formatProductTitle(item, lang)}
                         </div>
                         <div className="text-[10px] text-slate-400 font-mono mt-0.5 flex items-center gap-2">
                           <span>SKU: {item.sku || 'N/A'}</span>

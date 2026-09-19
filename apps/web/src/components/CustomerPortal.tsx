@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { fetchProducts, fetchCategories } from '../services/api';
 import { Lang, translations } from '../i18n/translations';
+import { getCleanHindiName } from '../utils/productFormat';
 
 interface CustomerPortalProps {
   lang: Lang;
@@ -385,7 +386,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                   >
                     <div className="min-w-0 flex-1">
                       <div className="font-bold text-xs text-slate-900 truncate">
-                        {lang === 'hi' && (item.hindi || item.nameHindi) ? (item.hindi || item.nameHindi) : item.name}
+                        {lang === 'hi' ? getCleanHindiName(item) : item.name}
                       </div>
                       <div className="text-[11px] text-slate-500 font-medium">{item.unit || 'packet'}</div>
                       <div className="text-sm font-black font-display text-blue-900 mt-1 font-mono">₹{price}</div>

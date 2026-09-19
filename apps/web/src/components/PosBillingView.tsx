@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { fetchProducts, fetchCategories } from '../services/api';
 import { Lang, translations } from '../i18n/translations';
+import { getCleanHindiName } from '../utils/productFormat';
 
 interface CartItem {
   id: string | number;
@@ -270,7 +271,7 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
                 >
                   <div>
                     <span className="text-xs font-bold text-slate-900 line-clamp-2 leading-tight group-hover:text-blue-700 transition-colors">
-                      {lang === 'hi' && (item.nameHindi || item.hindi) ? (item.nameHindi || item.hindi) : item.name}
+                      {lang === 'hi' ? getCleanHindiName(item) : item.name}
                     </span>
                     <span className="text-[10px] text-slate-400 font-medium block mt-1">
                       {lang === 'hi' ? `स्टॉक: ${item.currentStock || item.stock || 0} ${item.unit}` : `Stock: ${item.currentStock || item.stock || 0} ${item.unit}`}
