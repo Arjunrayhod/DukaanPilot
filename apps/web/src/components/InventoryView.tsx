@@ -266,9 +266,21 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
   const handleAdjustSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adjustingItem) return;
-    let deltaNum = parseFloat(adjustDelta) || 0;
-    if (adjustType === 'DAMAGE' || adjustType === 'EXPIRED') {
-      deltaNum = -Math.abs(deltaNum);
+
+    const currentQty = typeof adjustingItem.currentStock === 'number' ? adjustingItem.currentStock : parseFloat(adjustingItem.currentStock) || 0;
+    const inputVal = parseFloat(adjustDelta) || 0;
+    let deltaNum = 0;
+    let finalStock = currentQty;
+
+    if (adjustType === 'RESTOCK') {
+      deltaNum = Math.abs(inputVal);
+      finalStock = currentQty + deltaNum;
+    } else if (adjustType === 'DAMAGE' || adjustType === 'EXPIRED') {
+      deltaNum = -Math.abs(inputVal);
+      finalStock = Math.max(0, currentQty + deltaNum);
+    } else if (adjustType === 'CORRECTION') {
+      finalStock = Math.max(0, inputVal);
+      deltaNum = finalStock - currentQty;
     }
 
     const now = new Date();
@@ -278,8 +290,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
     // Update smart batch inventory & log
     const newLogs: StockAdjustmentLog[] = [];
     const updatedInventory = inventoryItems.map(item => {
-      if (item.id === adjustingItem.id || item.name === adjustingItem.name) {
-        const finalStock = Math.max(0, item.currentStock + deltaNum);
+      if (item.id === adjustingItem.id || item.name === adjustingItem.name || (adjustingItem.barcode && item.barcode === adjustingItem.barcode)) {
         const newLog: StockAdjustmentLog = {
           id: `log_${Date.now()}`,
           itemId: item.id,
@@ -287,7 +298,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
           type: adjustType,
           quantityDelta: deltaNum,
           finalStock,
-          reason: adjustReason || 'स्टॉक एडजस्टमेंट',
+          reason: adjustReason || (adjustType === 'RESTOCK' ? 'सप्लायर रीस्टॉक' : adjustType === 'DAMAGE' ? 'डैमेज वेस्टेज' : 'स्टॉक सुधार'),
           date: dateStr,
           time: timeStr
         };
@@ -299,17 +310,42 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
 
     saveInventoryItems(updatedInventory);
     setInventoryItems(updatedInventory);
+
     if (newLogs.length > 0) {
       const updatedLogs = [...newLogs, ...stockLogs];
       saveStockLogs(updatedLogs);
       setStockLogs(updatedLogs);
     }
 
-    const res = await adjustStock(adjustingItem.id, deltaNum, adjustReason);
-    if (res.success) {
-      showNotification(isHi ? `स्टॉक अपडेट हुआ: ${adjustingItem.name} (${deltaNum > 0 ? '+' : ''}${deltaNum})` : `Stock updated for ${adjustingItem.name} (${deltaNum > 0 ? '+' : ''}${deltaNum})`);
-      setAdjustingItem(null);
-      loadCatalog();
+    // Also update catalog product list
+    setProducts(prev => prev.map(p => {
+      if (p.id === adjustingItem.id || p.name === adjustingItem.name || (adjustingItem.barcode && p.barcode === adjustingItem.barcode)) {
+        return { ...p, currentStock: finalStock };
+      }
+      return p;
+    }));
+
+    const itemName = isHi ? (adjustingItem.hindi || adjustingItem.nameHindi || adjustingItem.name) : adjustingItem.name;
+    showNotification(
+      isHi 
+        ? `स्टॉक सफलतापूर्वक बदला गया: ${itemName} (नया स्टॉक: ${finalStock} ${adjustingItem.unit || ''})` 
+        : `Stock updated for ${itemName} (New stock: ${finalStock} ${adjustingItem.unit || ''})`
+    );
+
+    speakHindi(
+      isHi 
+        ? `${itemName} का स्टॉक ${finalStock} ${adjustingItem.unit || 'पैकेट'} हो गया है` 
+        : `Stock updated to ${finalStock} for ${adjustingItem.name}`,
+      lang
+    );
+
+    setAdjustingItem(null);
+
+    // Call backend API asynchronously
+    try {
+      await adjustStock(adjustingItem.id, deltaNum, adjustReason);
+    } catch (err) {
+      console.warn('API adjustStock notice:', err);
     }
   };
 
@@ -1351,101 +1387,184 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
       {/* 4. Smart Stock Adjustment Modal with Wastage / Restock Type */}
       {adjustingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div>
-                <h3 className="font-bold text-slate-900 text-base">
-                  {isHi ? 'स्टॉक स्तर बदलें' : 'Adjust Stock Level'}
-                </h3>
-                <span className="text-xs text-slate-500 font-medium">
-                  {adjustingItem.hindi || adjustingItem.name} ({isHi ? 'वर्तमान' : 'Current'}: {adjustingItem.currentStock} {adjustingItem.unit})
-                </span>
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700">
+                  <Truck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-base">
+                    {isHi ? 'स्टॉक एडजस्टमेंट' : 'Adjust Stock'}
+                  </h3>
+                  <span className="text-xs text-slate-500 font-medium">
+                    {adjustingItem.hindi || adjustingItem.name}
+                  </span>
+                </div>
               </div>
               <button
                 onClick={() => setAdjustingItem(null)}
-                className="text-slate-400 hover:text-slate-600 font-bold cursor-pointer"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center font-bold cursor-pointer transition-colors"
               >
-                &times;
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleAdjustSubmit} className="space-y-3">
+            <form onSubmit={handleAdjustSubmit} className="space-y-4">
+              {/* 3 Adjustment Mode Pills */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  {isHi ? 'एडजस्टमेंट प्रकार:' : 'Adjustment Type:'}
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  {isHi ? 'एडजस्टमेंट का प्रकार चुनें:' : 'Select Adjustment Mode:'}
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => {
                       setAdjustType('RESTOCK');
-                      setAdjustReason(isHi ? 'नया सप्लायर माल आया' : 'Supplier Restock');
+                      setAdjustDelta('5');
+                      setAdjustReason(isHi ? 'सप्लायर से ताजा माल आया' : 'Supplier Restock');
                     }}
-                    className={`p-2 rounded-xl text-xs font-bold border transition-all ${
+                    className={`py-2 px-1.5 rounded-xl text-xs font-bold border transition-all flex flex-col items-center gap-0.5 cursor-pointer ${
                       adjustType === 'RESTOCK'
-                        ? 'bg-emerald-50 border-emerald-500 text-emerald-900 ring-2 ring-emerald-200'
-                        : 'bg-slate-50 border-slate-200 text-slate-700'
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-900 ring-2 ring-emerald-300 shadow-xs'
+                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                     }`}
                   >
-                    + {isHi ? 'री-स्टॉक (+)' : 'Restock (+)'}
+                    <span className="text-sm">➕</span>
+                    <span>{isHi ? 'री-स्टॉक (+)' : 'Restock (+)'}</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => {
                       setAdjustType('DAMAGE');
-                      setAdjustReason(isHi ? 'टूटा/खराब सामान वेस्टेज' : 'Damaged / Wastage');
+                      setAdjustDelta('1');
+                      setAdjustReason(isHi ? 'खराब / डैमेज / वेस्टेज' : 'Damaged / Wastage');
                     }}
-                    className={`p-2 rounded-xl text-xs font-bold border transition-all ${
+                    className={`py-2 px-1.5 rounded-xl text-xs font-bold border transition-all flex flex-col items-center gap-0.5 cursor-pointer ${
                       adjustType === 'DAMAGE'
-                        ? 'bg-rose-50 border-rose-500 text-rose-900 ring-2 ring-rose-200'
-                        : 'bg-slate-50 border-slate-200 text-slate-700'
+                        ? 'bg-rose-50 border-rose-500 text-rose-900 ring-2 ring-rose-300 shadow-xs'
+                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                     }`}
                   >
-                    - {isHi ? 'डैमेज / वेस्टेज (-)' : 'Damage (-)'}
+                    <span className="text-sm">➖</span>
+                    <span>{isHi ? 'डैमेज (-)' : 'Damage (-)'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAdjustType('CORRECTION');
+                      setAdjustDelta(String(adjustingItem.currentStock));
+                      setAdjustReason(isHi ? 'दुकान का भौतिक स्टॉक सुधार' : 'Inventory Audit Count');
+                    }}
+                    className={`py-2 px-1.5 rounded-xl text-xs font-bold border transition-all flex flex-col items-center gap-0.5 cursor-pointer ${
+                      adjustType === 'CORRECTION'
+                        ? 'bg-blue-50 border-blue-500 text-blue-900 ring-2 ring-blue-300 shadow-xs'
+                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="text-sm">✏️</span>
+                    <span>{isHi ? 'सीधा सेट' : 'Set Exact'}</span>
                   </button>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  {isHi ? 'मात्रा (Quantity):' : 'Quantity:'}
-                </label>
-                <input
-                  type="number"
-                  value={adjustDelta}
-                  onChange={(e) => setAdjustDelta(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  required
-                />
+              {/* Quantity Input with Quick Preset Chips */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-700">
+                    {adjustType === 'RESTOCK'
+                      ? (isHi ? 'बढ़ाने की मात्रा (Add Qty):' : 'Quantity to Add:')
+                      : adjustType === 'DAMAGE'
+                      ? (isHi ? 'घटाने की मात्रा (Deduct Qty):' : 'Quantity to Deduct:')
+                      : (isHi ? 'नया सटीक स्टॉक (New Exact Stock):' : 'Exact Count on Shelf:')}
+                  </label>
+                  <span className="text-xs font-mono font-bold text-slate-500">
+                    {isHi ? 'इकाई' : 'Unit'}: {adjustingItem.unit || 'packet'}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={adjustDelta}
+                    onChange={(e) => setAdjustDelta(e.target.value)}
+                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-base font-mono font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+                    required
+                  />
+                  {adjustType !== 'CORRECTION' && (
+                    <div className="flex items-center gap-1">
+                      {['1', '5', '10', '20'].map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => setAdjustDelta(val)}
+                          className="px-2.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-mono font-bold cursor-pointer transition-colors"
+                        >
+                          +{val}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
+              {/* Live Preview Card */}
+              {(() => {
+                const current = typeof adjustingItem.currentStock === 'number' ? adjustingItem.currentStock : parseFloat(adjustingItem.currentStock) || 0;
+                const val = parseFloat(adjustDelta) || 0;
+                let calculated = current;
+                if (adjustType === 'RESTOCK') calculated = current + Math.abs(val);
+                else if (adjustType === 'DAMAGE') calculated = Math.max(0, current - Math.abs(val));
+                else if (adjustType === 'CORRECTION') calculated = Math.max(0, val);
+
+                return (
+                  <div className="p-3 rounded-2xl bg-indigo-50/80 border border-indigo-100 flex items-center justify-between text-xs">
+                    <span className="font-bold text-indigo-950">
+                      {isHi ? 'नया अनुमानित स्टॉक:' : 'Resulting Stock:'}
+                    </span>
+                    <div className="flex items-center gap-2 font-mono">
+                      <span className="text-slate-500 line-through">{current} {adjustingItem.unit}</span>
+                      <span className="font-black text-indigo-700 text-sm bg-white px-2 py-0.5 rounded-lg border border-indigo-200">
+                        ➔ {calculated} {adjustingItem.unit}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Reason Input */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  {isHi ? 'कारण / टिप्पणी:' : 'Reason / Note:'}
+                  {isHi ? 'कारण / नोट (वैकल्पिक):' : 'Reason / Note (Optional):'}
                 </label>
                 <input
                   type="text"
                   value={adjustReason}
                   onChange={(e) => setAdjustReason(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  placeholder={isHi ? 'उदा: नया माल आया, पैकेट डैमेज, आदि' : 'e.g. Fresh stock, packaging tear, etc.'}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
                 />
               </div>
 
+              {/* Action Buttons */}
               <div className="flex items-center gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setAdjustingItem(null)}
-                  className="flex-1 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
+                  className="flex-1 h-11 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
                 >
                   {isHi ? 'रद्द करें' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 h-10 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="flex-1 h-11 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                 >
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
-                  <span>{isHi ? 'सेव करें' : 'Save Stock'}</span>
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                  <span>{isHi ? 'स्टॉक अपडेट करें' : 'Save Changes'}</span>
                 </button>
               </div>
             </form>
