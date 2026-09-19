@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   X, Truck, Phone, MessageSquare, Copy, Check, Calendar, 
   AlertTriangle, Plus, Minus, Building2, Package, Sparkles
@@ -145,7 +145,7 @@ export function SupplierOrderModal({
             </div>
             <div>
               <h3 className="text-lg font-black tracking-tight">
-                {isHi ? 'सप्लायर री-स्टॉक ऑर्डर (Purchase Order)' : 'Supplier Restock Order (PO)'}
+                {isHi ? 'सप्लायर री-स्टॉक ऑर्डर' : 'Supplier Restock Order (PO)'}
               </h3>
               <p className="text-xs text-blue-200 font-mono mt-0.5">
                 #{poNumber} &bull; {supplier.name}

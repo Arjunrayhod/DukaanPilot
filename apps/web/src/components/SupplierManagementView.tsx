@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   Truck, Search, Plus, Phone, Building2, Package, Check, 
   AlertTriangle, Calendar, MessageSquare, ArrowRight, Sparkles, X, ChevronRight
@@ -153,7 +153,7 @@ export function SupplierManagementView({ lang = 'hi' }: SupplierManagementViewPr
             }`}
           >
             <AlertTriangle className="w-4 h-4" />
-            <span>{isHi ? 'कम स्टॉक सामग्री (Low Stock)' : 'Low Stock Items'}</span>
+            <span>{isHi ? 'कम स्टॉक सामग्री' : 'Low Stock Items'}</span>
             <span className="px-2 py-0.5 rounded-full bg-white/20 text-xs font-mono">{lowStockItems.length}</span>
           </button>
 

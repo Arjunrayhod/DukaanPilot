@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   TrendingUp, DollarSign, ShoppingCart, Users, Calendar, 
   ArrowUpRight, ArrowDownRight, Printer, MessageSquare, 
@@ -71,7 +71,7 @@ export function AnalyticsView({
             timeRange === 'today' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          {isHi ? 'आज (Today)' : 'Today'}
+          {isHi ? 'आज' : 'Today'}
         </button>
         <button
           type="button"
@@ -80,7 +80,7 @@ export function AnalyticsView({
             timeRange === 'yesterday' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          {isHi ? 'कल (Yesterday)' : 'Yesterday'}
+          {isHi ? 'कल' : 'Yesterday'}
         </button>
         <button
           type="button"
@@ -89,7 +89,7 @@ export function AnalyticsView({
             timeRange === 'week' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          {isHi ? '7 दिन (7 Days)' : '7 Days'}
+          {isHi ? '7 दिन' : '7 Days'}
         </button>
         <button
           type="button"
@@ -98,7 +98,7 @@ export function AnalyticsView({
             timeRange === 'month' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          {isHi ? 'इस महीने (Month)' : 'Month'}
+          {isHi ? 'इस महीने' : 'Month'}
         </button>
       </div>
 
@@ -108,7 +108,7 @@ export function AnalyticsView({
         <div className="p-5 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:shadow-md transition-all space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-slate-400 uppercase tracking-wider">
-              {isHi ? 'कुल बिक्री (Gross Sales)' : 'Gross Sales'}
+              {isHi ? 'कुल बिक्री' : 'Gross Sales'}
             </span>
             <span className="p-2 rounded-xl bg-blue-50 text-blue-700">
               <DollarSign className="w-4 h-4" />
@@ -186,7 +186,7 @@ export function AnalyticsView({
             <div className="flex items-center gap-2">
               <Award className="w-5 h-5 text-amber-500" />
               <h3 className="text-base font-black text-slate-900">
-                {isHi ? 'सबसे ज्यादा बिकने वाला सामान (Top Movers)' : 'Top Selling Products'}
+                {isHi ? 'सबसे ज्यादा बिकने वाला सामान' : 'Top Selling Products'}
               </h3>
             </div>
             <span className="text-xs text-slate-400 font-medium">By Volume & Revenue</span>

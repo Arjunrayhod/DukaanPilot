@@ -112,7 +112,7 @@ export function VoiceHeroBanner({ lang, onCommandTrigger }: VoiceHeroBannerProps
           {isListening && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-bold border border-red-500/30 animate-pulse">
               <span className="w-2 h-2 rounded-full bg-red-400 animate-ping"></span>
-              <span>{lang === 'hi' ? 'माइक चालू है (सुन रहे हैं...)' : 'Listening live...'}</span>
+              <span>{lang === 'hi' ? 'माइक सक्रिय है... बोलिए' : 'Listening live...'}</span>
             </span>
           )}
         </div>
@@ -120,9 +120,9 @@ export function VoiceHeroBanner({ lang, onCommandTrigger }: VoiceHeroBannerProps
         {/* Main Trigger & Mic Area */}
         <div className="flex items-center justify-between gap-5 pt-1">
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl sm:text-2xl font-black leading-tight text-white flex items-center gap-2 flex-wrap font-display tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-black leading-tight text-white flex items-center gap-2 flex-wrap font-display">
               <span>{t.voiceBillTitle}</span>
-              <span className="text-emerald-400 text-lg font-bold">{t.voiceBillSub}</span>
+              {t.voiceBillSub && <span className="text-emerald-400 text-lg font-bold">{t.voiceBillSub}</span>}
             </h2>
             <p className="text-xs sm:text-sm text-slate-300/90 mt-1.5 font-medium leading-relaxed max-w-xl">
               {currentDisplay ? (

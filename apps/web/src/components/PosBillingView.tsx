@@ -57,7 +57,7 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
   const [splitCash, setSplitCash] = useState<number>(0);
   const [splitUpi, setSplitUpi] = useState<number>(0);
   const [splitKhata, setSplitKhata] = useState<number>(0);
-  const [customerName, setCustomerName] = useState('रमेश कुमार (Ramesh Kumar)');
+  const [customerName, setCustomerName] = useState('रमेश कुमार');
   const [customerPhone, setCustomerPhone] = useState('9823456789');
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [currentReceipt, setCurrentReceipt] = useState<ReceiptData | null>(null);
@@ -69,12 +69,12 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
   const [lastVoiceResult, setLastVoiceResult] = useState('');
 
   const defaultCategories = [
-    { id: 'All', name: 'All Items', nameHindi: 'सभी सामान (All)' },
-    { id: 'cat_atta', name: 'Atta & Flour', nameHindi: 'आटा व दाल (Atta/Dal)' },
-    { id: 'cat_oils', name: 'Edible Oil', nameHindi: 'तेल व घी (Edible Oils)' },
-    { id: 'cat_spices', name: 'Spices & Masala', nameHindi: 'मसाले (Spices)' },
-    { id: 'cat_dairy', name: 'Dairy & Bakery', nameHindi: 'डेयरी व दूध (Dairy)' },
-    { id: 'cat_snacks', name: 'Snacks & Namkeen', nameHindi: 'नमकीन व बिस्कुट (Snacks)' },
+    { id: 'All', name: 'All Items', nameHindi: 'सभी सामान' },
+    { id: 'cat_atta', name: 'Atta & Flour', nameHindi: 'आटा व दाल' },
+    { id: 'cat_oils', name: 'Edible Oil', nameHindi: 'तेल व घी' },
+    { id: 'cat_spices', name: 'Spices & Masala', nameHindi: 'मसाले' },
+    { id: 'cat_dairy', name: 'Dairy & Bakery', nameHindi: 'डेयरी व दूध' },
+    { id: 'cat_snacks', name: 'Snacks & Namkeen', nameHindi: 'नमकीन व बिस्कुट' },
   ];
 
   const handleProcessVoiceInput = (rawSpoken: string) => {
@@ -515,61 +515,61 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
           {/* Bill Calculation & Checkout Triggers */}
           <div className="space-y-2.5 pt-2 border-t border-slate-100">
             {/* Subtotal & GST rows */}
-            <div className="space-y-1 text-xs text-slate-600">
-              <div className="flex justify-between">
-                <span>{lang === 'hi' ? 'उप-कुल (Subtotal):' : 'Subtotal:'}</span>
-                <span className="font-bold font-mono">₹{subtotal}</span>
+            <div className="space-y-1.5 text-xs text-slate-600">
+              <div className="flex justify-between items-center py-0.5">
+                <span>{lang === 'hi' ? 'उप-कुल:' : 'Subtotal:'}</span>
+                <span className="font-bold font-mono text-slate-800">₹{subtotal}</span>
               </div>
-              <div className="flex justify-between">
-                <span>{lang === 'hi' ? 'जीएसटी / GST (5%):' : 'GST (5%):'}</span>
-                <span className="font-bold font-mono">₹{gstAmount}</span>
+              <div className="flex justify-between items-center py-0.5">
+                <span>{lang === 'hi' ? 'जीएसटी (5%):' : 'GST (5%):'}</span>
+                <span className="font-bold font-mono text-slate-800">₹{gstAmount}</span>
               </div>
-              <div className="flex justify-between items-baseline pt-1.5 border-t border-slate-200">
-                <span className="text-xs font-black text-slate-900 uppercase tracking-wide">
-                  {lang === 'hi' ? 'कुल देय राशि (Grand Total)' : 'Grand Total'}
+              <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+                <span className="text-xs font-black text-slate-900 uppercase">
+                  {lang === 'hi' ? 'कुल देय राशि:' : 'Grand Total:'}
                 </span>
                 <span className="text-2xl font-black text-blue-900 font-mono">₹{grandTotal}</span>
               </div>
             </div>
 
             {/* Payment Method Selector Grid */}
-            <div className="grid grid-cols-4 gap-1.5 pt-0.5">
+            <div className="grid grid-cols-4 gap-2 pt-1">
               <button
                 type="button"
                 onClick={() => setSelectedPayment('cash')}
-                className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border transition-all text-[11px] font-black cursor-pointer ${
+                className={`flex flex-col items-center justify-center py-2.5 px-1.5 rounded-xl border transition-all text-xs font-bold cursor-pointer ${
                   selectedPayment === 'cash'
                     ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-sm ring-2 ring-emerald-200'
                     : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <Banknote className="w-4 h-4 text-emerald-600 mb-0.5" />
+                <Banknote className="w-4 h-4 text-emerald-600 mb-1" />
                 <span>{lang === 'hi' ? 'नकद' : 'Cash'}</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setSelectedPayment('upi')}
-                className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border transition-all text-[11px] font-black cursor-pointer ${
+                className={`flex flex-col items-center justify-center py-2.5 px-1.5 rounded-xl border transition-all text-xs font-bold cursor-pointer ${
                   selectedPayment === 'upi'
                     ? 'bg-blue-50 border-blue-600 text-blue-900 shadow-sm ring-2 ring-blue-200'
                     : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <QrCode className="w-4 h-4 text-blue-600 mb-0.5" />
+                <QrCode className="w-4 h-4 text-blue-600 mb-1" />
                 <span>UPI QR</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setSelectedPayment('khata')}
-                className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border transition-all text-[11px] font-black cursor-pointer ${
+                className={`flex flex-col items-center justify-center py-2.5 px-1.5 rounded-xl border transition-all text-xs font-bold cursor-pointer ${
                   selectedPayment === 'khata'
                     ? 'bg-amber-50 border-amber-500 text-amber-900 shadow-sm ring-2 ring-amber-200'
                     : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <BookOpen className="w-4 h-4 text-amber-600 mb-0.5" />
+                <BookOpen className="w-4 h-4 text-amber-600 mb-1" />
                 <span>{lang === 'hi' ? 'खाता' : 'Khata'}</span>
               </button>
 
@@ -580,49 +580,49 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
                   setSplitCash(Math.floor(grandTotal / 2));
                   setSplitUpi(grandTotal - Math.floor(grandTotal / 2));
                 }}
-                className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border transition-all text-[11px] font-black cursor-pointer ${
+                className={`flex flex-col items-center justify-center py-2.5 px-1.5 rounded-xl border transition-all text-xs font-bold cursor-pointer ${
                   selectedPayment === 'split'
                     ? 'bg-purple-50 border-purple-600 text-purple-900 shadow-sm ring-2 ring-purple-200'
                     : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <Zap className="w-4 h-4 text-purple-600 mb-0.5" />
+                <Zap className="w-4 h-4 text-purple-600 mb-1" />
                 <span>{lang === 'hi' ? 'स्प्लिट' : 'Split'}</span>
               </button>
             </div>
 
             {/* Split Payment Detailed Inputs (Only when Split is selected) */}
             {selectedPayment === 'split' && (
-              <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-2 space-y-1.5 text-xs">
-                <span className="font-bold text-purple-950 block text-[11px]">
-                  {lang === 'hi' ? 'स्प्लिट पेमेंट ब्रेकडाउन (₹' + grandTotal + ' कुल):' : 'Split Breakdown (₹' + grandTotal + ' Total):'}
+              <div className="bg-purple-50/80 border border-purple-200 rounded-xl p-3 space-y-2 text-xs">
+                <span className="font-bold text-purple-950 block text-xs">
+                  {lang === 'hi' ? `स्प्लिट भुगतान (कुल: ₹${grandTotal}):` : `Split Breakdown (Total: ₹${grandTotal}):`}
                 </span>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="text-[10px] text-slate-600 font-bold block">Cash ₹:</label>
+                    <label className="text-[11px] text-slate-600 font-bold block mb-0.5">{lang === 'hi' ? 'नकद ₹:' : 'Cash ₹:'}</label>
                     <input
                       type="number"
                       value={splitCash}
                       onChange={(e) => setSplitCash(parseFloat(e.target.value) || 0)}
-                      className="w-full p-1 bg-white border border-slate-300 rounded font-mono font-bold text-xs"
+                      className="w-full p-1.5 bg-white border border-slate-300 rounded-lg font-mono font-bold text-xs"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-slate-600 font-bold block">UPI ₹:</label>
+                    <label className="text-[11px] text-slate-600 font-bold block mb-0.5">UPI ₹:</label>
                     <input
                       type="number"
                       value={splitUpi}
                       onChange={(e) => setSplitUpi(parseFloat(e.target.value) || 0)}
-                      className="w-full p-1 bg-white border border-slate-300 rounded font-mono font-bold text-xs"
+                      className="w-full p-1.5 bg-white border border-slate-300 rounded-lg font-mono font-bold text-xs"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-slate-600 font-bold block">खाता ₹:</label>
+                    <label className="text-[11px] text-slate-600 font-bold block mb-0.5">{lang === 'hi' ? 'खाता ₹:' : 'Khata ₹:'}</label>
                     <input
                       type="number"
                       value={splitKhata}
                       onChange={(e) => setSplitKhata(parseFloat(e.target.value) || 0)}
-                      className="w-full p-1 bg-white border border-slate-300 rounded font-mono font-bold text-xs"
+                      className="w-full p-1.5 bg-white border border-slate-300 rounded-lg font-mono font-bold text-xs"
                     />
                   </div>
                 </div>

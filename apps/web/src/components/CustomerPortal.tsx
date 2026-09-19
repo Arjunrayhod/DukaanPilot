@@ -68,7 +68,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
         fetchCategories()
       ]);
       if (cRes.success && cRes.data && cRes.data.length > 0) {
-        setCategories([{ id: 'All', name: 'All Items', nameHindi: 'सभी सामान (All)' }, ...cRes.data]);
+        setCategories([{ id: 'All', name: 'All Items', nameHindi: 'सभी सामान' }, ...cRes.data]);
       }
       if (pRes.success && pRes.data?.items && pRes.data.items.length > 0) {
         setProducts(pRes.data.items);
@@ -330,7 +330,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
           <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-900">
-                {lang === 'hi' ? 'हालिया लेन-देन (Recent Ledger History)' : 'Recent Ledger History'}
+                {lang === 'hi' ? 'हालिया लेन-देन' : 'Recent Ledger History'}
               </h3>
               <button
                 onClick={() => setActiveTab('bills')}

@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   X, Printer, MessageSquare, Download, Check, AlertTriangle, 
   TrendingUp, Banknote, QrCode, BookOpen, ShieldCheck, DollarSign, Calendar
@@ -108,7 +108,7 @@ export function DailyZReportModal({
             </div>
             <div>
               <h3 className="text-lg font-black tracking-tight">
-                {isHi ? 'डेली क्लोजिंग Z-रिपोर्ट (Daily Z-Report)' : 'Daily Closing Z-Report'}
+                {isHi ? 'डेली क्लोजिंग Z-रिपोर्ट' : 'Daily Closing Z-Report'}
               </h3>
               <p className="text-xs text-blue-200 font-mono mt-0.5">
                 #{reportNumber} &bull; {reportDate}
@@ -177,7 +177,7 @@ export function DailyZReportModal({
 
             <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
               <span className="text-[11px] font-bold text-slate-400 block uppercase">
-                {isHi ? 'UPI / QR सेल' : 'UPI QR Sales'}
+                {isHi ? 'UPI व QR सेल' : 'UPI QR Sales'}
               </span>
               <span className="text-xl font-black text-blue-700 font-mono">
                 ₹{upiSales.toLocaleString('en-IN')}
@@ -206,7 +206,7 @@ export function DailyZReportModal({
               <div className="flex items-center gap-2">
                 <Banknote className="w-5 h-5 text-emerald-600" />
                 <h4 className="text-sm font-black text-slate-900">
-                  {isHi ? 'शाम का कैश दराज मिलान (Cash Drawer Audit)' : 'Cash Drawer Reconciliation'}
+                  {isHi ? 'शाम का कैश दराज मिलान' : 'Cash Drawer Reconciliation'}
                 </h4>
               </div>
               <span className="text-xs font-bold text-slate-400">EOD Audit</span>

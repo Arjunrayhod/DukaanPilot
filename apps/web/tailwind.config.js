@@ -37,8 +37,10 @@ export default {
         'on-error': '#ffffff',
       },
       fontFamily: {
-        sans: ['Noto Sans', 'Plus Jakarta Sans', 'sans-serif'],
-        display: ['Plus Jakarta Sans', 'Noto Sans', 'sans-serif'],
+        sans: ['"Plus Jakarta Sans"', '"Noto Sans Devanagari"', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['Outfit', '"Plus Jakarta Sans"', '"Noto Sans Devanagari"', 'sans-serif'],
+        hindi: ['"Noto Sans Devanagari"', '"Plus Jakarta Sans"', 'sans-serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       }
     },
   },

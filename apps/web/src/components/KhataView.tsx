@@ -193,7 +193,7 @@ export function KhataView({ lang }: KhataViewProps) {
             </span>
             <div>
               <h2 className="text-xl font-black text-white">
-                {isHi ? 'डिजिटल खाता लेजर (Khata OS)' : 'Digital Khata Ledger'}
+                {isHi ? 'डिजिटल खाता बही' : 'Digital Khata Ledger'}
               </h2>
               <p className="text-xs text-slate-300 font-medium">
                 {isHi ? 'उधार-जमा का सटीक हिसाब व ऑटोमैटिक व्हाट्सएप तगादा' : 'Track credit, payments & send WhatsApp reminders with UPI link'}
@@ -394,7 +394,7 @@ export function KhataView({ lang }: KhataViewProps) {
                 {/* Net Balance Box */}
                 <div className="bg-slate-50 border border-slate-200 p-3 rounded-2xl text-right shrink-0">
                   <span className="text-[10px] uppercase font-bold text-slate-500 block">
-                    {isHi ? 'वर्तमान बकाया (Net Balance)' : 'Current Balance'}
+                    {isHi ? 'वर्तमान बकाया' : 'Current Balance'}
                   </span>
                   <span className={`text-xl font-black font-mono ${
                     selectedCustomer.currentDue > 0 ? 'text-rose-600' : 'text-emerald-600'
@@ -417,7 +417,7 @@ export function KhataView({ lang }: KhataViewProps) {
                   className="h-11 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <ArrowUpRight className="w-4 h-4 stroke-[3]" />
-                  <span>{isHi ? '- उधार दिया (Give Credit)' : '- Give Credit'}</span>
+                  <span>{isHi ? '- उधार दिया' : '- Give Credit'}</span>
                 </button>
 
                 <button
@@ -431,7 +431,7 @@ export function KhataView({ lang }: KhataViewProps) {
                   className="h-11 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <ArrowDownLeft className="w-4 h-4 stroke-[3]" />
-                  <span>{isHi ? '+ जमा मिला (Receive Payment)' : '+ Receive Payment'}</span>
+                  <span>{isHi ? '+ जमा मिला' : '+ Receive Payment'}</span>
                 </button>
 
                 <button
@@ -441,7 +441,7 @@ export function KhataView({ lang }: KhataViewProps) {
                   className="h-11 rounded-2xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white text-xs font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <MessageSquare className="w-4 h-4 text-emerald-400 fill-emerald-400" />
-                  <span>{isHi ? 'WhatsApp तगादा भेजें' : 'Send Reminder'}</span>
+                  <span>{isHi ? 'WhatsApp तगादा' : 'Send Reminder'}</span>
                 </button>
               </div>
 
@@ -449,7 +449,7 @@ export function KhataView({ lang }: KhataViewProps) {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">
-                    {isHi ? 'लेन-देन इतिहास (Transaction Timeline)' : 'Transaction History'}
+                    {isHi ? 'लेन-देन इतिहास' : 'Transaction History'}
                   </h4>
                   <span className="text-[11px] text-slate-400 font-medium">
                     {selectedCustomer.transactions.length} {isHi ? 'प्रविष्टियां' : 'Entries'}
@@ -539,8 +539,8 @@ export function KhataView({ lang }: KhataViewProps) {
                 </div>
                 <h3 className="font-bold text-slate-900 text-base">
                   {txType === 'DEBIT'
-                    ? (isHi ? 'उधार जोड़ें (Give Credit)' : 'Give Credit (Udhaar)')
-                    : (isHi ? 'जमा प्राप्त करें (Receive Payment)' : 'Record Payment (Jama)')}
+                    ? (isHi ? 'उधार जोड़ें' : 'Give Credit (Udhaar)')
+                    : (isHi ? 'जमा प्राप्त करें' : 'Record Payment (Jama)')}
                 </h3>
               </div>
               <button
@@ -567,7 +567,7 @@ export function KhataView({ lang }: KhataViewProps) {
 
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  {isHi ? 'राशि (Amount ₹):' : 'Amount (₹):'} *
+                  {isHi ? 'राशि (₹):' : 'Amount (₹):'} *
                 </label>
                 <input
                   type="number"
@@ -583,7 +583,7 @@ export function KhataView({ lang }: KhataViewProps) {
               {txType === 'CREDIT' && (
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">
-                    {isHi ? 'भुगतान माध्यम (Payment Mode):' : 'Payment Mode:'}
+                    {isHi ? 'भुगतान माध्यम:' : 'Payment Mode:'}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
@@ -596,7 +596,7 @@ export function KhataView({ lang }: KhataViewProps) {
                       }`}
                     >
                       <Banknote className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>{isHi ? 'नकद (Cash)' : 'Cash'}</span>
+                      <span>{isHi ? 'नकद' : 'Cash'}</span>
                     </button>
                     <button
                       type="button"
@@ -616,7 +616,7 @@ export function KhataView({ lang }: KhataViewProps) {
 
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  {isHi ? 'विवरण या सामान (Notes/Items):' : 'Notes/Details:'}
+                  {isHi ? 'विवरण या सामान:' : 'Notes / Details:'}
                 </label>
                 <input
                   type="text"
@@ -670,7 +670,7 @@ export function KhataView({ lang }: KhataViewProps) {
             <form onSubmit={handleSaveCustomer} className="space-y-3.5 text-xs">
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  {isHi ? 'ग्राहक का नाम (Customer Name):' : 'Customer Name:'} *
+                  {isHi ? 'ग्राहक का नाम:' : 'Customer Name:'} *
                 </label>
                 <input
                   type="text"
@@ -685,7 +685,7 @@ export function KhataView({ lang }: KhataViewProps) {
 
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  {isHi ? 'मोबाइल नंबर (Phone):' : 'Mobile Phone:'} *
+                  {isHi ? 'मोबाइल नंबर:' : 'Mobile Phone:'} *
                 </label>
                 <input
                   type="tel"
@@ -699,7 +699,7 @@ export function KhataView({ lang }: KhataViewProps) {
 
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  {isHi ? 'पता / गली (Address):' : 'Address:'}
+                  {isHi ? 'पता / गली:' : 'Address:'}
                 </label>
                 <input
                   type="text"
@@ -712,7 +712,7 @@ export function KhataView({ lang }: KhataViewProps) {
 
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  {isHi ? 'उधार सीमा (Credit Limit ₹):' : 'Credit Limit (₹):'}
+                  {isHi ? 'उधार सीमा (₹):' : 'Credit Limit (₹):'}
                 </label>
                 <input
                   type="number"

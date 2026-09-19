@@ -135,11 +135,7 @@ export function getCleanHindiName(product: { name: string; nameHindi?: string; h
  */
 export function formatProductTitle(product: { name: string; nameHindi?: string; hindiName?: string }, lang: 'hi' | 'en'): string {
   if (lang === 'hi') {
-    const hindi = getCleanHindiName(product);
-    if (hindi && hindi !== product.name) {
-      return `${hindi} (${product.name})`;
-    }
-    return product.name;
+    return getCleanHindiName(product);
   }
-  return product.name;
+  return product.name || '';
 }

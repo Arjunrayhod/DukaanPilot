@@ -226,7 +226,7 @@ export function ReceiptModal({
             {/* Customer WhatsApp Phone Input */}
             <div className="bg-slate-950/70 border border-white/10 rounded-2xl p-4 space-y-3">
               <label className="block text-xs font-bold text-slate-300">
-                {isHi ? 'ग्राहक का व्हाट्सएप नंबर (Customer Phone):' : 'Customer WhatsApp Phone:'}
+                {isHi ? 'ग्राहक का व्हाट्सएप नंबर:' : 'Customer WhatsApp Phone:'}
               </label>
               
               <div className="relative">
@@ -300,7 +300,7 @@ export function ReceiptModal({
                 className="flex-1 h-11 rounded-2xl bg-slate-800 hover:bg-slate-700 text-emerald-400 font-extrabold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 text-emerald-400" />
-                <span>{isHi ? 'नया बिल शुरू करें (New Bill)' : 'Start Next Bill'}</span>
+                <span>{isHi ? 'नया बिल शुरू करें' : 'Start Next Bill'}</span>
               </button>
             </div>
 
