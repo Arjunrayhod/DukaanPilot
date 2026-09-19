@@ -141,6 +141,8 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
     }
   });
 
+  const processedVoiceRef = React.useRef<string>('');
+
   useEffect(() => {
     async function initData() {
       setLoading(true);
@@ -150,21 +152,25 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
       ]);
 
       if (cRes.success && cRes.data && cRes.data.length > 0) {
-        setCategories([{ id: 'All', name: 'All Items', nameHindi: 'सभी सामान (All)' }, ...cRes.data]);
+        setCategories([{ id: 'All', name: 'All Items', nameHindi: 'सभी सामान' }, ...cRes.data]);
       } else {
         setCategories(defaultCategories);
       }
 
       if (pRes.success && pRes.data?.items) {
         setProducts(pRes.data.items);
-        if (initialVoiceText) {
-          handleProcessVoiceInput(initialVoiceText);
-        }
       }
       setLoading(false);
     }
     initData();
-  }, [barcodeQuery, selectedCategory, initialVoiceText]);
+  }, [barcodeQuery, selectedCategory]);
+
+  useEffect(() => {
+    if (initialVoiceText && initialVoiceText !== processedVoiceRef.current && products.length > 0) {
+      processedVoiceRef.current = initialVoiceText;
+      handleProcessVoiceInput(initialVoiceText);
+    }
+  }, [initialVoiceText, products]);
 
   const updateQty = (id: string | number, delta: number) => {
     setCart((prev) =>

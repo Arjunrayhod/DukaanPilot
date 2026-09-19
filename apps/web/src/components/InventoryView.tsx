@@ -351,7 +351,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
               }`}
             >
               {selectedCategory === 'All' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
-              <span>{lang === 'hi' ? 'सभी सामान (All)' : 'All Items'}</span>
+              <span>{lang === 'hi' ? 'सभी सामान' : 'All Items'}</span>
             </button>
 
             {categories.map((cat) => (
