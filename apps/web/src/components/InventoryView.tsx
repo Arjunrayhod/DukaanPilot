@@ -78,6 +78,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
   const [adjustDelta, setAdjustDelta] = useState('5');
   const [adjustType, setAdjustType] = useState<'RESTOCK' | 'DAMAGE' | 'EXPIRED' | 'CORRECTION'>('RESTOCK');
   const [adjustReason, setAdjustReason] = useState('ताजा सप्लायर रीस्टॉक');
+  const [adjustExpiryDate, setAdjustExpiryDate] = useState('2027-03-31');
+  const [adjustBatchNo, setAdjustBatchNo] = useState('');
+  const [adjustShelfLocation, setAdjustShelfLocation] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -263,6 +266,58 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
     }
   };
 
+  const openAdjustModal = (item: any, type: 'RESTOCK' | 'DAMAGE' | 'CORRECTION' = 'RESTOCK') => {
+    setAdjustingItem(item);
+    setAdjustType(type);
+    setAdjustDelta(type === 'CORRECTION' ? String(item.currentStock || 0) : '5');
+    setAdjustReason(
+      type === 'RESTOCK'
+        ? (isHi ? 'ताजा सप्लायर रीस्टॉक' : 'Supplier Restock')
+        : type === 'DAMAGE'
+        ? (isHi ? 'डैमेज / वेस्टेज' : 'Damaged Goods')
+        : (isHi ? 'स्टॉक व एक्सपायरी अपडेट' : 'Stock & Expiry Update')
+    );
+    setAdjustExpiryDate(item.expiryDate || '2027-03-31');
+    setAdjustBatchNo(item.batchNo || 'B2609X');
+    setAdjustShelfLocation(item.shelfLocation || 'Rack A1');
+  };
+
+  const quickRenewExpiry = (item: InventoryItem) => {
+    // Add 45 days fresh shelf life
+    const now = new Date();
+    now.setDate(now.getDate() + 45);
+    const newExp = now.toISOString().split('T')[0];
+    const newBatch = `B2609${Math.floor(10 + Math.random() * 90)}`;
+
+    const updatedInventory = inventoryItems.map(inv => {
+      if (inv.id === item.id || inv.name === item.name) {
+        return { ...inv, expiryDate: newExp, batchNo: newBatch };
+      }
+      return inv;
+    });
+
+    saveInventoryItems(updatedInventory);
+    setInventoryItems(updatedInventory);
+
+    const log: StockAdjustmentLog = {
+      id: `log_${Date.now()}`,
+      itemId: item.id,
+      itemName: item.hindi || item.name,
+      type: 'RESTOCK',
+      quantityDelta: 0,
+      finalStock: item.currentStock,
+      reason: `ताजा नया बैच रिन्यू (नई एक्सपायरी: ${newExp})`,
+      date: new Date().toLocaleDateString('en-IN'),
+      time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+    };
+    const updatedLogs = [log, ...stockLogs];
+    saveStockLogs(updatedLogs);
+    setStockLogs(updatedLogs);
+
+    showNotification(isHi ? `ताजा बैच रिन्यू हुआ: ${item.hindi || item.name} (सुरक्षित - नई एक्सपायरी: ${newExp})` : `Fresh batch renewed for ${item.name}`);
+    speakHindi(isHi ? `${item.hindi || item.name} का नया बैच अपडेट हो गया है` : `Fresh batch updated for ${item.name}`, lang);
+  };
+
   const handleAdjustSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adjustingItem) return;
@@ -303,7 +358,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
           time: timeStr
         };
         newLogs.push(newLog);
-        return { ...item, currentStock: finalStock };
+        return { 
+          ...item, 
+          currentStock: finalStock,
+          expiryDate: adjustExpiryDate || item.expiryDate,
+          batchNo: adjustBatchNo || item.batchNo,
+          shelfLocation: adjustShelfLocation || item.shelfLocation
+        };
       }
       return item;
     });
@@ -707,17 +768,26 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
                           )}
                         </td>
                         <td className="py-3.5 px-4 text-right">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setAdjustingItem(item);
-                              setAdjustDelta('5');
-                              setAdjustType('RESTOCK');
-                            }}
-                            className="px-2.5 py-1 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] cursor-pointer shadow-sm"
-                          >
-                            {isHi ? 'स्टॉक बदलें' : 'Adjust'}
-                          </button>
+                          <div className="inline-flex items-center gap-1.5 justify-end">
+                            {status === 'NEAR_EXPIRY' && (
+                              <button
+                                type="button"
+                                onClick={() => quickRenewExpiry(item)}
+                                title={isHi ? 'ताजा नया बैच सेट करें (+45 दिन)' : 'Renew Fresh Batch (+45d)'}
+                                className="px-2.5 py-1 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-[10px] cursor-pointer shadow-xs transition-colors flex items-center gap-1"
+                              >
+                                <RefreshCw className="w-2.5 h-2.5 text-emerald-600" />
+                                <span>{isHi ? 'ताजा बैच' : 'Renew'}</span>
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => openAdjustModal(item, 'RESTOCK')}
+                              className="px-2.5 py-1 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] cursor-pointer shadow-sm transition-all"
+                            >
+                              {isHi ? 'स्टॉक बदलें' : 'Adjust'}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -947,7 +1017,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
                             <div className="inline-flex items-center gap-1.5">
                               {/* Stock adjust pill */}
                               <button
-                                onClick={() => setAdjustingItem(item)}
+                                onClick={() => openAdjustModal(item, 'RESTOCK')}
                                 title={isHi ? 'स्टॉक बदलें' : 'Adjust Stock'}
                                 className="h-7 px-2.5 rounded-full bg-slate-900/85 hover:bg-slate-900 text-white text-[11px] font-bold border border-white/15 shadow-sm transition-all flex items-center gap-1 cursor-pointer"
                               >
@@ -1535,6 +1605,72 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
                   </div>
                 );
               })()}
+
+              {/* Batch No, Shelf Location & Expiry Date (Editable on Restock / Adjustment) */}
+              <div className="pt-2 border-t border-slate-100 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      {isHi ? 'एक्सपायरी दिनांक (Expiry):' : 'Expiry Date:'}
+                    </label>
+                    <input
+                      type="date"
+                      value={adjustExpiryDate}
+                      onChange={(e) => setAdjustExpiryDate(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+                    />
+                    <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const d = new Date();
+                          d.setDate(d.getDate() + 45);
+                          setAdjustExpiryDate(d.toISOString().split('T')[0]);
+                          setAdjustBatchNo(`B2609${Math.floor(10 + Math.random() * 90)}`);
+                        }}
+                        className="text-[10px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-300 transition-colors cursor-pointer"
+                      >
+                        {isHi ? '🔄 +45 दिन (ताजा बैच)' : '🔄 +45d Fresh'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const d = new Date();
+                          d.setDate(d.getDate() + 180);
+                          setAdjustExpiryDate(d.toISOString().split('T')[0]);
+                        }}
+                        className="text-[10px] font-bold text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-md border border-blue-200 transition-colors cursor-pointer"
+                      >
+                        {isHi ? '+6 माह' : '+6 Mos'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      {isHi ? 'बैच नंबर (Batch No):' : 'Batch No:'}
+                    </label>
+                    <input
+                      type="text"
+                      value={adjustBatchNo}
+                      onChange={(e) => setAdjustBatchNo(e.target.value)}
+                      placeholder="B2609A"
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+                    />
+
+                    <label className="block text-xs font-bold text-slate-700 mt-2 mb-1">
+                      {isHi ? 'रैक / शेल्फ स्थान:' : 'Shelf / Rack Location:'}
+                    </label>
+                    <input
+                      type="text"
+                      value={adjustShelfLocation}
+                      onChange={(e) => setAdjustShelfLocation(e.target.value)}
+                      placeholder="Rack A1"
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
 
               {/* Reason Input */}
               <div>
