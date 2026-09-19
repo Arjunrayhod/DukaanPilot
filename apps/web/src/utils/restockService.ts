@@ -1,4 +1,6 @@
-﻿export interface Supplier {
+import type { Lang } from '../i18n/translations.ts';
+
+export interface Supplier {
   id: string;
   name: string;
   company: string;
@@ -239,9 +241,9 @@ export function formatSupplierWhatsAppPO(
     phone: '+91 98765 43210',
     address: 'दुकान नं. 4, मेन मार्केट, नई दिल्ली'
   },
-  lang: 'hi' | 'en' = 'hi'
+  lang: Lang = 'hi'
 ): string {
-  const isHi = lang === 'hi';
+  const isHi = lang === 'hi' || lang === 'gu' || lang === 'mr';
 
   let msg = isHi
     ? `नमस्ते *${po.contactPerson || po.supplierName} जी* 🙏\n\n`
@@ -303,7 +305,7 @@ export function generateSupplierWhatsAppUrl(
     phone: string;
     address: string;
   },
-  lang: 'hi' | 'en' = 'hi'
+  lang: Lang = 'hi'
 ): string {
   const text = formatSupplierWhatsAppPO(po, shopInfo, lang);
   const cleanPhone = (po.supplierPhone || '').replace(/[^\d]/g, '');

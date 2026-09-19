@@ -1,6 +1,4 @@
-/**
- * DukaanPilot - Customer Loyalty Points, Rewards & Festive WhatsApp Promotions
- */
+import type { Lang } from '../i18n/translations.ts';
 
 export interface LoyaltyAccount {
   phone: string;
@@ -91,7 +89,7 @@ export function calculateEarnedPoints(billAmount: number): number {
 }
 
 /**
- * Generates WhatsApp Festive Promotion Message for broadcast
+ * Formats a WhatsApp Festive Promo Broadcast Message
  */
 export function formatPromoBroadcastMessage(
   coupon: PromoCoupon,
@@ -99,9 +97,9 @@ export function formatPromoBroadcastMessage(
     name: 'श्री गणेश किराना स्टोर',
     phone: '+91 98765 43210'
   },
-  lang: 'hi' | 'en' = 'hi'
+  lang: Lang = 'hi'
 ): string {
-  const isHi = lang === 'hi';
+  const isHi = lang === 'hi' || lang === 'gu' || lang === 'mr';
 
   let msg = isHi
     ? `🎉 *${shopInfo.name}* की ओर से त्योहारी महा-बचत ऑफर! 🛍️✨\n\n`
@@ -129,7 +127,7 @@ export function generatePromoWhatsAppUrl(
   phone: string,
   coupon: PromoCoupon,
   shopInfo?: { name: string; phone: string },
-  lang: 'hi' | 'en' = 'hi'
+  lang: Lang = 'hi'
 ): string {
   const text = formatPromoBroadcastMessage(coupon, shopInfo, lang);
   const cleanPhone = (phone || '').replace(/[^\d]/g, '');

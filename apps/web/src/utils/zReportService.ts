@@ -1,3 +1,5 @@
+import type { Lang } from '../i18n/translations.ts';
+
 export interface DailySalesSummary {
   date: string;
   totalSales: number;
@@ -180,9 +182,9 @@ export const PERIOD_ANALYTICS_DATA: Record<'today' | 'yesterday' | 'week' | 'mon
  */
 export function formatDailyZReportText(
   zReport: ZReportData,
-  lang: 'hi' | 'en' = 'hi'
+  lang: Lang = 'hi'
 ): string {
-  const isHi = lang === 'hi';
+  const isHi = lang === 'hi' || lang === 'gu' || lang === 'mr';
 
   let msg = `📊 *${isHi ? 'दुकान डेली क्लोजिंग Z-रिपोर्ट' : 'Daily Z-Closing Report'}*\n`;
   msg += `🏪 *${zReport.shopName}*\n`;
@@ -222,7 +224,7 @@ export function formatDailyZReportText(
 export function generateDailyZReportWhatsAppUrl(
   zReport: ZReportData,
   ownerPhone = '9876543210',
-  lang: 'hi' | 'en' = 'hi'
+  lang: Lang = 'hi'
 ): string {
   const text = formatDailyZReportText(zReport, lang);
   const cleanPhone = ownerPhone.replace(/[^\d]/g, '');

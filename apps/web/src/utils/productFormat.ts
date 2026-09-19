@@ -130,11 +130,13 @@ export function getCleanHindiName(product: { name: string; nameHindi?: string; h
   return product.name || '';
 }
 
+import type { Lang } from '../i18n/translations.ts';
+
 /**
  * Formats a product display title considering the active language
  */
-export function formatProductTitle(product: { name: string; nameHindi?: string; hindiName?: string }, lang: 'hi' | 'en'): string {
-  if (lang === 'hi') {
+export function formatProductTitle(product: { name: string; nameHindi?: string; hindiName?: string }, lang: Lang): string {
+  if (lang === 'hi' || lang === 'gu' || lang === 'mr') {
     return getCleanHindiName(product);
   }
   return product.name || '';

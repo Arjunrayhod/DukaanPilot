@@ -1,6 +1,4 @@
-/**
- * DukaanPilot - Thermal Receipt & WhatsApp Invoice Formatter
- */
+import type { Lang } from '../i18n/translations.ts';
 
 export interface ReceiptItem {
   id: string | number;
@@ -38,8 +36,8 @@ export interface ReceiptData {
 /**
  * Formats a clean, readable WhatsApp invoice text in Hindi/English
  */
-export function formatWhatsAppInvoice(data: ReceiptData, lang: 'hi' | 'en' = 'hi'): string {
-  const isHi = lang === 'hi';
+export function formatWhatsAppInvoice(data: ReceiptData, lang: Lang = 'hi'): string {
+  const isHi = lang === 'hi' || lang === 'gu' || lang === 'mr';
 
   let msg = `🏪 *${data.shopName}*\n`;
   msg += `📍 ${data.shopAddress} | 📞 ${data.shopPhone}\n`;

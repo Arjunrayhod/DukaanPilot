@@ -1,6 +1,4 @@
-/**
- * DukaanPilot - Digital Khata Ledger & Automated WhatsApp Reminder Service
- */
+import type { Lang } from '../i18n/translations.ts';
 
 export interface KhataTransaction {
   id: string;
@@ -199,9 +197,9 @@ export function formatKhataReminderMessage(
     phone: '+91 98765 43210',
     upiId: 'shreeganesh@sbi'
   },
-  lang: 'hi' | 'en' = 'hi'
+  lang: Lang = 'hi'
 ): string {
-  const isHi = lang === 'hi';
+  const isHi = lang === 'hi' || lang === 'gu' || lang === 'mr';
 
   let msg = isHi
     ? `नमस्ते *${customer.name} जी* 🙏\n\n`
@@ -243,7 +241,7 @@ export function generateKhataWhatsAppUrl(
     phone: string;
     upiId: string;
   },
-  lang: 'hi' | 'en' = 'hi'
+  lang: Lang = 'hi'
 ): string {
   const text = formatKhataReminderMessage(customer, shopInfo, lang);
   const cleanPhone = (customer.phone || '').replace(/[^\d]/g, '');

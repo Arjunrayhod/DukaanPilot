@@ -60,7 +60,12 @@ export function App() {
   }, []);
 
   const toggleLanguage = () => {
-    setLang((prev) => (prev === 'hi' ? 'en' : 'hi'));
+    setLang((prev) => {
+      if (prev === 'hi') return 'en';
+      if (prev === 'en') return 'gu';
+      if (prev === 'gu') return 'mr';
+      return 'hi';
+    });
   };
 
   const handleQuickToggleRole = () => {

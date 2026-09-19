@@ -41,6 +41,7 @@ import { findProductByBarcode, playScannerBeep, BarcodeProduct } from '../utils/
 import { INITIAL_INVENTORY_ITEMS, decrementStockOnSale, InventoryItem } from '../utils/inventoryService';
 import { INITIAL_LOYALTY_ACCOUNTS, calculateEarnedPoints, LoyaltyAccount } from '../utils/loyaltyService';
 import { recordCompletedBill } from '../utils/salesService';
+import { announceSoundboxPayment } from '../utils/soundboxService';
 
 interface CartItem {
   id: string | number;
@@ -408,10 +409,12 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
     // 4. Clear cart for next sale
     setCart([]);
 
-    const voiceAnnounce = lang === 'hi'
-      ? `बिल पूरा हुआ, कुल ₹${grandTotal}${earned > 0 ? `। ${earned} लॉयल्टी पॉइंट्स जुड़े` : ''}`
-      : `Bill completed, total ₹${grandTotal}`;
-    speakHindi(voiceAnnounce, lang);
+    // 5. Smart Soundbox Voice Alert & Chime
+    announceSoundboxPayment({
+      amount: grandTotal,
+      mode: selectedPayment,
+      lang
+    });
   };
 
   return (

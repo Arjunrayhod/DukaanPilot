@@ -1,6 +1,7 @@
 import React from 'react';
-import { Store, ShieldCheck, Languages, User, ArrowLeftRight, Zap, BookOpen, Package, BarChart3 } from 'lucide-react';
+import { Store, ShieldCheck, Languages, User, ArrowLeftRight, Zap, BookOpen, Package, BarChart3, Volume2, VolumeX } from 'lucide-react';
 import { Lang, translations } from '../i18n/translations';
+import { useSoundbox } from '../utils/soundboxService';
 
 interface HeaderProps {
   storeName: string;
@@ -30,6 +31,7 @@ export function Header({
   onQuickToggleRole,
 }: HeaderProps) {
   const t = translations[lang];
+  const { settings, toggleSoundbox, testAnnouncement } = useSoundbox();
 
   const desktopNavTabs = [
     { id: 'home', label: t.navHome, icon: Store },
@@ -38,6 +40,13 @@ export function Header({
     { id: 'inventory', label: t.navInventory, icon: Package },
     { id: 'analytics', label: t.navAnalytics, icon: BarChart3 },
   ];
+
+  const langLabels: Record<Lang, string> = {
+    hi: 'हिन्दी',
+    en: 'EN',
+    gu: 'ગુજરાતી',
+    mr: 'मराठी'
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200/80 shadow-[0_1px_10px_rgba(0,0,0,0.03)] transition-all">
@@ -115,6 +124,33 @@ export function Header({
 
         {/* Action Controls & Capsule Switchers */}
         <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          {/* Smart Soundbox Simulator Pill */}
+          {userRole === 'OWNER' && (
+            <div className="flex items-center">
+              <button
+                onClick={toggleSoundbox}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 cursor-pointer border ${
+                  settings.enabled 
+                    ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200 shadow-xs' 
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-500 border-slate-200'
+                }`}
+                title={settings.enabled ? "साउंडबॉक्स ऑन (Soundbox Active - Click to Mute)" : "साउंडबॉक्स म्यूट (Soundbox Muted - Click to Enable)"}
+              >
+                {settings.enabled ? (
+                  <>
+                    <Volume2 className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+                    <span className="hidden md:inline">साउंडबॉक्स</span>
+                  </>
+                ) : (
+                  <>
+                    <VolumeX className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="hidden md:inline">म्यूट</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
           {/* Quick Role Switcher Pill */}
           {onQuickToggleRole && (
             <button
@@ -137,7 +173,7 @@ export function Header({
             title="भाषा बदलें (Toggle Language)"
           >
             <Languages className="w-3.5 h-3.5 text-blue-700" />
-            <span>{lang === 'hi' ? 'हिन्दी' : 'EN'}</span>
+            <span>{langLabels[lang] || 'हिन्दी'}</span>
           </button>
 
           {/* Profile / Fast Login Button */}
@@ -153,3 +189,4 @@ export function Header({
     </header>
   );
 }
+

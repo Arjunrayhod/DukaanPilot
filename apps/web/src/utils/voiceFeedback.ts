@@ -1,6 +1,4 @@
-/**
- * Text-to-Speech Voice Feedback in Hindi and Indian English
- */
+import { Lang } from '../i18n/translations';
 
 let cachedVoices: SpeechSynthesisVoice[] = [];
 
@@ -11,7 +9,7 @@ if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
   };
 }
 
-export function speakHindi(text: string, lang: 'hi' | 'en' = 'hi'): void {
+export function speakHindi(text: string, lang: Lang = 'hi'): void {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     return;
   }
@@ -24,18 +22,21 @@ export function speakHindi(text: string, lang: 'hi' | 'en' = 'hi'): void {
     window.speechSynthesis.cancel(); // Stop any previous utterance
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = lang === 'hi' ? 'hi-IN' : 'en-IN';
+    if (lang === 'hi') utterance.lang = 'hi-IN';
+    else if (lang === 'gu') utterance.lang = 'gu-IN';
+    else if (lang === 'mr') utterance.lang = 'mr-IN';
+    else utterance.lang = 'en-IN';
+
     utterance.rate = 1.05;
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
 
     const voices = cachedVoices.length > 0 ? cachedVoices : window.speechSynthesis.getVoices();
     
-    // Pick the most natural Hindi or Indian English voice
-    const voice = voices.find(v => v.lang.toLowerCase().includes('hi-in') || v.lang.toLowerCase().includes('hi_in')) ||
+    // Pick the most natural voice for the locale
+    const voice = voices.find(v => v.lang.toLowerCase().includes(utterance.lang.toLowerCase())) ||
                   voices.find(v => v.lang.toLowerCase().includes('hi')) ||
                   voices.find(v => v.lang.toLowerCase().includes('en-in') || v.name.toLowerCase().includes('india')) ||
-                  voices.find(v => v.lang.toLowerCase().startsWith('en')) ||
                   voices[0];
     
     if (voice) {
