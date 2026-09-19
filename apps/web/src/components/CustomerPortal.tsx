@@ -16,11 +16,19 @@ import {
   ShoppingBag,
   Info,
   Search,
+  Share2,
+  Truck,
+  MapPin,
 } from 'lucide-react';
 import { fetchProducts, fetchCategories } from '../services/api';
 import { Lang, translations } from '../i18n/translations';
 import { getCleanHindiName } from '../utils/productFormat';
-import { saveOnlineOrder, formatWhatsAppOrderText, OnlineCustomerOrder } from '../utils/orderService';
+import { 
+  saveOnlineOrder, 
+  formatWhatsAppOrderText, 
+  generateShareStoreMessage,
+  OnlineCustomerOrder 
+} from '../utils/orderService';
 import { speakHindi } from '../utils/voiceFeedback';
 
 interface CustomerPortalProps {
@@ -47,6 +55,8 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
+  const [deliveryType, setDeliveryType] = useState<'DELIVERY' | 'PICKUP'>('DELIVERY');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
 
   // Fallback catalog
   const defaultCatalog = [
@@ -110,6 +120,13 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     return sum + price * count;
   }, 0);
 
+  const handleShareStore = () => {
+    const msg = encodeURIComponent(
+      generateShareStoreMessage(customer.shopName || 'श्री गणेश किराना स्टोर', window.location.href)
+    );
+    window.open(`https://api.whatsapp.com/send?text=${msg}`, '_blank');
+  };
+
   const handleSendWhatsAppOrder = () => {
     const orderNumber = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
     const orderItems = Object.entries(cart).map(([id, count]) => {
@@ -140,11 +157,13 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
       items: orderItems,
       itemCount: cartTotalCount,
       totalAmount: cartTotalPrice,
+      deliveryType,
+      deliveryAddress: deliveryType === 'DELIVERY' ? (deliveryAddress || 'दिए गए फोन पर संपर्क करें') : undefined,
       status: 'NEW',
       paymentStatus: 'COD',
       createdAt: `आज, ${timeStr}`,
       timestamp: Date.now(),
-      notes: 'कस्टमर पोर्टल से प्राप्त ऑनलाइन आर्डर'
+      notes: deliveryType === 'DELIVERY' ? 'होम डिलीवरी आर्डर' : 'दुकान से सेल्फ-पिकअप आर्डर'
     };
 
     saveOnlineOrder(newOrder);
@@ -157,7 +176,9 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
           customerPhone: customer.phone,
           items: orderItems,
           totalAmount: cartTotalPrice,
-          notes: 'कस्टमर पोर्टल से प्राप्त ऑनलाइन आर्डर'
+          deliveryType,
+          deliveryAddress: deliveryType === 'DELIVERY' ? deliveryAddress : undefined,
+          notes: deliveryType === 'DELIVERY' ? 'होम डिलीवरी आर्डर' : 'दुकान पिकअप आर्डर'
         },
         customer.shopName || 'श्री गणेश किराना स्टोर'
       )
@@ -216,7 +237,14 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleShareStore}
+              className="inline-flex items-center gap-1.5 text-xs font-bold bg-emerald-600/80 hover:bg-emerald-600 px-3 py-1.5 rounded-full border border-emerald-400/30 text-white transition-all shadow-sm cursor-pointer"
+            >
+              <Share2 className="w-3 h-3 text-emerald-200" />
+              <span>{lang === 'hi' ? 'स्टोर शेयर करें' : 'Share Store'}</span>
+            </button>
             <a
               href="tel:9876543210"
               className="inline-flex items-center gap-1.5 text-xs font-bold bg-slate-900/80 hover:bg-slate-900 px-3 py-1.5 rounded-full border border-white/15 text-white transition-all shadow-sm cursor-pointer"
@@ -484,13 +512,64 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
               })}
             </div>
 
+            {/* Delivery Type & Address Selector when cart has items */}
+            {cartTotalCount > 0 && (
+              <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Truck className="w-4 h-4 text-indigo-700" />
+                    <span>{lang === 'hi' ? 'डिलीवरी का प्रकार चुनें' : 'Select Delivery Mode'}</span>
+                  </span>
+                  <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-indigo-200">
+                    <button
+                      type="button"
+                      onClick={() => setDeliveryType('DELIVERY')}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                        deliveryType === 'DELIVERY'
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <span>🏠</span>
+                      <span>{lang === 'hi' ? 'होम डिलीवरी' : 'Delivery'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeliveryType('PICKUP')}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                        deliveryType === 'PICKUP'
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      <span>🏬</span>
+                      <span>{lang === 'hi' ? 'दुकान पिकअप' : 'Pickup'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {deliveryType === 'DELIVERY' && (
+                  <div className="relative">
+                    <MapPin className="w-4 h-4 text-indigo-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={deliveryAddress}
+                      onChange={(e) => setDeliveryAddress(e.target.value)}
+                      placeholder={lang === 'hi' ? 'डिलीवरी का पता (मकान नं, गली, लैंडमार्क)...' : 'Delivery address (House no, Street, Landmark)...'}
+                      className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-indigo-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Permanent Floating Docked Cart Bar (Always visible without scrolling) */}
             {cartTotalCount > 0 && (
               <div className="fixed bottom-4 inset-x-3 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 w-auto sm:w-full sm:max-w-xl z-50 p-4 rounded-3xl bg-slate-950/95 backdrop-blur-2xl text-white flex items-center justify-between gap-4 shadow-[0_10px_35px_rgba(0,0,0,0.35)] border border-white/20 animate-in slide-in-from-bottom-4 duration-300">
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                    <span>{cartTotalCount} {t.itemsInCart}</span>
+                    <span>{cartTotalCount} {t.itemsInCart} ({deliveryType === 'DELIVERY' ? (lang === 'hi' ? 'होम डिलीवरी' : 'Delivery') : (lang === 'hi' ? 'दुकान पिकअप' : 'Pickup')})</span>
                   </div>
                   <div className="text-xl font-black font-mono text-white tracking-tight">
                     ₹{cartTotalPrice.toLocaleString('en-IN')}

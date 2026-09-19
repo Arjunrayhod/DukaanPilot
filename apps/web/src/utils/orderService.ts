@@ -1,4 +1,4 @@
-﻿export interface OrderItem {
+export interface OrderItem {
   id: string;
   name: string;
   hindiName?: string;
@@ -18,12 +18,15 @@ export interface OnlineCustomerOrder {
   totalAmount: number;
   status: 'NEW' | 'ACCEPTED' | 'PACKED' | 'DELIVERED' | 'REJECTED';
   paymentStatus: 'COD' | 'PAID_UPI' | 'KHATA_PENDING';
+  deliveryType?: 'DELIVERY' | 'PICKUP';
+  deliveryAddress?: string;
   createdAt: string;
   timestamp: number;
   notes?: string;
 }
 
 const STORAGE_KEY = 'dukaanpilot_online_orders';
+let inMemoryOrders: OnlineCustomerOrder[] | null = null;
 
 export const INITIAL_ONLINE_ORDERS: OnlineCustomerOrder[] = [
   {
@@ -31,6 +34,8 @@ export const INITIAL_ONLINE_ORDERS: OnlineCustomerOrder[] = [
     orderNumber: 'ORD-1082',
     customerName: 'रमेश कुमार (Ramesh Kumar)',
     customerPhone: '9823456789',
+    deliveryType: 'DELIVERY',
+    deliveryAddress: 'मकान नं 42, गली नं 3, मेन मार्केट',
     items: [
       {
         id: 'prod_atta_01',
@@ -63,9 +68,13 @@ export const INITIAL_ONLINE_ORDERS: OnlineCustomerOrder[] = [
 
 export function getOnlineOrders(): OnlineCustomerOrder[] {
   try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    if (data) {
-      return JSON.parse(data);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const data = localStorage.getItem(STORAGE_KEY);
+      if (data) {
+        return JSON.parse(data);
+      }
+    } else if (inMemoryOrders !== null) {
+      return inMemoryOrders;
     }
   } catch (e) {
     console.error('Failed to load online orders:', e);
@@ -77,8 +86,12 @@ export function saveOnlineOrder(order: OnlineCustomerOrder): OnlineCustomerOrder
   try {
     const existing = getOnlineOrders();
     const updated = [order, ...existing.filter((o) => o.id !== order.id)];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    window.dispatchEvent(new CustomEvent('dukaanpilot_new_order', { detail: order }));
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('dukaanpilot_new_order', { detail: order }));
+    } else {
+      inMemoryOrders = updated;
+    }
     return updated;
   } catch (e) {
     console.error('Failed to save order:', e);
@@ -90,8 +103,12 @@ export function updateOrderStatus(orderId: string, status: OnlineCustomerOrder['
   try {
     const existing = getOnlineOrders();
     const updated = existing.map((o) => (o.id === orderId ? { ...o, status } : o));
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    window.dispatchEvent(new CustomEvent('dukaanpilot_orders_updated', { detail: updated }));
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('dukaanpilot_orders_updated', { detail: updated }));
+    } else {
+      inMemoryOrders = updated;
+    }
     return updated;
   } catch (e) {
     console.error('Failed to update order status:', e);
@@ -106,14 +123,26 @@ export function formatWhatsAppOrderText(
     customerPhone: string;
     items: OrderItem[];
     totalAmount: number;
+    deliveryType?: 'DELIVERY' | 'PICKUP';
+    deliveryAddress?: string;
     notes?: string;
   },
-  shopName = 'श्री गणेश किराना स्टोर (Shree Ganesh Kirana)'
+  shopName = 'श्री गणेश किराना स्टोर'
 ): string {
   let msg = `🛒 *नया ऑनलाइन ऑर्डर #${order.orderNumber}*\n\n`;
   msg += `👤 *ग्राहक:* ${order.customerName}\n`;
   msg += `📞 *फोन:* ${order.customerPhone}\n`;
   msg += `🏪 *दुकान:* ${shopName}\n`;
+  
+  if (order.deliveryType === 'DELIVERY') {
+    msg += `🛵 *प्रकार:* 🏠 होम डिलीवरी (Home Delivery)\n`;
+    if (order.deliveryAddress) {
+      msg += `📍 *पता:* ${order.deliveryAddress}\n`;
+    }
+  } else if (order.deliveryType === 'PICKUP') {
+    msg += `🛍️ *प्रकार:* 🏬 दुकान से पिकअप (Self-Pickup)\n`;
+  }
+
   msg += `━━━━━━━━━━━━━━━━━━━━\n`;
   msg += `📦 *ऑर्डर सामान सूची:*\n`;
 
@@ -131,4 +160,13 @@ export function formatWhatsAppOrderText(
   msg += `\n🙏 *कृपया ऑर्डर तैयार करके डिलीवरी की पुष्टि करें।*`;
 
   return msg;
+}
+
+export function generateShareStoreMessage(shopName = 'श्री गणेश किराना स्टोर', storeUrl = 'https://dukaanpilot.app/shop'): string {
+  return `🏪 *${shopName} का ऑनलाइन स्टोर*\n\n` +
+    `नमस्ते! अब आप घर बैठे हमारी दुकान से ताज़ा किराना व राशन ऑनलाइन ऑर्डर कर सकते हैं।\n\n` +
+    `🛒 *ऑनलाइन ऑर्डर करने के लिए लिंक पर क्लिक करें:*\n` +
+    `👉 ${storeUrl}\n\n` +
+    `⚡ तेज़ होम डिलीवरी व दुकान पिकअप उपलब्ध\n` +
+    `धन्यवाद! 🙏`;
 }

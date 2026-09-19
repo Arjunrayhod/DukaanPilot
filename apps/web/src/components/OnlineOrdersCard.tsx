@@ -1,7 +1,8 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ShoppingBag, Check, Clock, Phone, MessageSquare, ArrowRight, 
-  Sparkles, CheckCircle2, ChevronRight, PackageCheck, AlertCircle, Printer
+  Sparkles, CheckCircle2, ChevronRight, PackageCheck, AlertCircle, Printer,
+  Truck, MapPin
 } from 'lucide-react';
 import { Lang } from '../i18n/translations';
 import { 
@@ -144,11 +145,29 @@ export function OnlineOrdersCard({ lang, onConvertToPosBill }: OnlineOrdersCardP
                       >
                         {isNew ? (isHi ? 'नया ऑर्डर' : 'NEW') : isAccepted ? (isHi ? 'स्वीकृत' : 'ACCEPTED') : (isHi ? 'पैक हुआ' : 'PACKED')}
                       </span>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                          order.deliveryType === 'PICKUP'
+                            ? 'bg-slate-100 text-slate-700 border border-slate-200'
+                            : 'bg-blue-50 text-blue-700 border border-blue-200'
+                        }`}
+                      >
+                        {order.deliveryType === 'PICKUP' ? '🏬 पिकअप' : '🏠 होम डिलीवरी'}
+                      </span>
                     </div>
-                    <div className="text-xs text-slate-500 flex items-center gap-2 font-mono mt-0.5">
+                    <div className="text-xs text-slate-500 flex flex-wrap items-center gap-2 font-mono mt-0.5">
                       <span>📞 {order.customerPhone}</span>
                       <span>&bull;</span>
                       <span>🕒 {order.createdAt}</span>
+                      {order.deliveryAddress && (
+                        <>
+                          <span>&bull;</span>
+                          <span className="text-indigo-700 font-sans font-medium flex items-center gap-0.5 truncate max-w-[200px]">
+                            <MapPin className="w-3 h-3 shrink-0" />
+                            {order.deliveryAddress}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
