@@ -197,6 +197,7 @@ export function formatWhatsAppOrderText(
     totalAmount: number;
     deliveryType?: 'DELIVERY' | 'PICKUP';
     deliveryAddress?: string;
+    paymentStatus?: 'COD' | 'PAID_UPI' | 'KHATA_PENDING' | 'KHATA';
     notes?: string;
   },
   shopName = 'श्री गणेश किराना स्टोर'
@@ -214,6 +215,14 @@ export function formatWhatsAppOrderText(
   } else if (order.deliveryType === 'PICKUP') {
     msg += `🛍️ *प्रकार:* 🏬 दुकान से पिकअप (Self-Pickup)\n`;
   }
+
+  const paymentText = 
+    order.paymentStatus === 'PAID_UPI' 
+      ? '📲 ऑनलाइन UPI (Online UPI / QR)' 
+      : order.paymentStatus === 'KHATA' || order.paymentStatus === 'KHATA_PENDING'
+      ? '📖 खाता लेजर उधार (Khata Pay Later)'
+      : '💵 कैश ऑन डिलीवरी (Cash on Delivery / COD)';
+  msg += `💳 *भुगतान:* ${paymentText}\n`;
 
   msg += `━━━━━━━━━━━━━━━━━━━━\n`;
   msg += `📦 *ऑर्डर सामान सूची:*\n`;

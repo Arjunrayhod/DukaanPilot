@@ -22,7 +22,13 @@ import {
   Package,
   PackageCheck,
   RotateCcw,
-  Check
+  Check,
+  X,
+  CreditCard,
+  Banknote,
+  BookOpen,
+  Send,
+  ExternalLink
 } from 'lucide-react';
 import { fetchProducts, fetchCategories } from '../services/api';
 import { Lang, translations } from '../i18n/translations';
@@ -64,6 +70,10 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   const [loading, setLoading] = useState(false);
   const [deliveryType, setDeliveryType] = useState<'DELIVERY' | 'PICKUP'>('DELIVERY');
   const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [paymentMode, setPaymentMode] = useState<'COD' | 'PAID_UPI' | 'KHATA_PENDING'>('COD');
+  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
+  const [hasPaidOnline, setHasPaidOnline] = useState(false);
+  const [orderNotes, setOrderNotes] = useState('');
   const [customerOrders, setCustomerOrders] = useState<OnlineCustomerOrder[]>(() => getOnlineOrders());
 
   useEffect(() => {
@@ -147,7 +157,14 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     window.open(`https://api.whatsapp.com/send?text=${msg}`, '_blank');
   };
 
-  const handleSendWhatsAppOrder = () => {
+  const handleOpenCheckout = () => {
+    if (cartTotalCount === 0) return;
+    setIsCheckoutModalOpen(true);
+  };
+
+  const handleConfirmAndPlaceOrder = () => {
+    if (cartTotalCount === 0) return;
+
     const orderNumber = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
     const orderItems: OrderItem[] = Object.entries(cart).map(([id, count]: [string, number]) => {
       const item = products.find((c: any) => String(c.id) === String(id));
@@ -180,15 +197,16 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
       deliveryType,
       deliveryAddress: deliveryType === 'DELIVERY' ? (deliveryAddress || 'दिए गए फोन पर संपर्क करें') : undefined,
       status: 'NEW',
-      paymentStatus: 'COD',
+      paymentStatus: paymentMode,
       createdAt: `आज, ${timeStr}`,
       timestamp: Date.now(),
-      notes: deliveryType === 'DELIVERY' ? 'होम डिलीवरी आर्डर' : 'दुकान से सेल्फ-पिकअप आर्डर'
+      notes: orderNotes || (deliveryType === 'DELIVERY' ? 'होम डिलीवरी आर्डर' : 'दुकान से सेल्फ-पिकअप आर्डर')
     };
 
     saveOnlineOrder(newOrder);
     setCustomerOrders(getOnlineOrders());
     setCart({});
+    setIsCheckoutModalOpen(false);
     setActiveTab('orders'); // Auto navigate to My Orders for live tracking!
 
     const message = encodeURIComponent(
@@ -201,7 +219,8 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
           totalAmount: cartTotalPrice,
           deliveryType,
           deliveryAddress: deliveryType === 'DELIVERY' ? deliveryAddress : undefined,
-          notes: deliveryType === 'DELIVERY' ? 'होम डिलीवरी आर्डर' : 'दुकान पिकअप आर्डर'
+          paymentStatus: paymentMode,
+          notes: newOrder.notes
         },
         customer.shopName || 'श्री गणेश किराना स्टोर'
       )
@@ -508,7 +527,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 </div>
                 {cartTotalCount > 0 && (
                   <button
-                    onClick={handleSendWhatsAppOrder}
+                    onClick={handleOpenCheckout}
                     className="px-3.5 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
                   >
                     <ShoppingBag className="w-3.5 h-3.5" />
@@ -667,11 +686,11 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                 </div>
 
                 <button
-                  onClick={handleSendWhatsAppOrder}
+                  onClick={handleOpenCheckout}
                   className="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg transition-transform active:scale-95 cursor-pointer shrink-0"
                 >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>{t.sendOrderWhatsApp}</span>
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>{lang === 'hi' ? '🛍️ चेकआउट व ऑर्डर करें' : 'Checkout & Order'}</span>
                 </button>
               </div>
             )}
@@ -833,8 +852,12 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                           <div className="text-xl font-black font-mono text-slate-950">
                             ₹{ord.totalAmount.toLocaleString('en-IN')}
                           </div>
-                          <span className="text-[11px] font-bold text-slate-500">
-                            {ord.paymentStatus === 'PAID_UPI' ? 'UPI द्वारा भुगतान' : 'कैश ऑन डिलीवरी (COD)'}
+                          <span className="text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                            {ord.paymentStatus === 'PAID_UPI'
+                              ? (lang === 'hi' ? '📲 UPI द्वारा भुगतान' : '📲 UPI Paid')
+                              : ord.paymentStatus === 'KHATA_PENDING'
+                              ? (lang === 'hi' ? '📖 खाता लेजर उधार' : '📖 Khata Credit')
+                              : (lang === 'hi' ? '💵 कैश ऑन डिलीवरी (COD)' : '💵 Cash on Delivery')}
                           </span>
                         </div>
                       </div>
@@ -1004,6 +1027,308 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. ORDER CHECKOUT MODAL (Cash vs Online UPI vs Khata) */}
+      {isCheckoutModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div 
+            className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 p-6 space-y-5 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center shadow-xs">
+                  <ShoppingBag className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 font-display">
+                    {lang === 'hi' ? '🛍️ ऑर्डर चेकआउट व पुष्टि' : '🛍️ Order Checkout & Confirm'}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {customer.shopName || 'श्री गणेश किराना स्टोर'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsCheckoutModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Cart Items Summary */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                <span>{lang === 'hi' ? 'सामान सूची (Items List):' : 'Items List:'}</span>
+                <span className="font-mono text-indigo-700">{cartTotalCount} {lang === 'hi' ? 'सामान' : 'items'}</span>
+              </div>
+              <div className="max-h-36 overflow-y-auto divide-y divide-slate-100 bg-slate-50/70 rounded-2xl p-3 border border-slate-200/80">
+                {Object.entries(cart).map(([id, count]) => {
+                  const item = products.find((c) => String(c.id) === String(id));
+                  const title = lang === 'hi' ? getCleanHindiName(item) : (item?.name || 'Item');
+                  const price = item ? (item.sellingPrice || item.price || 0) : 0;
+                  return (
+                    <div key={id} className="py-1.5 flex items-center justify-between text-xs">
+                      <div className="truncate pr-2">
+                        <span className="font-bold text-slate-900">{title}</span>
+                        <span className="text-slate-400 font-mono text-[11px] ml-1.5">({count} {item?.unit || 'pk'} x ₹{price})</span>
+                      </div>
+                      <span className="font-mono font-bold text-slate-900 shrink-0">₹{price * count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Step 1: Delivery Mode */}
+            <div className="space-y-2.5">
+              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <Truck className="w-4 h-4 text-indigo-700" />
+                <span>{lang === 'hi' ? '1. डिलीवरी का माध्यम चुनें:' : '1. Select Delivery Mode:'}</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setDeliveryType('DELIVERY')}
+                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                    deliveryType === 'DELIVERY'
+                      ? 'bg-indigo-50 border-indigo-300 ring-2 ring-indigo-500/20 shadow-xs'
+                      : 'bg-white border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg">🏠</span>
+                    {deliveryType === 'DELIVERY' && <CheckCircle2 className="w-4 h-4 text-indigo-600" />}
+                  </div>
+                  <div className="font-bold text-xs text-slate-900 mt-1">
+                    {lang === 'hi' ? 'होम डिलीवरी' : 'Home Delivery'}
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    {lang === 'hi' ? 'घर पर पहुंचाएं' : 'Deliver to address'}
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDeliveryType('PICKUP')}
+                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                    deliveryType === 'PICKUP'
+                      ? 'bg-indigo-50 border-indigo-300 ring-2 ring-indigo-500/20 shadow-xs'
+                      : 'bg-white border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg">🏬</span>
+                    {deliveryType === 'PICKUP' && <CheckCircle2 className="w-4 h-4 text-indigo-600" />}
+                  </div>
+                  <div className="font-bold text-xs text-slate-900 mt-1">
+                    {lang === 'hi' ? 'दुकान से पिकअप' : 'Self Pickup'}
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    {lang === 'hi' ? 'दुकान से खुद लें' : 'Pick from shop'}
+                  </div>
+                </button>
+              </div>
+
+              {deliveryType === 'DELIVERY' && (
+                <div className="relative pt-1">
+                  <MapPin className="w-4 h-4 text-indigo-500 absolute left-3 top-3.5" />
+                  <input
+                    type="text"
+                    value={deliveryAddress}
+                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                    placeholder={lang === 'hi' ? 'पूरा पता व लैंडमार्क (मकान नं, गली)...' : 'Full address and landmark...'}
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Step 2: Payment Mode (Cash vs UPI vs Khata) */}
+            <div className="space-y-2.5">
+              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <Banknote className="w-4 h-4 text-emerald-700" />
+                <span>{lang === 'hi' ? '2. भुगतान का तरीका चुनें (Payment Mode):' : '2. Select Payment Mode:'}</span>
+              </label>
+
+              <div className="space-y-2">
+                {/* 1. Cash on Delivery (COD) */}
+                <div
+                  onClick={() => setPaymentMode('COD')}
+                  className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                    paymentMode === 'COD'
+                      ? 'bg-emerald-50/80 border-emerald-300 ring-2 ring-emerald-500/20 shadow-xs'
+                      : 'bg-white border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-base shrink-0">
+                      💵
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs text-slate-900">
+                        {lang === 'hi' ? 'कैश ऑन डिलीवरी (COD)' : 'Cash on Delivery (COD)'}
+                      </div>
+                      <div className="text-[11px] text-slate-500">
+                        {lang === 'hi' ? 'सामान मिलने पर नकद भुगतान करें' : 'Pay cash upon delivery / pickup'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                    paymentMode === 'COD' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300'
+                  }`}>
+                    {paymentMode === 'COD' && <Check className="w-3 h-3" />}
+                  </div>
+                </div>
+
+                {/* 2. Online UPI Payment */}
+                <div
+                  onClick={() => setPaymentMode('PAID_UPI')}
+                  className={`p-3.5 rounded-2xl border transition-all cursor-pointer space-y-2.5 ${
+                    paymentMode === 'PAID_UPI'
+                      ? 'bg-indigo-50/80 border-indigo-300 ring-2 ring-indigo-500/20 shadow-xs'
+                      : 'bg-white border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center font-bold text-base shrink-0">
+                        📲
+                      </div>
+                      <div>
+                        <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                          <span>{lang === 'hi' ? 'ऑनलाइन UPI / QR भुगतान' : 'Online UPI / QR Payment'}</span>
+                          <span className="px-1.5 py-0.2 rounded-full bg-indigo-600 text-white text-[9px] font-mono font-bold">Fast</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          {lang === 'hi' ? 'GPay, PhonePe, Paytm, BHIM द्वारा तुरंत भुगतान' : 'Pay instantly via GPay, PhonePe, Paytm'}
+                        </div>
+                      </div>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
+                      paymentMode === 'PAID_UPI' ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300'
+                    }`}>
+                      {paymentMode === 'PAID_UPI' && <Check className="w-3 h-3" />}
+                    </div>
+                  </div>
+
+                  {paymentMode === 'PAID_UPI' && (
+                    <div className="p-3 bg-white rounded-xl border border-indigo-200 space-y-2 text-xs">
+                      <div className="flex items-center justify-between bg-indigo-50/60 p-2 rounded-lg">
+                        <span className="text-slate-600 font-medium">{lang === 'hi' ? 'दुकान UPI आईडी:' : 'Shop UPI ID:'}</span>
+                        <span className="font-mono font-bold text-indigo-950">{customer.upiId || 'shreeganesh@sbi'}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={`upi://pay?pa=${encodeURIComponent(customer.upiId || 'shreeganesh@sbi')}&pn=${encodeURIComponent(customer.shopName || 'Kirana')}&am=${cartTotalPrice}&cu=INR`}
+                          className="flex-1 py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all text-center"
+                        >
+                          <CreditCard className="w-3.5 h-3.5" />
+                          <span>{lang === 'hi' ? `₹${cartTotalPrice} UPI ऐप से भरें` : `Pay ₹${cartTotalPrice} via UPI`}</span>
+                        </a>
+
+                        <button
+                          type="button"
+                          onClick={onOpenQr}
+                          className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1 border border-slate-200 cursor-pointer"
+                        >
+                          <QrCode className="w-3.5 h-3.5" />
+                          <span>QR</span>
+                        </button>
+                      </div>
+
+                      <label className="flex items-center gap-2 pt-1 text-[11px] text-slate-600 cursor-pointer font-medium">
+                        <input
+                          type="checkbox"
+                          checked={hasPaidOnline}
+                          onChange={(e) => setHasPaidOnline(e.target.checked)}
+                          className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
+                        />
+                        <span>{lang === 'hi' ? 'मैंने UPI से भुगतान कर दिया है / डिलीवरी पर ऑनलाइन दूंगा' : 'I will pay / have paid via UPI'}</span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Khata Pay Later (if khata exists) */}
+                <div
+                  onClick={() => setPaymentMode('KHATA_PENDING')}
+                  className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                    paymentMode === 'KHATA_PENDING'
+                      ? 'bg-amber-50/80 border-amber-300 ring-2 ring-amber-500/20 shadow-xs'
+                      : 'bg-white border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-base shrink-0">
+                      📖
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs text-slate-900">
+                        {lang === 'hi' ? 'खाता लेजर (उधार / बाद में दें)' : 'Khata Credit (Pay Later)'}
+                      </div>
+                      <div className="text-[11px] text-slate-500">
+                        {lang === 'hi' ? `मौजूदा खाता बकाया: ₹${customer.khataDue || 0} • बिल खाते में जुड़ेगा` : `Current due: ₹${customer.khataDue || 0} • Add to khata`}
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                    paymentMode === 'KHATA_PENDING' ? 'border-amber-600 bg-amber-600 text-white' : 'border-slate-300'
+                  }`}>
+                    {paymentMode === 'KHATA_PENDING' && <Check className="w-3 h-3" />}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 3: Order Notes */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-600">
+                {lang === 'hi' ? 'विशेष निर्देश / नोट (वैकल्पिक):' : 'Special Instructions / Notes (Optional):'}
+              </label>
+              <input
+                type="text"
+                value={orderNotes}
+                onChange={(e) => setOrderNotes(e.target.value)}
+                placeholder={lang === 'hi' ? 'जैसे: शाम 5 बजे भेजें, ताज़ा पैकेट देना...' : 'e.g. deliver after 5pm, fresh packet...'}
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            {/* Total & Confirm Button */}
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+              <div>
+                <span className="text-[11px] font-bold text-slate-400 block">{lang === 'hi' ? 'कुल देय राशि' : 'Total Amount'}</span>
+                <span className="text-xl font-black font-mono text-slate-950">₹{cartTotalPrice.toLocaleString('en-IN')}</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCheckoutModalOpen(false)}
+                  className="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
+                >
+                  {lang === 'hi' ? 'रद्द करें' : 'Cancel'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleConfirmAndPlaceOrder}
+                  className="px-6 py-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black flex items-center gap-2 shadow-lg transition-transform active:scale-95 cursor-pointer"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>{lang === 'hi' ? '🚀 ऑर्डर तुरंत दर्ज करें' : '🚀 Place Order Now'}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
