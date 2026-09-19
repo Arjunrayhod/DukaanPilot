@@ -1,7 +1,7 @@
 ﻿import React, { useState, useRef, useEffect } from 'react';
 import { 
   X, QrCode, Download, Share2, Upload, Image as ImageIcon, 
-  Check, Trash2, Sparkles, Printer, RefreshCw, ShieldCheck, Edit2
+  Check, Trash2, Sparkles, Printer, RefreshCw, ShieldCheck, Edit2, Smartphone
 } from 'lucide-react';
 import { Lang } from '../i18n/translations';
 import { speakHindi } from '../utils/voiceFeedback';
@@ -13,6 +13,7 @@ interface QrModalProps {
   shopName: string;
   upiId: string;
   customQrImage?: string;
+  userRole?: 'OWNER' | 'CUSTOMER';
   onUpdateQr?: (newUpiId: string, newCustomQrImage?: string) => void;
 }
 
@@ -23,11 +24,13 @@ export function QrModal({
   shopName, 
   upiId: initialUpiId,
   customQrImage: initialCustomQrImage,
+  userRole = 'OWNER',
   onUpdateQr 
 }: QrModalProps) {
   if (!isOpen) return null;
 
   const isHi = lang === 'hi';
+  const isOwner = userRole === 'OWNER';
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState<'upload' | 'dynamic'>(
@@ -46,13 +49,16 @@ export function QrModal({
     if (savedQr) {
       setCustomQrImage(savedQr);
     }
+    const savedUpi = localStorage.getItem('dukaanpilot_shop_upi');
+    if (savedUpi) {
+      setUpiId(savedUpi);
+    }
   }, []);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Read as Base64 Data URL
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
@@ -100,7 +106,8 @@ export function QrModal({
     `upi://pay?pa=${upiId}&pn=${encodeURIComponent(shopName)}&cu=INR`
   )}`;
 
-  const currentDisplayQr = activeTab === 'upload' && customQrImage ? customQrImage : dynamicQrUrl;
+  // If custom uploaded image exists, use it; otherwise use dynamic QR
+  const currentDisplayQr = customQrImage ? customQrImage : dynamicQrUrl;
 
   const handleDownload = () => {
     const link = document.createElement('a');
@@ -119,8 +126,8 @@ export function QrModal({
     window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handleOpenUpiApp = () => {
+    window.location.href = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(shopName)}&cu=INR`;
   };
 
   return (
@@ -140,44 +147,48 @@ export function QrModal({
         </div>
 
         <h3 className="text-lg font-black text-slate-900 tracking-tight">
-          {isHi ? 'दुकान UPI पेमेंट QR कोड' : 'Shop Payment QR Code'}
+          {isOwner
+            ? (isHi ? 'दुकान UPI पेमेंट QR कोड' : 'Shop Payment QR Code')
+            : (isHi ? 'स्कैन करें व ऑनलाइन भुगतान करें' : 'Scan & Pay via UPI')}
         </h3>
         <p className="text-xs text-slate-500 font-semibold">{shopName}</p>
 
-        {/* Mode Selector Tabs */}
-        <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-2xl my-3.5 w-full border border-slate-200/60">
-          <button
-            type="button"
-            onClick={() => setActiveTab('upload')}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              activeTab === 'upload'
-                ? 'bg-white text-indigo-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Upload className="w-3.5 h-3.5 text-indigo-600" />
-            <span>{isHi ? 'अपना QR अपलोड करें' : 'Upload Own QR'}</span>
-            {customQrImage && (
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            )}
-          </button>
+        {/* Mode Selector Tabs (ONLY FOR SHOPKEEPER / OWNER) */}
+        {isOwner && (
+          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-2xl my-3.5 w-full border border-slate-200/60">
+            <button
+              type="button"
+              onClick={() => setActiveTab('upload')}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                activeTab === 'upload'
+                  ? 'bg-white text-indigo-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Upload className="w-3.5 h-3.5 text-indigo-600" />
+              <span>{isHi ? 'अपना QR अपलोड करें' : 'Upload Own QR'}</span>
+              {customQrImage && (
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              )}
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('dynamic')}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              activeTab === 'dynamic'
-                ? 'bg-white text-indigo-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-            <span>{isHi ? 'ऑटो UPI QR' : 'Auto Dynamic QR'}</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab('dynamic')}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                activeTab === 'dynamic'
+                  ? 'bg-white text-indigo-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+              <span>{isHi ? 'ऑटो UPI QR' : 'Auto Dynamic QR'}</span>
+            </button>
+          </div>
+        )}
 
-        {/* Upload Action Strip (When in Upload mode) */}
-        {activeTab === 'upload' && (
+        {/* Upload Action Strip (ONLY FOR SHOPKEEPER / OWNER) */}
+        {isOwner && activeTab === 'upload' && (
           <div className="w-full mb-3 space-y-2">
             <input
               type="file"
@@ -235,18 +246,18 @@ export function QrModal({
         )}
 
         {/* QR Code Display Canvas */}
-        <div className="p-4 bg-white border-2 border-slate-200 rounded-2xl mb-3 shadow-inner relative flex flex-col items-center">
+        <div className={`p-4 bg-white border-2 border-slate-200 rounded-2xl mb-3 shadow-inner relative flex flex-col items-center ${!isOwner ? 'mt-3' : ''}`}>
           <div className="relative w-48 h-48 flex items-center justify-center bg-white rounded-xl overflow-hidden">
             <img
-              src={currentDisplayQr}
+              src={isOwner ? (activeTab === 'upload' && customQrImage ? customQrImage : dynamicQrUrl) : currentDisplayQr}
               alt="Shop UPI QR Code"
               className="w-full h-full object-contain rounded-lg"
             />
           </div>
 
-          {/* UPI ID Badge & Inline Editor */}
+          {/* UPI ID Badge */}
           <div className="mt-3 w-full pt-2.5 border-t border-slate-100 flex items-center justify-center gap-2">
-            {isEditingUpi ? (
+            {isOwner && isEditingUpi ? (
               <div className="flex items-center gap-1.5 w-full">
                 <input
                   type="text"
@@ -268,17 +279,26 @@ export function QrModal({
                 <span className="text-xs font-mono font-bold text-slate-800 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">
                   {upiId}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => { setTempUpi(upiId); setIsEditingUpi(true); }}
-                  className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-indigo-600 cursor-pointer"
-                  title={isHi ? 'UPI ID बदलें' : 'Edit UPI ID'}
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
+                {isOwner && (
+                  <button
+                    type="button"
+                    onClick={() => { setTempUpi(upiId); setIsEditingUpi(true); }}
+                    className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-indigo-600 cursor-pointer"
+                    title={isHi ? 'UPI ID बदलें' : 'Edit UPI ID'}
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             )}
           </div>
+
+          {/* Customer Support Apps Pill */}
+          {!isOwner && (
+            <div className="mt-2 flex items-center justify-center gap-1 text-[11px] font-bold text-slate-500">
+              <span>Google Pay &bull; PhonePe &bull; Paytm &bull; BHIM</span>
+            </div>
+          )}
 
           {saveSuccess && (
             <div className="mt-2 text-[11px] text-emerald-700 font-bold flex items-center gap-1 animate-in fade-in">
@@ -288,26 +308,57 @@ export function QrModal({
           )}
         </div>
 
-        {/* Action Buttons Grid */}
-        <div className="grid grid-cols-2 gap-2 w-full pt-1">
-          <button
-            type="button"
-            onClick={handleDownload}
-            className="h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <Download className="w-4 h-4" />
-            <span>{isHi ? 'डाउनलोड' : 'Download'}</span>
-          </button>
+        {/* Action Buttons */}
+        {!isOwner ? (
+          <div className="space-y-2 w-full pt-1">
+            <button
+              type="button"
+              onClick={handleOpenUpiApp}
+              className="w-full h-11 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer active:scale-95"
+            >
+              <Smartphone className="w-4 h-4" />
+              <span>{isHi ? 'UPI ऐप से सीधे भुगतान करें' : 'Pay via UPI App'}</span>
+            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={handleDownload}
+                className="h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                <span>{isHi ? 'डाउनलोड' : 'Download'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleShare}
+                className="h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95"
+              >
+                <Share2 className="w-4 h-4" />
+                <span>{isHi ? 'शेयर करें' : 'Share'}</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2 w-full pt-1">
+            <button
+              type="button"
+              onClick={handleDownload}
+              className="h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              <span>{isHi ? 'डाउनलोड' : 'Download'}</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={handleShare}
-            className="h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95"
-          >
-            <Share2 className="w-4 h-4" />
-            <span>{isHi ? 'WhatsApp शेयर' : 'Share QR'}</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={handleShare}
+              className="h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95"
+            >
+              <Share2 className="w-4 h-4" />
+              <span>{isHi ? 'WhatsApp शेयर' : 'Share QR'}</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

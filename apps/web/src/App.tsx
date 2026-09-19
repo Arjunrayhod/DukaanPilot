@@ -199,6 +199,7 @@ export function App() {
       {/* QR Code Modal */}
       <QrModal
         lang={lang}
+        userRole={currentUser?.role}
         isOpen={isQrOpen}
         onClose={() => setIsQrOpen(false)}
         shopName={currentUser?.shopName || 'Shree Ganesh Kirana'}
