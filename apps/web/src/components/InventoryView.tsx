@@ -13,6 +13,10 @@ import {
   StockAdjustmentLog,
   INITIAL_INVENTORY_ITEMS,
   INITIAL_STOCK_LOGS,
+  getInventoryItems,
+  saveInventoryItems,
+  getStockLogs,
+  saveStockLogs,
   getDaysUntilExpiry,
   getExpiryStatus
 } from '../utils/inventoryService';
@@ -34,8 +38,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
   const [loading, setLoading] = useState(false);
 
   // Expiry & Batch inventory state
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(INITIAL_INVENTORY_ITEMS);
-  const [stockLogs, setStockLogs] = useState<StockAdjustmentLog[]>(INITIAL_STOCK_LOGS);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(() => getInventoryItems());
+  const [stockLogs, setStockLogs] = useState<StockAdjustmentLog[]>(() => getStockLogs());
   const [expiryFilter, setExpiryFilter] = useState<'all' | 'near_expiry' | 'expired' | 'low_stock'>('all');
 
   // Modals state
@@ -116,6 +120,23 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
   useEffect(() => {
     loadCatalog();
   }, [search, selectedCategory]);
+
+  useEffect(() => {
+    const handleInvUpdate = () => {
+      setInventoryItems(getInventoryItems());
+    };
+    const handleLogsUpdate = () => {
+      setStockLogs(getStockLogs());
+    };
+
+    window.addEventListener('dukaanpilot_inventory_updated', handleInvUpdate);
+    window.addEventListener('dukaanpilot_stock_logs_updated', handleLogsUpdate);
+
+    return () => {
+      window.removeEventListener('dukaanpilot_inventory_updated', handleInvUpdate);
+      window.removeEventListener('dukaanpilot_stock_logs_updated', handleLogsUpdate);
+    };
+  }, []);
 
   const showNotification = (msg: string, isError = false) => {
     if (isError) {
@@ -201,7 +222,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
           barcode: payload.barcode,
           shelfLocation: formData.shelfLocation || 'Rack A1'
         };
-        setInventoryItems(prev => [newInv, ...prev]);
+        const updatedInv = [newInv, ...inventoryItems];
+        saveInventoryItems(updatedInv);
+        setInventoryItems(updatedInv);
 
         showNotification(isHi ? `नया सामान जोड़ा गया: ${payload.name}` : `New product added: ${payload.name}`);
         setIsAddProductOpen(false);
@@ -253,6 +276,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
     const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
     // Update smart batch inventory & log
+    const newLogs: StockAdjustmentLog[] = [];
     const updatedInventory = inventoryItems.map(item => {
       if (item.id === adjustingItem.id || item.name === adjustingItem.name) {
         const finalStock = Math.max(0, item.currentStock + deltaNum);
@@ -267,13 +291,19 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
           date: dateStr,
           time: timeStr
         };
-        setStockLogs(prev => [newLog, ...prev]);
+        newLogs.push(newLog);
         return { ...item, currentStock: finalStock };
       }
       return item;
     });
 
+    saveInventoryItems(updatedInventory);
     setInventoryItems(updatedInventory);
+    if (newLogs.length > 0) {
+      const updatedLogs = [...newLogs, ...stockLogs];
+      saveStockLogs(updatedLogs);
+      setStockLogs(updatedLogs);
+    }
 
     const res = await adjustStock(adjustingItem.id, deltaNum, adjustReason);
     if (res.success) {
@@ -609,9 +639,16 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
                           {item.shelfLocation || 'Rack A'}
                         </td>
                         <td className="py-3.5 px-4 font-mono font-bold">
-                          <span className={isLow ? 'text-rose-600' : 'text-slate-900'}>
-                            {item.currentStock} {item.unit}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className={isLow ? 'text-amber-700 font-black' : 'text-slate-900'}>
+                              {item.currentStock} {item.unit}
+                            </span>
+                            {isLow && (
+                              <span className="px-1.5 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-800 text-[9px] font-black uppercase">
+                                {isHi ? 'कम स्टॉक' : 'Low'}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-3.5 px-4 font-mono font-bold">
                           {item.expiryDate}

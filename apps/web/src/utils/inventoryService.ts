@@ -32,14 +32,19 @@ export interface StockAdjustmentLog {
   time: string;
 }
 
+const INVENTORY_STORAGE_KEY = 'dukaanpilot_inventory_items';
+const STOCK_LOGS_STORAGE_KEY = 'dukaanpilot_stock_logs';
+let inMemoryInventory: InventoryItem[] | null = null;
+let inMemoryLogs: StockAdjustmentLog[] | null = null;
+
 export const INITIAL_INVENTORY_ITEMS: InventoryItem[] = [
   {
     id: 'inv_101',
     name: 'Amul Taaza Milk 500ml',
     hindi: 'अमूल ताजा दूध 500ml',
     category: 'Dairy & Bakery',
-    currentStock: 14,
-    minThreshold: 20,
+    currentStock: 19,
+    minThreshold: 5,
     unit: 'packet',
     costPrice: 25,
     sellingPrice: 27,
@@ -56,7 +61,7 @@ export const INITIAL_INVENTORY_ITEMS: InventoryItem[] = [
     hindi: 'ब्रिटानिया ब्रेड 400g',
     category: 'Dairy & Bakery',
     currentStock: 6,
-    minThreshold: 10,
+    minThreshold: 4,
     unit: 'packet',
     costPrice: 38,
     sellingPrice: 45,
@@ -73,7 +78,7 @@ export const INITIAL_INVENTORY_ITEMS: InventoryItem[] = [
     hindi: 'आशीर्वाद शरबती आटा 10kg',
     category: 'Atta, Flour & Grains',
     currentStock: 4,
-    minThreshold: 10,
+    minThreshold: 2,
     unit: 'bag',
     costPrice: 480,
     sellingPrice: 535,
@@ -90,7 +95,7 @@ export const INITIAL_INVENTORY_ITEMS: InventoryItem[] = [
     hindi: 'फॉर्च्यून सरसों तेल 1L',
     category: 'Edible Oils & Ghee',
     currentStock: 8,
-    minThreshold: 15,
+    minThreshold: 3,
     unit: 'bottle',
     costPrice: 142,
     sellingPrice: 165,
@@ -107,7 +112,7 @@ export const INITIAL_INVENTORY_ITEMS: InventoryItem[] = [
     hindi: 'मधुर चीनी 1kg',
     category: 'Sugar & Sweeteners',
     currentStock: 22,
-    minThreshold: 30,
+    minThreshold: 5,
     unit: 'packet',
     costPrice: 42,
     sellingPrice: 48,
@@ -124,7 +129,7 @@ export const INITIAL_INVENTORY_ITEMS: InventoryItem[] = [
     hindi: 'हल्दीराम आलू भुजिया 200g',
     category: 'Snacks & Biscuits',
     currentStock: 3,
-    minThreshold: 12,
+    minThreshold: 5, // Low stock: 3 <= 5
     unit: 'packet',
     costPrice: 40,
     sellingPrice: 48,
@@ -144,7 +149,7 @@ export const INITIAL_STOCK_LOGS: StockAdjustmentLog[] = [
     itemName: 'अमूल ताजा दूध 500ml',
     type: 'RESTOCK',
     quantityDelta: 20,
-    finalStock: 14,
+    finalStock: 19,
     reason: 'सुबह का सप्लायर रीस्टॉक',
     date: '19/09/2026',
     time: '07:30 AM'
@@ -161,6 +166,66 @@ export const INITIAL_STOCK_LOGS: StockAdjustmentLog[] = [
     time: '09:15 AM'
   }
 ];
+
+export function getInventoryItems(): InventoryItem[] {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const data = localStorage.getItem(INVENTORY_STORAGE_KEY);
+      if (data) {
+        return JSON.parse(data);
+      }
+    } else if (inMemoryInventory !== null) {
+      return inMemoryInventory;
+    }
+  } catch (e) {
+    console.error('Failed to get inventory items:', e);
+  }
+  return INITIAL_INVENTORY_ITEMS;
+}
+
+export function saveInventoryItems(items: InventoryItem[]): InventoryItem[] {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(items));
+      window.dispatchEvent(new CustomEvent('dukaanpilot_inventory_updated', { detail: items }));
+    } else {
+      inMemoryInventory = items;
+    }
+  } catch (e) {
+    console.error('Failed to save inventory items:', e);
+  }
+  return items;
+}
+
+export function getStockLogs(): StockAdjustmentLog[] {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const data = localStorage.getItem(STOCK_LOGS_STORAGE_KEY);
+      if (data) {
+        return JSON.parse(data);
+      }
+    } else if (inMemoryLogs !== null) {
+      return inMemoryLogs;
+    }
+  } catch (e) {
+    console.error('Failed to get stock logs:', e);
+  }
+  return INITIAL_STOCK_LOGS;
+}
+
+export function saveStockLogs(logs: StockAdjustmentLog[]): StockAdjustmentLog[] {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem(STOCK_LOGS_STORAGE_KEY, JSON.stringify(logs));
+      window.dispatchEvent(new CustomEvent('dukaanpilot_stock_logs_updated', { detail: logs }));
+    } else {
+      inMemoryLogs = logs;
+    }
+  } catch (e) {
+    console.error('Failed to save stock logs:', e);
+  }
+  return logs;
+}
 
 export type ExpiryStatus = 'SAFE' | 'NEAR_EXPIRY' | 'EXPIRED';
 
@@ -224,5 +289,13 @@ export function decrementStockOnSale(
     return item;
   });
 
+  // Save to persistence
+  saveInventoryItems(updated);
+  if (newLogs.length > 0) {
+    const existingLogs = getStockLogs();
+    saveStockLogs([...newLogs, ...existingLogs]);
+  }
+
   return { updatedInventory: updated, logs: newLogs };
 }
+

@@ -38,7 +38,7 @@ import { BarcodeGeneratorModal } from './BarcodeGeneratorModal';
 import { PromotionsModal } from './PromotionsModal';
 import { useBarcodeScanner } from '../hooks/useBarcodeScanner';
 import { findProductByBarcode, playScannerBeep, BarcodeProduct } from '../utils/barcodeService';
-import { INITIAL_INVENTORY_ITEMS, decrementStockOnSale, InventoryItem } from '../utils/inventoryService';
+import { INITIAL_INVENTORY_ITEMS, getInventoryItems, decrementStockOnSale, InventoryItem } from '../utils/inventoryService';
 import { INITIAL_LOYALTY_ACCOUNTS, calculateEarnedPoints, LoyaltyAccount } from '../utils/loyaltyService';
 import { recordCompletedBill } from '../utils/salesService';
 import { announceSoundboxPayment } from '../utils/soundboxService';
@@ -53,22 +53,33 @@ interface CartItem {
   unit: string;
 }
 
+type PaymentMode = 'cash' | 'upi' | 'khata' | 'split';
+
 interface PosBillingViewProps {
   lang?: Lang;
+  soundboxEnabled?: boolean;
   initialVoiceText?: string;
   onBackToDashboard?: () => void;
+  onOpenCustomerPortal?: () => void;
+  onOpenDailyReport?: () => void;
+  pendingOrderToBill?: any;
+  onClearPendingOrder?: () => void;
 }
 
 export const PosBillingView: React.FC<PosBillingViewProps> = ({
   lang = 'hi',
+  soundboxEnabled = true,
   initialVoiceText = '',
-  onBackToDashboard
+  onBackToDashboard,
+  onOpenCustomerPortal,
+  onOpenDailyReport,
+  pendingOrderToBill,
+  onClearPendingOrder
 }) => {
   const t = translations[lang];
 
   // Start with empty cart for live billing
   const [cart, setCart] = useState<CartItem[]>([]);
-
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedPayment, setSelectedPayment] = useState<'cash' | 'upi' | 'khata' | 'split'>('cash');
   const [splitCash, setSplitCash] = useState<number>(0);
@@ -77,7 +88,6 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
   const [customerName, setCustomerName] = useState('रमेश कुमार');
   const [customerPhone, setCustomerPhone] = useState('9823456789');
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
-  const [currentReceipt, setCurrentReceipt] = useState<ReceiptData | null>(null);
   const [voiceInput, setVoiceInput] = useState('3 packet doodh, 2 kg cheeni, 1 bread add karo');
   const [barcodeQuery, setBarcodeQuery] = useState('');
   const [products, setProducts] = useState<any[]>([]);
@@ -87,9 +97,20 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
   const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
   const [isBarcodeGeneratorOpen, setIsBarcodeGeneratorOpen] = useState(false);
   const [isPromotionsModalOpen, setIsPromotionsModalOpen] = useState(false);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(INITIAL_INVENTORY_ITEMS);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(() => getInventoryItems());
   const [loyaltyAccounts, setLoyaltyAccounts] = useState<Record<string, LoyaltyAccount>>(INITIAL_LOYALTY_ACCOUNTS);
   const [redeemedPoints, setRedeemedPoints] = useState<number>(0);
+  const [currentReceipt, setCurrentReceipt] = useState<ReceiptData | null>(null);
+
+  useEffect(() => {
+    const handleInvUpdate = () => {
+      setInventoryItems(getInventoryItems());
+    };
+    window.addEventListener('dukaanpilot_inventory_updated', handleInvUpdate);
+    return () => {
+      window.removeEventListener('dukaanpilot_inventory_updated', handleInvUpdate);
+    };
+  }, []);
 
   // Handle Barcode Scanned (Camera or USB Scanner)
   const handleProductBarcodeScanned = (product: BarcodeProduct) => {
