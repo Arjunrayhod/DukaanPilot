@@ -10,6 +10,7 @@ import { BottomNavBar } from './components/BottomNavBar';
 import { QrModal } from './components/QrModal';
 import { PosBillingView } from './components/PosBillingView';
 import { InventoryView } from './components/InventoryView';
+import { KhataView } from './components/KhataView';
 import { CustomerPortal } from './components/CustomerPortal';
 import { AuthModal } from './components/AuthModal';
 import { checkHealth } from './services/api';
@@ -114,9 +115,7 @@ export function App() {
           activeTab === 'inventory' ? (
             <InventoryView lang={lang} />
           ) : activeTab === 'khata' ? (
-            <div className="max-w-4xl mx-auto space-y-4">
-              <KhataSummaryCard lang={lang} />
-            </div>
+            <KhataView lang={lang} />
           ) : activeView === 'pos' ? (
             <PosBillingView lang={lang} initialVoiceText={posVoiceTrigger} />
           ) : (
@@ -144,7 +143,7 @@ export function App() {
               <SalesSummaryCard lang={lang} />
 
               {/* 4. Khata Credit Ledger Widget */}
-              <KhataSummaryCard lang={lang} />
+              <KhataSummaryCard lang={lang} onOpenKhata={() => setActiveTab('khata')} />
 
               {/* 5. Low Stock Watch */}
               <LowStockAlerts lang={lang} />

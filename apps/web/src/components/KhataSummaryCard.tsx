@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { BookOpen, Send, ArrowRight, Check, MessageSquare } from 'lucide-react';
+import { BookOpen, ArrowRight, Check, MessageSquare } from 'lucide-react';
 import { Lang, translations } from '../i18n/translations';
+import { generateKhataWhatsAppUrl } from '../utils/khataService';
 
 interface KhataSummaryCardProps {
   lang: Lang;
+  onOpenKhata?: () => void;
 }
 
-export function KhataSummaryCard({ lang }: KhataSummaryCardProps) {
+export function KhataSummaryCard({ lang, onOpenKhata }: KhataSummaryCardProps) {
   const t = translations[lang];
   const [remindedList, setRemindedList] = useState<number[]>([]);
 
@@ -17,6 +19,7 @@ export function KhataSummaryCard({ lang }: KhataSummaryCardProps) {
       colorClass: 'bg-blue-100 text-blue-800',
       name: lang === 'hi' ? 'रमेश कुमार (Ramesh)' : 'Ramesh Kumar',
       amount: '₹1,450',
+      amountNum: 1450,
       status: t.daysAgo,
       statusClass: 'text-slate-500',
       phone: '9876543210',
@@ -27,6 +30,7 @@ export function KhataSummaryCard({ lang }: KhataSummaryCardProps) {
       colorClass: 'bg-emerald-100 text-emerald-800',
       name: lang === 'hi' ? 'सुनीता वर्मा (Sunita V.)' : 'Sunita Verma',
       amount: '₹820',
+      amountNum: 820,
       status: t.dueToday,
       statusClass: 'text-amber-700 font-semibold',
       phone: '9876543211',
@@ -37,15 +41,29 @@ export function KhataSummaryCard({ lang }: KhataSummaryCardProps) {
       colorClass: 'bg-indigo-100 text-indigo-800',
       name: lang === 'hi' ? 'महेंद्र किराना (B2B)' : 'Mahendra Kirana (B2B)',
       amount: '₹3,100',
+      amountNum: 3100,
       status: t.weekLate,
       statusClass: 'text-rose-600 font-semibold',
       phone: '9876543212',
     },
   ];
 
-  const handleSendReminder = (id: number, name: string, amount: string) => {
+  const handleSendReminder = (id: number, name: string, phone: string, amountNum: number) => {
     setRemindedList((prev) => [...prev, id]);
-    alert(lang === 'hi' ? `WhatsApp तकादा भेजा गया: ${name} (${amount})` : `WhatsApp reminder sent to: ${name} (${amount})`);
+    const url = generateKhataWhatsAppUrl(
+      {
+        phone,
+        name,
+        currentDue: amountNum,
+      },
+      {
+        name: 'श्री गणेश किराना स्टोर (Shree Ganesh Kirana)',
+        phone: '+91 98765 43210',
+        upiId: 'shreeganesh@sbi',
+      },
+      lang
+    );
+    window.open(url, '_blank');
   };
 
   return (
@@ -90,7 +108,7 @@ export function KhataSummaryCard({ lang }: KhataSummaryCardProps) {
               </div>
 
               <button
-                onClick={() => handleSendReminder(row.id, row.name, row.amount)}
+                onClick={() => handleSendReminder(row.id, row.name, row.phone, row.amountNum)}
                 className={`h-9 px-4 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all shrink-0 cursor-pointer ${
                   isReminded
                     ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
@@ -117,7 +135,13 @@ export function KhataSummaryCard({ lang }: KhataSummaryCardProps) {
       </div>
 
       <button
-        onClick={() => alert(lang === 'hi' ? 'सभी 14 खाते लोड किए जा रहे हैं...' : 'Loading all 14 ledger accounts...')}
+        onClick={() => {
+          if (onOpenKhata) {
+            onOpenKhata();
+          } else {
+            alert(lang === 'hi' ? 'सभी खाते लोड किए जा रहे हैं...' : 'Loading all accounts...');
+          }
+        }}
         className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
         type="button"
       >
