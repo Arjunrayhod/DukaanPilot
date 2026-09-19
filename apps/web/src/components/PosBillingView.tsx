@@ -40,6 +40,7 @@ import { useBarcodeScanner } from '../hooks/useBarcodeScanner';
 import { findProductByBarcode, playScannerBeep, BarcodeProduct } from '../utils/barcodeService';
 import { INITIAL_INVENTORY_ITEMS, decrementStockOnSale, InventoryItem } from '../utils/inventoryService';
 import { INITIAL_LOYALTY_ACCOUNTS, calculateEarnedPoints, LoyaltyAccount } from '../utils/loyaltyService';
+import { recordCompletedBill } from '../utils/salesService';
 
 interface CartItem {
   id: string | number;
@@ -63,11 +64,8 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
 }) => {
   const t = translations[lang];
 
-  const [cart, setCart] = useState<CartItem[]>([
-    { id: '1', name: 'Amul Taaza Milk 500ml', hindi: 'अमूल ताजा दूध 500ml', price: 27, qty: 3, unit: 'packet' },
-    { id: '2', name: 'Madhur Pure Sugar 1kg', hindi: 'मधुर चीनी 1kg', price: 48, qty: 2, unit: 'kg' },
-    { id: '3', name: 'Britannia Daily Bread 400g', hindi: 'ब्रिटानिया ब्रेड 400g', price: 45, qty: 1, unit: 'packet' },
-  ]);
+  // Start with empty cart for live billing
+  const [cart, setCart] = useState<CartItem[]>([]);
 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedPayment, setSelectedPayment] = useState<'cash' | 'upi' | 'khata' | 'split'>('cash');
@@ -372,6 +370,43 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
     setCurrentReceipt(receipt);
     setIsReceiptModalOpen(true);
     setRedeemedPoints(0);
+
+    // 3. Record completed bill for live sales, gross profit, and daily tracking
+    recordCompletedBill({
+      invoiceNo: receipt.invoiceNo,
+      customerName,
+      customerPhone,
+      items: cart.map((c) => {
+        const matchedInv = inventoryItems.find((inv) => String(inv.id) === String(c.id) || inv.name === c.name);
+        return {
+          id: c.id,
+          name: c.name,
+          hindi: c.hindi,
+          qty: c.qty,
+          unit: c.unit,
+          price: c.price,
+          costPrice: matchedInv?.costPrice ?? Math.round(c.price * 0.78),
+          category: matchedInv?.category || 'General Kirana',
+          categoryHindi: matchedInv?.category ? undefined : 'सामान्य किराना'
+        };
+      }),
+      subtotal,
+      gstAmount,
+      discount: discountFromPoints,
+      grandTotal,
+      paymentMode: selectedPayment,
+      splitBreakdown:
+        selectedPayment === 'split'
+          ? {
+              cash: splitCash || 0,
+              upi: splitUpi || 0,
+              khata: splitKhata || Math.max(0, grandTotal - (splitCash || 0) - (splitUpi || 0)),
+            }
+          : undefined,
+    });
+
+    // 4. Clear cart for next sale
+    setCart([]);
 
     const voiceAnnounce = lang === 'hi'
       ? `बिल पूरा हुआ, कुल ₹${grandTotal}${earned > 0 ? `। ${earned} लॉयल्टी पॉइंट्स जुड़े` : ''}`

@@ -9,6 +9,7 @@ import {
   formatDailyZReportText, 
   generateDailyZReportWhatsAppUrl 
 } from '../utils/zReportService';
+import { useTodaySales } from '../utils/salesService';
 import { speakHindi } from '../utils/voiceFeedback';
 
 interface DailyZReportModalProps {
@@ -29,20 +30,21 @@ export function DailyZReportModal({
   if (!isOpen) return null;
 
   const isHi = lang === 'hi';
+  const { summary } = useTodaySales();
+
+  const cashSales = summary.cashCollected;
+  const upiSales = summary.upiCollected;
+  const khataGiven = summary.khataGiven;
+  const khataRecovered = summary.khataRecovered || 0;
+  const totalSales = summary.totalSales;
+  const totalProfit = summary.grossProfit;
+  const totalBills = summary.totalBills;
 
   const [openingCash, setOpeningCash] = useState('2000');
-  const [actualCash, setActualCash] = useState('4730');
+  const [actualCash, setActualCash] = useState(() => (2000 + cashSales).toString());
   const [supplierCashPaid, setSupplierCashPaid] = useState('0');
   const [reportPaperWidth, setReportPaperWidth] = useState<'58mm' | '80mm'>('80mm');
   const [closingConfirmed, setClosingConfirmed] = useState(false);
-
-  const cashSales = 2280;
-  const upiSales = 5170;
-  const khataGiven = 1000;
-  const khataRecovered = 450;
-  const totalSales = 8450;
-  const totalProfit = 1820;
-  const totalBills = 60;
 
   const openingCashNum = parseFloat(openingCash) || 0;
   const supplierPaidNum = parseFloat(supplierCashPaid) || 0;
@@ -58,6 +60,11 @@ export function DailyZReportModal({
     hour: '2-digit',
     minute: '2-digit'
   });
+
+  const topItem = summary.topSellingItems && summary.topSellingItems.length > 0 ? summary.topSellingItems[0] : null;
+  const topItemName = topItem 
+    ? `${isHi && topItem.hindiName ? topItem.hindiName : topItem.name} (${topItem.qtySold} ${topItem.unit})`
+    : (isHi ? 'कोई बिक्री नहीं' : 'No items sold');
 
   const zReportData: ZReportData = {
     reportNumber,
@@ -75,7 +82,7 @@ export function DailyZReportModal({
     totalNetSales: totalSales,
     totalProfit,
     totalBills,
-    topItemName: 'अमूल ताजा दूध 500ml (34 पैकेट)',
+    topItemName,
     notes: discrepancy === 0 ? 'कैश दराज पूरी तरह संतुलित' : `कैश अंतर: ₹${discrepancy}`
   };
 
