@@ -409,95 +409,111 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
         </div>
 
         {/* Right Column (4 of 12): Active Cart & Checkout Panel */}
-        <div className="lg:col-span-4 bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm flex flex-col justify-between space-y-4">
+        <div className="lg:col-span-4 bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm flex flex-col justify-between space-y-3 lg:sticky lg:top-4 h-fit max-h-[calc(100vh-2rem)]">
           <div>
             {/* Bill Header & Customer Selector */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
               <div>
-                <span className="text-xs font-bold text-slate-900 block">
+                <span className="text-xs font-black text-slate-900 block">
                   {lang === 'hi' ? 'चालू बिल #2048' : 'Current Bill #2048'}
                 </span>
                 <span className="text-[10px] text-slate-400">
                   {lang === 'hi' ? 'फास्ट बिलिंग काउंटर' : 'Fast Checkout Counter'}
                 </span>
               </div>
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                {cart.length} {lang === 'hi' ? 'आइटम्स' : 'Items'}
+              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full font-mono">
+                {cart.length} {lang === 'hi' ? 'सामान' : 'Items'}
               </span>
             </div>
 
             {/* Customer Pill Selector */}
-            <div className="bg-[#eff4ff] border border-blue-100 rounded-xl p-3 my-3 flex items-center justify-between">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-blue-200 text-blue-900 flex items-center justify-center font-bold text-xs shrink-0">
+            <div className="bg-[#eff4ff] border border-blue-100 rounded-xl p-2.5 my-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-7 h-7 rounded-lg bg-blue-200 text-blue-900 flex items-center justify-center font-bold text-xs shrink-0">
                   RK
                 </div>
                 <div className="min-w-0">
                   <span className="text-xs font-bold text-slate-900 block truncate">
-                    {lang === 'hi' ? 'रमेश कुमार (Ramesh)' : 'Ramesh Kumar'}
+                    {customerName || (lang === 'hi' ? 'रमेश कुमार (Ramesh)' : 'Ramesh Kumar')}
                   </span>
                   <span className="text-[10px] text-amber-700 font-semibold block">
                     {lang === 'hi' ? 'खाता: ₹1,450 बकाया' : 'Khata: ₹1,450 Pending'}
                   </span>
                 </div>
               </div>
-              <button className="text-xs font-bold text-blue-700 hover:underline shrink-0">
+              <button 
+                type="button"
+                onClick={() => {
+                  const newName = prompt(lang === 'hi' ? 'ग्राहक का नाम दर्ज करें:' : 'Enter customer name:', customerName);
+                  if (newName) setCustomerName(newName);
+                }}
+                className="text-xs font-bold text-blue-700 hover:underline shrink-0 cursor-pointer"
+              >
                 {lang === 'hi' ? 'बदलें' : 'Change'}
               </button>
             </div>
 
             {/* Cart Items Table */}
-            <div className="space-y-2 max-h-72 overflow-y-auto pr-1 no-scrollbar">
-              {cart.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100 text-xs hover:bg-slate-100/70 transition-colors"
-                >
-                  <div className="flex-1 pr-2 min-w-0">
-                    <span className="font-bold text-slate-900 block truncate">
-                      {lang === 'hi' && item.hindi ? item.hindi : item.name}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      ₹{item.price} &times; {item.qty} {item.unit}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    {/* Qty +/- stepper */}
-                    <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 shadow-sm">
-                      <button
-                        onClick={() => updateQty(item.id, -1)}
-                        className="p-1 hover:bg-slate-100 rounded text-slate-600 active:scale-90"
-                      >
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="px-2 font-bold text-slate-900 text-xs font-mono">{item.qty}</span>
-                      <button
-                        onClick={() => updateQty(item.id, 1)}
-                        className="p-1 hover:bg-slate-100 rounded text-slate-600 active:scale-90"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </button>
+            <div className="space-y-1.5 max-h-36 sm:max-h-44 overflow-y-auto pr-1 no-scrollbar">
+              {cart.length === 0 ? (
+                <div className="py-4 text-center text-slate-400 text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  {lang === 'hi' ? 'कार्ट खाली है (आइटम जोड़ें या बोलें)' : 'Cart is empty'}
+                </div>
+              ) : (
+                cart.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100 text-xs hover:bg-slate-100/70 transition-colors"
+                  >
+                    <div className="flex-1 pr-2 min-w-0">
+                      <span className="font-bold text-slate-900 block truncate">
+                        {lang === 'hi' && item.hindi ? item.hindi : item.name}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        ₹{item.price} &times; {item.qty} {item.unit}
+                      </span>
                     </div>
 
-                    <span className="font-extrabold text-slate-900 w-12 text-right font-mono">
-                      ₹{item.price * item.qty}
-                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {/* Qty +/- stepper */}
+                      <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 shadow-sm">
+                        <button
+                          type="button"
+                          onClick={() => updateQty(item.id, -1)}
+                          className="p-1 hover:bg-slate-100 rounded text-slate-600 active:scale-90 cursor-pointer"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="px-1.5 font-bold text-slate-900 text-xs font-mono">{item.qty}</span>
+                        <button
+                          type="button"
+                          onClick={() => updateQty(item.id, 1)}
+                          className="p-1 hover:bg-slate-100 rounded text-slate-600 active:scale-90 cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
 
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      className="text-slate-400 hover:text-rose-600 p-1 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                      <span className="font-black text-slate-900 w-12 text-right font-mono">
+                        ₹{item.price * item.qty}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => removeItem(item.id)}
+                        className="text-slate-400 hover:text-rose-600 p-1 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
           {/* Bill Calculation & Checkout Triggers */}
-          <div className="space-y-3 pt-3 border-t border-slate-100">
+          <div className="space-y-2.5 pt-2 border-t border-slate-100">
             {/* Subtotal & GST rows */}
             <div className="space-y-1 text-xs text-slate-600">
               <div className="flex justify-between">
@@ -508,52 +524,52 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
                 <span>{lang === 'hi' ? 'जीएसटी / GST (5%):' : 'GST (5%):'}</span>
                 <span className="font-bold font-mono">₹{gstAmount}</span>
               </div>
-              <div className="flex justify-between items-baseline pt-2 border-t border-slate-200">
-                <span className="text-xs font-bold text-slate-900 uppercase tracking-wide">
+              <div className="flex justify-between items-baseline pt-1.5 border-t border-slate-200">
+                <span className="text-xs font-black text-slate-900 uppercase tracking-wide">
                   {lang === 'hi' ? 'कुल देय राशि (Grand Total)' : 'Grand Total'}
                 </span>
-                <span className="text-2xl font-extrabold text-blue-900 font-mono">₹{grandTotal}</span>
+                <span className="text-2xl font-black text-blue-900 font-mono">₹{grandTotal}</span>
               </div>
             </div>
 
             {/* Payment Method Selector Grid */}
-            <div className="grid grid-cols-4 gap-1.5 pt-1">
+            <div className="grid grid-cols-4 gap-1.5 pt-0.5">
               <button
                 type="button"
                 onClick={() => setSelectedPayment('cash')}
-                className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all text-[11px] font-bold cursor-pointer ${
+                className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border transition-all text-[11px] font-black cursor-pointer ${
                   selectedPayment === 'cash'
                     ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-sm ring-2 ring-emerald-200'
                     : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <Banknote className="w-4 h-4 text-emerald-600 mb-1" />
+                <Banknote className="w-4 h-4 text-emerald-600 mb-0.5" />
                 <span>{lang === 'hi' ? 'नकद' : 'Cash'}</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setSelectedPayment('upi')}
-                className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all text-[11px] font-bold cursor-pointer ${
+                className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border transition-all text-[11px] font-black cursor-pointer ${
                   selectedPayment === 'upi'
                     ? 'bg-blue-50 border-blue-600 text-blue-900 shadow-sm ring-2 ring-blue-200'
                     : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <QrCode className="w-4 h-4 text-blue-600 mb-1" />
-                <span>{lang === 'hi' ? 'UPI QR' : 'UPI QR'}</span>
+                <QrCode className="w-4 h-4 text-blue-600 mb-0.5" />
+                <span>UPI QR</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setSelectedPayment('khata')}
-                className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all text-[11px] font-bold cursor-pointer ${
+                className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border transition-all text-[11px] font-black cursor-pointer ${
                   selectedPayment === 'khata'
                     ? 'bg-amber-50 border-amber-500 text-amber-900 shadow-sm ring-2 ring-amber-200'
                     : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <BookOpen className="w-4 h-4 text-amber-600 mb-1" />
+                <BookOpen className="w-4 h-4 text-amber-600 mb-0.5" />
                 <span>{lang === 'hi' ? 'खाता' : 'Khata'}</span>
               </button>
 
@@ -564,31 +580,31 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
                   setSplitCash(Math.floor(grandTotal / 2));
                   setSplitUpi(grandTotal - Math.floor(grandTotal / 2));
                 }}
-                className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all text-[11px] font-bold cursor-pointer ${
+                className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border transition-all text-[11px] font-black cursor-pointer ${
                   selectedPayment === 'split'
                     ? 'bg-purple-50 border-purple-600 text-purple-900 shadow-sm ring-2 ring-purple-200'
                     : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <Zap className="w-4 h-4 text-purple-600 mb-1" />
+                <Zap className="w-4 h-4 text-purple-600 mb-0.5" />
                 <span>{lang === 'hi' ? 'स्प्लिट' : 'Split'}</span>
               </button>
             </div>
 
             {/* Split Payment Detailed Inputs (Only when Split is selected) */}
             {selectedPayment === 'split' && (
-              <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-2.5 space-y-2 text-xs">
+              <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-2 space-y-1.5 text-xs">
                 <span className="font-bold text-purple-950 block text-[11px]">
                   {lang === 'hi' ? 'स्प्लिट पेमेंट ब्रेकडाउन (₹' + grandTotal + ' कुल):' : 'Split Breakdown (₹' + grandTotal + ' Total):'}
                 </span>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-1.5">
                   <div>
                     <label className="text-[10px] text-slate-600 font-bold block">Cash ₹:</label>
                     <input
                       type="number"
                       value={splitCash}
                       onChange={(e) => setSplitCash(parseFloat(e.target.value) || 0)}
-                      className="w-full p-1.5 bg-white border border-slate-300 rounded font-mono font-bold text-xs"
+                      className="w-full p-1 bg-white border border-slate-300 rounded font-mono font-bold text-xs"
                     />
                   </div>
                   <div>
@@ -597,7 +613,7 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
                       type="number"
                       value={splitUpi}
                       onChange={(e) => setSplitUpi(parseFloat(e.target.value) || 0)}
-                      className="w-full p-1.5 bg-white border border-slate-300 rounded font-mono font-bold text-xs"
+                      className="w-full p-1 bg-white border border-slate-300 rounded font-mono font-bold text-xs"
                     />
                   </div>
                   <div>
@@ -606,7 +622,7 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
                       type="number"
                       value={splitKhata}
                       onChange={(e) => setSplitKhata(parseFloat(e.target.value) || 0)}
-                      className="w-full p-1.5 bg-white border border-slate-300 rounded font-mono font-bold text-xs"
+                      className="w-full p-1 bg-white border border-slate-300 rounded font-mono font-bold text-xs"
                     />
                   </div>
                 </div>
@@ -617,7 +633,7 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
             <button
               type="button"
               onClick={handleCompleteBill}
-              className="w-full flex items-center justify-center gap-2 bg-blue-900 hover:bg-blue-800 text-white py-3.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 bg-blue-900 hover:bg-blue-800 text-white py-3 rounded-xl font-black text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer"
             >
               <Printer className="w-4 h-4" />
               <span>{lang === 'hi' ? 'प्रिंट & डिजिटल बिल पूरा करें' : 'Complete & Print Bill'}</span>
@@ -626,7 +642,7 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
             <button
               type="button"
               onClick={handleCompleteBill}
-              className="w-full flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 py-2.5 rounded-xl font-bold text-xs transition-colors active:scale-95 cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 py-2 rounded-xl font-bold text-xs transition-colors active:scale-95 cursor-pointer"
             >
               <MessageSquare className="w-3.5 h-3.5 text-emerald-700" />
               <span>{lang === 'hi' ? 'व्हाट्सएप रसीद भेजें' : 'Send WhatsApp Receipt'}</span>
@@ -634,6 +650,49 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
           </div>
         </div>
       </div>
+
+      {/* Mobile Floating Sticky Quick POS Checkout Bar (Always visible on mobile without scrolling) */}
+      {cart.length > 0 && (
+        <div className="lg:hidden fixed bottom-3 inset-x-3 z-40 p-3 rounded-2xl bg-slate-950/95 backdrop-blur-xl text-white shadow-2xl border border-white/20 flex items-center justify-between gap-3 animate-in slide-in-from-bottom-2">
+          <div className="min-w-0">
+            <div className="text-[10px] text-slate-400 font-bold uppercase truncate">
+              {cart.length} {lang === 'hi' ? 'सामान' : 'items'} &bull; {selectedPayment.toUpperCase()}
+            </div>
+            <div className="text-xl font-black font-mono text-emerald-400">
+              ₹{grandTotal}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => { setSelectedPayment('cash'); handleCompleteBill(); }}
+              className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 cursor-pointer active:scale-95"
+            >
+              <Banknote className="w-3.5 h-3.5" />
+              <span>{lang === 'hi' ? 'नकद' : 'Cash'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setSelectedPayment('upi'); handleCompleteBill(); }}
+              className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1 cursor-pointer active:scale-95"
+            >
+              <QrCode className="w-3.5 h-3.5" />
+              <span>UPI</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleCompleteBill}
+              className="px-3.5 py-2 rounded-xl bg-white text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md cursor-pointer active:scale-95"
+            >
+              <Printer className="w-3.5 h-3.5 text-blue-900" />
+              <span>{lang === 'hi' ? 'प्रिंट' : 'Print'}</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Thermal & Digital Receipt Modal */}
       <ReceiptModal
