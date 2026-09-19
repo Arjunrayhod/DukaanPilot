@@ -28,14 +28,19 @@ export function App() {
   const [posVoiceTrigger, setPosVoiceTrigger] = useState('');
   
   // Dual User State: Shopkeeper vs Customer
-  const [currentUser, setCurrentUser] = useState<any>({
-    id: 'usr_owner_01',
-    name: 'Ramesh Ganesh',
-    shopName: 'Shree Ganesh Kirana',
-    phone: '9876543210',
-    upiId: 'shreeganesh@sbi',
-    role: 'OWNER', // 'OWNER' | 'CUSTOMER'
-    khataDue: 0,
+  const [currentUser, setCurrentUser] = useState<any>(() => {
+    const savedUpi = localStorage.getItem('dukaanpilot_shop_upi') || 'shreeganesh@sbi';
+    const savedQr = localStorage.getItem('dukaanpilot_custom_qr') || undefined;
+    return {
+      id: 'usr_owner_01',
+      name: 'Ramesh Ganesh',
+      shopName: 'Shree Ganesh Kirana',
+      phone: '9876543210',
+      upiId: savedUpi,
+      customQrImage: savedQr,
+      role: 'OWNER', // 'OWNER' | 'CUSTOMER'
+      khataDue: 0,
+    };
   });
 
   useEffect(() => {
@@ -188,6 +193,14 @@ export function App() {
         onClose={() => setIsQrOpen(false)}
         shopName={currentUser?.shopName || 'Shree Ganesh Kirana'}
         upiId={currentUser?.upiId || 'shreeganesh@sbi'}
+        customQrImage={currentUser?.customQrImage}
+        onUpdateQr={(newUpi, newImg) => {
+          setCurrentUser((prev: any) => ({
+            ...prev,
+            upiId: newUpi,
+            customQrImage: newImg,
+          }));
+        }}
       />
 
       {/* Authentication & PIN Login Modal */}
