@@ -20,6 +20,8 @@ import { AuthModal } from './components/AuthModal';
 import { PromotionsModal } from './components/PromotionsModal';
 import { AiKiranaCopilotModal } from './components/AiKiranaCopilotModal';
 import { GstTaxReportModal } from './components/GstTaxReportModal';
+import { CashierShiftModal } from './components/CashierShiftModal';
+import { BarcodeSheetModal } from './components/BarcodeSheetModal';
 import { checkHealth } from './services/api';
 import { Lang } from './i18n/translations';
 
@@ -36,6 +38,8 @@ export function App() {
   const [isPromotionsOpen, setIsPromotionsOpen] = useState(false);
   const [isAiCopilotOpen, setIsAiCopilotOpen] = useState(false);
   const [isGstTaxOpen, setIsGstTaxOpen] = useState(false);
+  const [isCashierShiftOpen, setIsCashierShiftOpen] = useState(false);
+  const [isBarcodeSheetOpen, setIsBarcodeSheetOpen] = useState(false);
   const [posVoiceTrigger, setPosVoiceTrigger] = useState('');
   const [pendingOrderToBill, setPendingOrderToBill] = useState<any>(null);
   const { isOnline, pendingCount, isSyncing, syncNow } = useOfflineSync();
@@ -256,6 +260,8 @@ export function App() {
                 onPromotions={() => setIsPromotionsOpen(true)}
                 onOpenAiCopilot={() => setIsAiCopilotOpen(true)}
                 onOpenGstTax={() => setIsGstTaxOpen(true)}
+                onOpenCashierShift={() => setIsCashierShiftOpen(true)}
+                onOpenBarcodeSheet={() => setIsBarcodeSheetOpen(true)}
               />
 
               {/* 3. Live Incoming Online Customer Orders */}
@@ -381,6 +387,23 @@ export function App() {
           gstin: '07AAAAA0000A1Z5',
           state: 'Delhi (07)',
         }}
+      />
+
+      {/* Cashier Shifts & Cash Drawer Reconciliation Modal */}
+      <CashierShiftModal
+        isOpen={isCashierShiftOpen}
+        onClose={() => setIsCashierShiftOpen(false)}
+        lang={lang}
+        shopName={currentUser?.shopName || 'श्री गणेश किराना स्टोर'}
+        shopPhone={currentUser?.phone || '+91 98765 43210'}
+      />
+
+      {/* A4 Barcode Sticker Sheet Batch Printing Modal */}
+      <BarcodeSheetModal
+        isOpen={isBarcodeSheetOpen}
+        onClose={() => setIsBarcodeSheetOpen(false)}
+        lang={lang}
+        shopName={currentUser?.shopName || 'श्री गणेश किराना स्टोर'}
       />
     </div>
   );

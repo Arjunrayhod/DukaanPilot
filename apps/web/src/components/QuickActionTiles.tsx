@@ -1,5 +1,5 @@
 import React from 'react';
-import { Receipt, QrCode, PlusCircle, FileSpreadsheet, Sparkles, Zap } from 'lucide-react';
+import { Receipt, QrCode, PlusCircle, FileSpreadsheet, Sparkles, Zap, Barcode } from 'lucide-react';
 import { Lang, translations } from '../i18n/translations';
 
 interface QuickActionTilesProps {
@@ -12,6 +12,8 @@ interface QuickActionTilesProps {
   onPromotions?: () => void;
   onOpenAiCopilot?: () => void;
   onOpenGstTax?: () => void;
+  onOpenCashierShift?: () => void;
+  onOpenBarcodeSheet?: () => void;
 }
 
 export function QuickActionTiles({
@@ -24,6 +26,8 @@ export function QuickActionTiles({
   onPromotions,
   onOpenAiCopilot,
   onOpenGstTax,
+  onOpenCashierShift,
+  onOpenBarcodeSheet
 }: QuickActionTilesProps) {
   const t = translations[lang];
 
@@ -128,6 +132,30 @@ export function QuickActionTiles({
           <FileSpreadsheet className="w-4 h-4 text-indigo-300" />
           <span>{t.dailyReport}</span>
         </button>
+
+        {onOpenCashierShift && (
+          <button
+            onClick={onOpenCashierShift}
+            className="h-10 px-4 rounded-full bg-slate-900/85 hover:bg-slate-900 text-white backdrop-blur-xl border border-indigo-400/30 text-xs font-bold flex items-center gap-2 shrink-0 shadow-md transition-all active:scale-95 cursor-pointer"
+            type="button"
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></div>
+            <Receipt className="w-4 h-4 text-indigo-300" />
+            <span>{lang === 'hi' ? 'कैशियर शिफ्ट व गल्ला' : 'Cashier Shift'}</span>
+          </button>
+        )}
+
+        {onOpenBarcodeSheet && (
+          <button
+            onClick={onOpenBarcodeSheet}
+            className="h-10 px-4 rounded-full bg-slate-900/85 hover:bg-slate-900 text-white backdrop-blur-xl border border-amber-400/30 text-xs font-bold flex items-center gap-2 shrink-0 shadow-md transition-all active:scale-95 cursor-pointer"
+            type="button"
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></div>
+            <Barcode className="w-4 h-4 text-amber-300" />
+            <span>{lang === 'hi' ? 'A4 बारकोड स्टिकर शीट' : 'A4 Barcode Labels'}</span>
+          </button>
+        )}
 
         {onPromotions && (
           <button
