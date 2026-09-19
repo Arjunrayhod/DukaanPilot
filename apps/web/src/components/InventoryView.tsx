@@ -6,6 +6,7 @@ import {
 import { fetchProducts, adjustStock, createProduct, updateProduct, deleteProduct, fetchCategories, createCategory } from '../services/api';
 import { Lang, translations } from '../i18n/translations';
 import { formatProductTitle, getCleanHindiName } from '../utils/productFormat';
+import { SupplierManagementView } from './SupplierManagementView';
 
 interface InventoryViewProps {
   lang?: Lang;
@@ -14,6 +15,7 @@ interface InventoryViewProps {
 export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => {
   const t = translations[lang];
 
+  const [inventorySubTab, setInventorySubTab] = useState<'catalog' | 'suppliers'>('catalog');
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [search, setSearch] = useState('');
@@ -234,18 +236,50 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
 
   return (
     <div className="space-y-4">
-      {/* Header with Search & Top Capsule Buttons */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-              <Package className="w-5 h-5 text-blue-700" />
-              <span>{lang === 'hi' ? 'सामान व श्रेणी कस्टमाइजेशन' : 'Product & Category OS'}</span>
-            </h2>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
-              {lang === 'hi' ? 'दुकानदार नया सामान जोड़ सकते हैं, हटा सकते हैं और नई श्रेणियां बना सकते हैं' : 'Add, edit, remove products and create custom categories'}
-            </p>
-          </div>
+      {/* Sub-Tab Navigation Bar */}
+      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-200/70 border border-slate-300/50 w-fit">
+        <button
+          type="button"
+          onClick={() => setInventorySubTab('catalog')}
+          className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+            inventorySubTab === 'catalog'
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Package className="w-4 h-4 text-blue-700" />
+          <span>{lang === 'hi' ? 'सामान व श्रेणी कैटलॉग' : 'Product Catalog'}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setInventorySubTab('suppliers')}
+          className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+            inventorySubTab === 'suppliers'
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Truck className="w-4 h-4 text-indigo-600" />
+          <span>{lang === 'hi' ? 'सप्लायर व री-स्टॉक PO (WhatsApp)' : 'Suppliers & Restock PO'}</span>
+        </button>
+      </div>
+
+      {inventorySubTab === 'suppliers' ? (
+        <SupplierManagementView lang={lang} />
+      ) : (
+        <>
+          {/* Header with Search & Top Capsule Buttons */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                  <Package className="w-5 h-5 text-blue-700" />
+                  <span>{lang === 'hi' ? 'सामान व श्रेणी कस्टमाइजेशन' : 'Product & Category OS'}</span>
+                </h2>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  {lang === 'hi' ? 'दुकानदार नया सामान जोड़ सकते हैं, हटा सकते हैं और नई श्रेणियां बना सकते हैं' : 'Add, edit, remove products and create custom categories'}
+                </p>
+              </div>
 
           {/* Transparent Capsule Action Pills */}
           <div className="flex flex-wrap items-center gap-2">
@@ -911,6 +945,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
             </form>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

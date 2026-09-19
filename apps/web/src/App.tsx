@@ -11,6 +11,7 @@ import { QrModal } from './components/QrModal';
 import { PosBillingView } from './components/PosBillingView';
 import { InventoryView } from './components/InventoryView';
 import { KhataView } from './components/KhataView';
+import { SupplierManagementView } from './components/SupplierManagementView';
 import { CustomerPortal } from './components/CustomerPortal';
 import { AuthModal } from './components/AuthModal';
 import { checkHealth } from './services/api';
@@ -116,6 +117,8 @@ export function App() {
             <InventoryView lang={lang} />
           ) : activeTab === 'khata' ? (
             <KhataView lang={lang} />
+          ) : activeTab === 'suppliers' ? (
+            <SupplierManagementView lang={lang} />
           ) : activeView === 'pos' ? (
             <PosBillingView lang={lang} initialVoiceText={posVoiceTrigger} />
           ) : (
@@ -145,8 +148,8 @@ export function App() {
               {/* 4. Khata Credit Ledger Widget */}
               <KhataSummaryCard lang={lang} onOpenKhata={() => setActiveTab('khata')} />
 
-              {/* 5. Low Stock Watch */}
-              <LowStockAlerts lang={lang} />
+              {/* 5. Low Stock Watch with WhatsApp PO */}
+              <LowStockAlerts lang={lang} onOpenSupplierManager={() => setActiveTab('suppliers')} />
 
               {/* 6. Daily Kirana Insights Strip */}
               <DailyInsightsStrip lang={lang} />

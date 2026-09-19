@@ -1,45 +1,32 @@
-import React, { useState } from 'react';
-import { AlertTriangle, Truck, Check } from 'lucide-react';
+﻿import React, { useState } from 'react';
+import { AlertTriangle, Truck, Check, ArrowRight, MessageSquare } from 'lucide-react';
 import { Lang, translations } from '../i18n/translations';
+import { 
+  Supplier, 
+  RestockItem, 
+  INITIAL_SUPPLIERS, 
+  INITIAL_LOW_STOCK_ITEMS,
+  PurchaseOrder 
+} from '../utils/restockService';
+import { SupplierOrderModal } from './SupplierOrderModal';
 
 interface LowStockAlertsProps {
   lang: Lang;
+  onOpenSupplierManager?: () => void;
 }
 
-export function LowStockAlerts({ lang }: LowStockAlertsProps) {
+export function LowStockAlerts({ lang, onOpenSupplierManager }: LowStockAlertsProps) {
   const t = translations[lang];
-  const [orderedItems, setOrderedItems] = useState<number[]>([]);
+  const isHi = lang === 'hi';
 
-  const stockAlerts = [
-    {
-      id: 1,
-      title: lang === 'hi' ? 'टाटा नमक (Tata Salt 1kg)' : 'Tata Salt 1kg',
-      remaining: `4 ${t.packetsLeft}`,
-      minThreshold: `(${t.minText} 25)`,
-      supplier: `${t.supplier}: ${lang === 'hi' ? 'बालाजी एजेंसीज़' : 'Balaji Agencies'}`,
-      orderQty: `50 ${t.packetsLeft}`,
-    },
-    {
-      id: 2,
-      title: lang === 'hi' ? 'फॉर्च्यून सनफ्लावर ऑयल 1L' : 'Fortune Sunflower Oil 1L',
-      remaining: `2 ${t.bottlesLeft}`,
-      minThreshold: `(${t.minText} 12)`,
-      supplier: `${t.supplier}: ${lang === 'hi' ? 'मेट्रो होलसेल' : 'Metro Wholesale'}`,
-      orderQty: `24 ${t.bottlesLeft}`,
-    },
-    {
-      id: 3,
-      title: lang === 'hi' ? 'आशीर्वाद चक्की आटा 5kg' : 'Aashirvaad Chakki Atta 5kg',
-      remaining: `3 ${t.bagsLeft}`,
-      minThreshold: `(${t.minText} 15)`,
-      supplier: `${t.supplier}: ${lang === 'hi' ? 'आईटीसी डायरेक्ट' : 'ITC Direct'}`,
-      orderQty: `20 ${t.bagsLeft}`,
-    },
-  ];
+  const [orderedItemIds, setOrderedItemIds] = useState<string[]>([]);
+  const [selectedSupplierForPO, setSelectedSupplierForPO] = useState<Supplier | null>(null);
+  const [selectedPOItems, setSelectedPOItems] = useState<RestockItem[]>([]);
 
-  const handleOrder = (id: number, title: string, qty: string) => {
-    setOrderedItems((prev) => [...prev, id]);
-    alert(lang === 'hi' ? `सप्लायर को ऑर्डर भेजा गया: ${title} (${qty})` : `Order sent to supplier: ${title} (${qty})`);
+  const handleOpenPO = (item: RestockItem) => {
+    const supplier = INITIAL_SUPPLIERS.find((s) => s.id === item.supplierId) || INITIAL_SUPPLIERS[0];
+    setSelectedSupplierForPO(supplier);
+    setSelectedPOItems([item]);
   };
 
   return (
@@ -55,31 +42,33 @@ export function LowStockAlerts({ lang }: LowStockAlertsProps) {
           </div>
         </div>
         <span className="px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-black font-mono">
-          {t.itemsLow}
+          {INITIAL_LOW_STOCK_ITEMS.length} {t.itemsLow}
         </span>
       </div>
 
       <div className="space-y-3 pt-1">
-        {stockAlerts.map((item) => {
-          const isOrdered = orderedItems.includes(item.id);
+        {INITIAL_LOW_STOCK_ITEMS.slice(0, 3).map((item) => {
+          const isOrdered = orderedItemIds.includes(item.id);
           return (
             <div
               key={item.id}
               className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/70 flex items-center justify-between gap-4 hover:bg-slate-50 transition-all shadow-xs"
             >
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-bold text-slate-900 truncate font-display">{item.title}</div>
-                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium mt-0.5">
-                  <span className="text-rose-600 font-black font-mono">{item.remaining}</span>
-                  <span className="text-slate-400">{item.minThreshold}</span>
+                <div className="text-sm font-bold text-slate-900 truncate font-display">
+                  {isHi && item.nameHindi ? item.nameHindi : item.name}
                 </div>
-                <span className="text-[11px] text-slate-400 font-medium block mt-0.5">
-                  {item.supplier}
+                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium mt-0.5">
+                  <span className="text-rose-600 font-black font-mono">{item.currentStock} {item.unit} {t.packetsLeft}</span>
+                  <span className="text-slate-400">({t.minText} {item.minThreshold})</span>
+                </div>
+                <span className="text-[11px] text-slate-400 font-medium block mt-0.5 truncate">
+                  {t.supplier}: <span className="text-slate-700 font-semibold">{item.supplierName}</span>
                 </span>
               </div>
 
               <button
-                onClick={() => handleOrder(item.id, item.title, item.orderQty)}
+                onClick={() => handleOpenPO(item)}
                 className={`h-9 px-4 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all shrink-0 cursor-pointer ${
                   isOrdered
                     ? 'bg-emerald-50 text-emerald-800 border border-emerald-300'
@@ -95,8 +84,8 @@ export function LowStockAlerts({ lang }: LowStockAlertsProps) {
                 ) : (
                   <>
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
-                    <Truck className="w-3.5 h-3.5 text-emerald-300" />
-                    <span>{item.orderQty} {t.orderBtn}</span>
+                    <MessageSquare className="w-3.5 h-3.5 text-emerald-300" />
+                    <span>+{item.suggestedOrderQty} {t.orderBtn}</span>
                   </>
                 )}
               </button>
@@ -104,6 +93,34 @@ export function LowStockAlerts({ lang }: LowStockAlertsProps) {
           );
         })}
       </div>
+
+      <button
+        onClick={() => {
+          if (onOpenSupplierManager) {
+            onOpenSupplierManager();
+          }
+        }}
+        className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+        type="button"
+      >
+        <span>{isHi ? 'सभी सप्लायर व री-स्टॉक देखें (Manage All Suppliers & Restock)' : 'Manage All Suppliers & Restock'}</span>
+        <ArrowRight className="w-4 h-4 text-slate-500" />
+      </button>
+
+      {/* Interactive PO Modal */}
+      {selectedSupplierForPO && (
+        <SupplierOrderModal
+          isOpen={!!selectedSupplierForPO}
+          onClose={() => setSelectedSupplierForPO(null)}
+          supplier={selectedSupplierForPO}
+          items={selectedPOItems}
+          lang={lang}
+          onOrderPlaced={() => {
+            setOrderedItemIds((prev) => [...prev, ...selectedPOItems.map((i) => i.id)]);
+            setSelectedSupplierForPO(null);
+          }}
+        />
+      )}
     </section>
   );
 }
