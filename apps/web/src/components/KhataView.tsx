@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   BookOpen,
   Search,
@@ -49,6 +49,12 @@ export function KhataView({ lang }: KhataViewProps) {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>(INITIAL_KHATA_CUSTOMERS[0].id);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'overdue' | 'high' | 'settled'>('all');
+
+  const customersRef = useRef(customers);
+  customersRef.current = customers;
+
+  const selectedCustomerIdRef = useRef(selectedCustomerId);
+  selectedCustomerIdRef.current = selectedCustomerId;
 
   // Modals state
   const [isAddTxOpen, setIsAddTxOpen] = useState(false);
@@ -107,7 +113,8 @@ export function KhataView({ lang }: KhataViewProps) {
     if (!rawSpoken.trim()) return;
     setLastVoiceResult(rawSpoken);
 
-    const parsed = parseVoiceKhataCommand(rawSpoken, customers);
+    const currentCustomerList = customersRef.current;
+    const parsed = parseVoiceKhataCommand(rawSpoken, currentCustomerList);
 
     if (parsed.amount <= 0) {
       const err = isHi ? 'कृपया राशि बोलें (जैसे: अर्जुन 500 रुपये जमा)' : 'Please specify an amount (e.g. Arjun 500 payment)';
@@ -158,41 +165,46 @@ export function KhataView({ lang }: KhataViewProps) {
         showNotification(speech);
         return;
       } else {
-        targetCustomer = selectedCustomer;
+        targetCustomer = currentCustomerList.find(c => c.id === selectedCustomerIdRef.current) || currentCustomerList[0];
       }
     }
 
     if (!targetCustomer) return;
 
-    // Record transaction for targetCustomer
-    setSelectedCustomerId(targetCustomer.id);
+    const targetId = targetCustomer.id;
+    setSelectedCustomerId(targetId);
 
-    let newDue = targetCustomer.currentDue;
-    if (parsed.type === 'DEBIT') {
-      newDue += parsed.amount;
-    } else {
-      newDue = Math.max(0, newDue - parsed.amount);
-    }
-
-    const newTx: KhataTransaction = {
-      id: `tx_${Date.now()}`,
-      date: dateStr,
-      time: timeStr,
-      type: parsed.type,
-      amount: parsed.amount,
-      balanceAfter: newDue,
-      notes: parsed.notes,
-      paymentMode: parsed.type === 'CREDIT' ? 'cash' : undefined,
-      billNo: parsed.type === 'DEBIT' ? `Bill #${Math.floor(2000 + Math.random() * 900)}` : undefined
-    };
+    let finalCalculatedDue = 0;
+    let targetCustName = targetCustomer.name;
 
     setCustomers(prev =>
       prev.map(c => {
-        if (c.id === targetCustomer!.id) {
+        if (c.id === targetId) {
+          targetCustName = c.name;
+          let newDue = c.currentDue;
+          if (parsed.type === 'DEBIT') {
+            newDue += parsed.amount;
+          } else {
+            newDue = Math.max(0, newDue - parsed.amount);
+          }
+          finalCalculatedDue = newDue;
+
+          const newTx: KhataTransaction = {
+            id: `tx_${Date.now()}`,
+            date: dateStr,
+            time: timeStr,
+            type: parsed.type,
+            amount: parsed.amount,
+            balanceAfter: newDue,
+            notes: parsed.notes,
+            paymentMode: parsed.type === 'CREDIT' ? 'cash' : undefined,
+            billNo: parsed.type === 'DEBIT' ? `Bill #${Math.floor(2000 + Math.random() * 900)}` : undefined
+          };
+
           return {
             ...c,
             currentDue: newDue,
-            overdueDays: parsed.type === 'DEBIT' ? c.overdueDays : (newDue === 0 ? 0 : c.overdueDays),
+            overdueDays: parsed.type === 'DEBIT' ? (c.overdueDays || 1) : (newDue === 0 ? 0 : c.overdueDays),
             lastDebitDate: parsed.type === 'DEBIT' ? dateStr : c.lastDebitDate,
             lastPaymentDate: parsed.type === 'CREDIT' ? dateStr : c.lastPaymentDate,
             transactions: [newTx, ...c.transactions]
@@ -202,11 +214,15 @@ export function KhataView({ lang }: KhataViewProps) {
       })
     );
 
+    const calculatedSpeechDue = parsed.type === 'DEBIT'
+      ? targetCustomer.currentDue + parsed.amount
+      : Math.max(0, targetCustomer.currentDue - parsed.amount);
+
     const confirmationMsg = isHi
       ? (parsed.type === 'DEBIT'
-          ? `${targetCustomer.name} का ₹${parsed.amount} उधार दर्ज हो गया। नया बकाया ₹${newDue} है।`
-          : `${targetCustomer.name} से ₹${parsed.amount} जमा प्राप्त हुआ। नया बकाया ₹${newDue} है।`)
-      : `Recorded ₹${parsed.amount} ${parsed.type === 'DEBIT' ? 'credit' : 'payment'} for ${targetCustomer.name}. New Balance: ₹${newDue}`;
+          ? `${targetCustName} का ₹${parsed.amount} उधार दर्ज हो गया। नया बकाया ₹${calculatedSpeechDue} है।`
+          : `${targetCustName} से ₹${parsed.amount} जमा प्राप्त हुआ। नया बकाया ₹${calculatedSpeechDue} है।`)
+      : `Recorded ₹${parsed.amount} ${parsed.type === 'DEBIT' ? 'credit' : 'payment'} for ${targetCustName}. New Balance: ₹${calculatedSpeechDue}`;
 
     speakHindi(confirmationMsg, lang);
     showNotification(confirmationMsg);
@@ -228,39 +244,43 @@ export function KhataView({ lang }: KhataViewProps) {
     }
   });
 
-  // 1. Add Udhaar / Jama Transaction
+  // 1. Add Udhaar / Jama Transaction (Manual Modal Form)
   const handleSaveTransaction = (e: React.FormEvent) => {
     e.preventDefault();
     const amountNum = parseFloat(txAmount) || 0;
     if (amountNum <= 0 || !selectedCustomer) return;
 
+    const targetId = selectedCustomer.id;
     const newTxId = `tx_${Date.now()}`;
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-IN');
     const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
-    let newDue = selectedCustomer.currentDue;
-    if (txType === 'DEBIT') {
-      newDue += amountNum;
-    } else {
-      newDue = Math.max(0, newDue - amountNum);
-    }
-
-    const newTx: KhataTransaction = {
-      id: newTxId,
-      date: dateStr,
-      time: timeStr,
-      type: txType,
-      amount: amountNum,
-      balanceAfter: newDue,
-      notes: txNotes || (txType === 'DEBIT' ? 'सामान उधारी' : 'भुगतान प्राप्ति'),
-      paymentMode: txType === 'CREDIT' ? txPaymentMode : undefined,
-      billNo: txType === 'DEBIT' ? `Bill #${Math.floor(2000 + Math.random() * 900)}` : undefined
-    };
+    let finalDue = 0;
 
     setCustomers((prev) =>
       prev.map((c) => {
-        if (c.id === selectedCustomer.id) {
+        if (c.id === targetId) {
+          let newDue = c.currentDue;
+          if (txType === 'DEBIT') {
+            newDue += amountNum;
+          } else {
+            newDue = Math.max(0, newDue - amountNum);
+          }
+          finalDue = newDue;
+
+          const newTx: KhataTransaction = {
+            id: newTxId,
+            date: dateStr,
+            time: timeStr,
+            type: txType,
+            amount: amountNum,
+            balanceAfter: newDue,
+            notes: txNotes || (txType === 'DEBIT' ? 'सामान उधारी' : 'भुगतान प्राप्ति'),
+            paymentMode: txType === 'CREDIT' ? txPaymentMode : undefined,
+            billNo: txType === 'DEBIT' ? `Bill #${Math.floor(2000 + Math.random() * 900)}` : undefined
+          };
+
           return {
             ...c,
             currentDue: newDue,

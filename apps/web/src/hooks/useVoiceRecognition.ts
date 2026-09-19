@@ -22,6 +22,11 @@ export function useVoiceRecognition(options: UseVoiceRecognitionOptions = {}) {
   const [error, setError] = useState<string | null>(null);
 
   const recognitionRef = useRef<any>(null);
+  const onResultRef = useRef(onResult);
+  onResultRef.current = onResult;
+
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -61,10 +66,10 @@ export function useVoiceRecognition(options: UseVoiceRecognitionOptions = {}) {
       if (currentFinal) {
         setTranscript(currentFinal.trim());
         setInterimTranscript('');
-        if (onResult) onResult(currentFinal.trim(), true);
+        if (onResultRef.current) onResultRef.current(currentFinal.trim(), true);
       } else {
         setInterimTranscript(currentInterim.trim());
-        if (onResult) onResult(currentInterim.trim(), false);
+        if (onResultRef.current) onResultRef.current(currentInterim.trim(), false);
       }
     };
 
@@ -78,7 +83,7 @@ export function useVoiceRecognition(options: UseVoiceRecognitionOptions = {}) {
         setError(`वॉइस एरर: ${event.error}`);
       }
       setIsListening(false);
-      if (onError) onError(event.error);
+      if (onErrorRef.current) onErrorRef.current(event.error);
     };
 
     recognition.onend = () => {
