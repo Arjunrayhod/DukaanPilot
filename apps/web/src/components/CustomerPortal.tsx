@@ -328,16 +328,27 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
       {/* 4. TAB 2: Store Catalog & WhatsApp Order */}
       {activeTab === 'catalog' && (
-        <div className="space-y-4">
+        <div className={`space-y-4 ${cartTotalCount > 0 ? 'pb-24' : ''}`}>
           <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3.5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
               <div>
                 <h3 className="text-base font-bold text-slate-900">{t.customerCatalogTitle}</h3>
                 <p className="text-xs text-slate-500">{t.customerCatalogSub}</p>
               </div>
-              <div className="text-xs font-bold text-slate-900 bg-slate-100 px-3 py-1 rounded-full border border-slate-200 flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                <span>{products.length} {lang === 'hi' ? 'आइटम' : 'Items'}</span>
+              <div className="flex items-center gap-2">
+                <div className="text-xs font-bold text-slate-900 bg-slate-100 px-3 py-1 rounded-full border border-slate-200 flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                  <span>{products.length} {lang === 'hi' ? 'आइटम' : 'Items'}</span>
+                </div>
+                {cartTotalCount > 0 && (
+                  <button
+                    onClick={handleSendWhatsAppOrder}
+                    className="px-3.5 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    <span>{cartTotalCount} {t.itemsInCart} (₹{cartTotalPrice})</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -425,22 +436,22 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
               })}
             </div>
 
-            {/* Cart Floating / Docked Strip */}
+            {/* Permanent Floating Docked Cart Bar (Always visible without scrolling) */}
             {cartTotalCount > 0 && (
-              <div className="mt-5 p-4 rounded-2xl bg-slate-900 text-white flex items-center justify-between gap-3 shadow-xl border border-white/15 animate-in slide-in-from-bottom-2">
-                <div>
+              <div className="fixed bottom-4 inset-x-3 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 w-auto sm:w-full sm:max-w-xl z-50 p-4 rounded-3xl bg-slate-950/95 backdrop-blur-2xl text-white flex items-center justify-between gap-4 shadow-[0_10px_35px_rgba(0,0,0,0.35)] border border-white/20 animate-in slide-in-from-bottom-4 duration-300">
+                <div className="min-w-0">
                   <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
                     <span>{cartTotalCount} {t.itemsInCart}</span>
                   </div>
-                  <div className="text-lg font-black font-mono text-white">
+                  <div className="text-xl font-black font-mono text-white tracking-tight">
                     ₹{cartTotalPrice.toLocaleString('en-IN')}
                   </div>
                 </div>
 
                 <button
                   onClick={handleSendWhatsAppOrder}
-                  className="px-4 py-2.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg transition-transform active:scale-95 cursor-pointer"
+                  className="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg transition-transform active:scale-95 cursor-pointer shrink-0"
                 >
                   <MessageSquare className="w-4 h-4" />
                   <span>{t.sendOrderWhatsApp}</span>
