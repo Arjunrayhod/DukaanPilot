@@ -83,6 +83,11 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   const [cart, setCart] = useState<Record<string, number>>({});
 
   const addToCart = (id: string) => {
+    const item = products.find((c) => String(c.id) === String(id));
+    if (item) {
+      const itemName = lang === 'hi' ? getCleanHindiName(item) : item.name;
+      speakHindi(lang === 'hi' ? `${itemName} कार्ट में जोड़ा गया` : `${item.name} added to cart`, lang);
+    }
     setCart((prev) => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
   };
 

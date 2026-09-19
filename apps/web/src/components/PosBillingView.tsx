@@ -175,16 +175,34 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
   const updateQty = (id: string | number, delta: number) => {
     setCart((prev) =>
       prev
-        .map((item) => (item.id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item))
+        .map((item) => {
+          if (item.id === id) {
+            const newQty = Math.max(1, item.qty + delta);
+            if (delta > 0) {
+              const itemName = lang === 'hi' && item.hindi ? item.hindi : item.name;
+              speakHindi(lang === 'hi' ? `${newQty} ${itemName}` : `${newQty} ${item.name}`, lang);
+            }
+            return { ...item, qty: newQty };
+          }
+          return item;
+        })
         .filter((item) => item.qty > 0)
     );
   };
 
   const removeItem = (id: string | number) => {
+    const target = cart.find((c) => c.id === id);
+    if (target) {
+      const itemName = lang === 'hi' && target.hindi ? target.hindi : target.name;
+      speakHindi(lang === 'hi' ? `${itemName} हटाया गया` : `${target.name} removed`, lang);
+    }
     setCart((prev) => prev.filter((item) => item.id !== id));
   };
 
   const addItemToCart = (item: any) => {
+    const itemName = lang === 'hi' ? getCleanHindiName(item) : item.name;
+    speakHindi(lang === 'hi' ? `${itemName} बिल में जोड़ा गया` : `${item.name} added to bill`, lang);
+
     setCart((prev) => {
       const existing = prev.find((p) => p.id === item.id);
       if (existing) {
@@ -195,7 +213,7 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
         {
           id: item.id,
           name: item.name,
-          hindi: item.nameHindi || item.hindi || '',
+          hindi: getCleanHindiName(item) || item.nameHindi || item.hindi || '',
           price: item.sellingPrice || item.price,
           qty: 1,
           unit: item.unit || 'packet',
