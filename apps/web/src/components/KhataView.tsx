@@ -23,7 +23,8 @@ import {
   Mic,
   Volume2,
   Zap,
-  Trash2
+  Trash2,
+  FileText
 } from 'lucide-react';
 import { Lang, translations } from '../i18n/translations';
 import {
@@ -36,6 +37,7 @@ import {
 } from '../utils/khataService';
 import { speakHindi } from '../utils/voiceFeedback';
 import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
+import { KhataStatementModal } from './KhataStatementModal';
 
 interface KhataViewProps {
   lang: Lang;
@@ -63,6 +65,7 @@ export function KhataView({ lang }: KhataViewProps) {
   const [txNotes, setTxNotes] = useState('');
   const [txPaymentMode, setTxPaymentMode] = useState<'cash' | 'upi'>('cash');
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
+  const [isStatementModalOpen, setIsStatementModalOpen] = useState(false);
   const [newCustName, setNewCustName] = useState('');
   const [newCustPhone, setNewCustPhone] = useState('');
   const [newCustAddress, setNewCustAddress] = useState('');
@@ -656,8 +659,8 @@ export function KhataView({ lang }: KhataViewProps) {
                 </div>
               </div>
 
-              {/* Action Buttons Strip: Udhaar vs Jama vs WhatsApp */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {/* Action Buttons Strip: Udhaar vs Jama vs WhatsApp vs Statement */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -666,9 +669,9 @@ export function KhataView({ lang }: KhataViewProps) {
                     setTxAmount('');
                     setIsAddTxOpen(true);
                   }}
-                  className="h-11 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                  className="h-11 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <ArrowUpRight className="w-4 h-4 stroke-[3]" />
+                  <ArrowUpRight className="w-3.5 h-3.5 stroke-[3]" />
                   <span>{isHi ? '- उधार दिया' : '- Give Credit'}</span>
                 </button>
 
@@ -680,20 +683,29 @@ export function KhataView({ lang }: KhataViewProps) {
                     setTxAmount('');
                     setIsAddTxOpen(true);
                   }}
-                  className="h-11 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                  className="h-11 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <ArrowDownLeft className="w-4 h-4 stroke-[3]" />
-                  <span>{isHi ? '+ जमा मिला' : '+ Receive Payment'}</span>
+                  <ArrowDownLeft className="w-3.5 h-3.5 stroke-[3]" />
+                  <span>{isHi ? '+ जमा मिला' : '+ Receive'}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => handleWhatsAppReminder(selectedCustomer)}
                   disabled={selectedCustomer.currentDue === 0}
-                  className="h-11 rounded-2xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white text-xs font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                  className="h-11 rounded-2xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white text-xs font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <MessageSquare className="w-4 h-4 text-emerald-400 fill-emerald-400" />
-                  <span>{isHi ? 'WhatsApp तगादा' : 'Send Reminder'}</span>
+                  <MessageSquare className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" />
+                  <span>{isHi ? 'तगादा' : 'Reminder'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsStatementModalOpen(true)}
+                  className="h-11 rounded-2xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5 text-blue-700" />
+                  <span>{isHi ? 'PDF लेजर' : 'Statement'}</span>
                 </button>
               </div>
 
@@ -993,6 +1005,14 @@ export function KhataView({ lang }: KhataViewProps) {
           </div>
         </div>
       )}
+
+      {/* Printable A4 PDF Khata Statement Modal */}
+      <KhataStatementModal
+        isOpen={isStatementModalOpen}
+        onClose={() => setIsStatementModalOpen(false)}
+        customer={selectedCustomer}
+        lang={lang}
+      />
     </div>
   );
 }

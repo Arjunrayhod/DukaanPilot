@@ -1,12 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Search, Barcode, AlertTriangle, ArrowUpDown, Package, Check, RefreshCw, 
-  Plus, Truck, Filter, Trash2, Edit3, FolderPlus, Sparkles, X, Tag, DollarSign, Layers
+  Plus, Truck, Filter, Trash2, Edit3, FolderPlus, Sparkles, X, Tag, DollarSign, Layers,
+  Calendar, Clock, AlertCircle, ShieldAlert, History, ArrowDownRight, ArrowUpRight
 } from 'lucide-react';
 import { fetchProducts, adjustStock, createProduct, updateProduct, deleteProduct, fetchCategories, createCategory } from '../services/api';
 import { Lang, translations } from '../i18n/translations';
 import { formatProductTitle, getCleanHindiName } from '../utils/productFormat';
 import { SupplierManagementView } from './SupplierManagementView';
+import {
+  InventoryItem,
+  StockAdjustmentLog,
+  INITIAL_INVENTORY_ITEMS,
+  INITIAL_STOCK_LOGS,
+  getDaysUntilExpiry,
+  getExpiryStatus
+} from '../utils/inventoryService';
+import { speakHindi } from '../utils/voiceFeedback';
 
 interface InventoryViewProps {
   lang?: Lang;
@@ -14,13 +24,19 @@ interface InventoryViewProps {
 
 export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => {
   const t = translations[lang];
+  const isHi = lang === 'hi';
 
-  const [inventorySubTab, setInventorySubTab] = useState<'catalog' | 'suppliers'>('catalog');
+  const [inventorySubTab, setInventorySubTab] = useState<'catalog' | 'expiry' | 'logs' | 'suppliers'>('catalog');
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [loading, setLoading] = useState(false);
+
+  // Expiry & Batch inventory state
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(INITIAL_INVENTORY_ITEMS);
+  const [stockLogs, setStockLogs] = useState<StockAdjustmentLog[]>(INITIAL_STOCK_LOGS);
+  const [expiryFilter, setExpiryFilter] = useState<'all' | 'near_expiry' | 'expired' | 'low_stock'>('all');
 
   // Modals state
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
@@ -41,7 +57,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
     currentStock: '10',
     minThreshold: '5',
     barcode: '',
-    brand: ''
+    brand: '',
+    batchNo: 'B2609X',
+    expiryDate: '2027-03-31',
+    shelfLocation: 'Shelf A1'
   });
 
   // Form states - Add Category
@@ -53,7 +72,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
 
   // Stock adjust state
   const [adjustDelta, setAdjustDelta] = useState('5');
-  const [adjustReason, setAdjustReason] = useState('Fresh Delivery Restock');
+  const [adjustType, setAdjustType] = useState<'RESTOCK' | 'DAMAGE' | 'EXPIRED' | 'CORRECTION'>('RESTOCK');
+  const [adjustReason, setAdjustReason] = useState('ताजा सप्लायर रीस्टॉक');
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -123,7 +143,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
       setFormData(prev => ({ ...prev, categoryId: res.data.id }));
       setIsAddCategoryOpen(false);
       setCatFormData({ name: '', nameHindi: '', icon: 'package' });
-      showNotification(lang === 'hi' ? `नई श्रेणी जोड़ी गई: ${res.data.nameHindi || res.data.name}` : `New category added: ${res.data.name}`);
+      showNotification(isHi ? `नई श्रेणी जोड़ी गई: ${res.data.nameHindi || res.data.name}` : `New category added: ${res.data.name}`);
     } else {
       showNotification(res.error?.message || 'Failed to add category', true);
     }
@@ -132,7 +152,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.sellingPrice) {
-      showNotification(lang === 'hi' ? 'कृपया सामान का नाम और सेलिंग प्राइस भरें' : 'Please provide product name and price', true);
+      showNotification(isHi ? 'कृपया सामान का नाम और सेलिंग प्राइस भरें' : 'Please provide product name and price', true);
       return;
     }
 
@@ -153,7 +173,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
     if (editingItem) {
       const res = await updateProduct(editingItem.id, payload);
       if (res.success) {
-        showNotification(lang === 'hi' ? `सामान अपडेट हुआ: ${payload.name}` : `Product updated: ${payload.name}`);
+        showNotification(isHi ? `सामान अपडेट हुआ: ${payload.name}` : `Product updated: ${payload.name}`);
         setEditingItem(null);
         setIsAddProductOpen(false);
         loadCatalog();
@@ -163,7 +183,27 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
     } else {
       const res = await createProduct(payload);
       if (res.success) {
-        showNotification(lang === 'hi' ? `नया सामान जोड़ा गया: ${payload.name}` : `New product added: ${payload.name}`);
+        // Also add to smart batch inventory
+        const newInv: InventoryItem = {
+          id: `inv_${Date.now()}`,
+          name: payload.name,
+          hindi: payload.nameHindi,
+          category: categories.find(c => c.id === payload.categoryId)?.name || 'General',
+          currentStock: payload.currentStock,
+          minThreshold: payload.minThreshold,
+          unit: payload.unit,
+          costPrice: payload.costPrice,
+          sellingPrice: payload.sellingPrice,
+          mrp: payload.mrp,
+          batchNo: formData.batchNo || 'B2609X',
+          expiryDate: formData.expiryDate || '2027-03-31',
+          supplierName: 'श्री गणेश सप्लायर एजेंसी',
+          barcode: payload.barcode,
+          shelfLocation: formData.shelfLocation || 'Rack A1'
+        };
+        setInventoryItems(prev => [newInv, ...prev]);
+
+        showNotification(isHi ? `नया सामान जोड़ा गया: ${payload.name}` : `New product added: ${payload.name}`);
         setIsAddProductOpen(false);
         setFormData({
           name: '',
@@ -176,7 +216,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
           currentStock: '10',
           minThreshold: '5',
           barcode: '',
-          brand: ''
+          brand: '',
+          batchNo: 'B2609X',
+          expiryDate: '2027-03-31',
+          shelfLocation: 'Shelf A1'
         });
         loadCatalog();
       } else {
@@ -189,7 +232,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
     if (!deletingItem) return;
     const res = await deleteProduct(deletingItem.id);
     if (res.success) {
-      showNotification(lang === 'hi' ? `सामान हटाया गया: ${deletingItem.name}` : `Product removed: ${deletingItem.name}`);
+      showNotification(isHi ? `सामान हटाया गया: ${deletingItem.name}` : `Product removed: ${deletingItem.name}`);
       setDeletingItem(null);
       loadCatalog();
     } else {
@@ -200,10 +243,41 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
   const handleAdjustSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adjustingItem) return;
-    const deltaNum = parseFloat(adjustDelta) || 0;
+    let deltaNum = parseFloat(adjustDelta) || 0;
+    if (adjustType === 'DAMAGE' || adjustType === 'EXPIRED') {
+      deltaNum = -Math.abs(deltaNum);
+    }
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-IN');
+    const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+    // Update smart batch inventory & log
+    const updatedInventory = inventoryItems.map(item => {
+      if (item.id === adjustingItem.id || item.name === adjustingItem.name) {
+        const finalStock = Math.max(0, item.currentStock + deltaNum);
+        const newLog: StockAdjustmentLog = {
+          id: `log_${Date.now()}`,
+          itemId: item.id,
+          itemName: item.hindi || item.name,
+          type: adjustType,
+          quantityDelta: deltaNum,
+          finalStock,
+          reason: adjustReason || 'स्टॉक एडजस्टमेंट',
+          date: dateStr,
+          time: timeStr
+        };
+        setStockLogs(prev => [newLog, ...prev]);
+        return { ...item, currentStock: finalStock };
+      }
+      return item;
+    });
+
+    setInventoryItems(updatedInventory);
+
     const res = await adjustStock(adjustingItem.id, deltaNum, adjustReason);
     if (res.success) {
-      showNotification(lang === 'hi' ? `स्टॉक अपडेट हुआ: ${adjustingItem.name} (${deltaNum > 0 ? '+' : ''}${deltaNum})` : `Stock updated for ${adjustingItem.name} (${deltaNum > 0 ? '+' : ''}${deltaNum})`);
+      showNotification(isHi ? `स्टॉक अपडेट हुआ: ${adjustingItem.name} (${deltaNum > 0 ? '+' : ''}${deltaNum})` : `Stock updated for ${adjustingItem.name} (${deltaNum > 0 ? '+' : ''}${deltaNum})`);
       setAdjustingItem(null);
       loadCatalog();
     }
@@ -222,7 +296,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
       currentStock: item.currentStock?.toString() || '0',
       minThreshold: item.minThreshold?.toString() || '5',
       barcode: item.barcode || '',
-      brand: item.brand || ''
+      brand: item.brand || '',
+      batchNo: 'B2609X',
+      expiryDate: '2027-03-31',
+      shelfLocation: 'Shelf A1'
     });
     setIsAddProductOpen(true);
   };
@@ -234,39 +311,351 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
     }));
   };
 
+  // Filtered Expiry Items
+  const filteredExpiryItems = inventoryItems.filter(item => {
+    const days = getDaysUntilExpiry(item.expiryDate);
+    const status = getExpiryStatus(item.expiryDate);
+    const isLow = item.currentStock <= item.minThreshold;
+
+    if (expiryFilter === 'near_expiry') return status === 'NEAR_EXPIRY';
+    if (expiryFilter === 'expired') return status === 'EXPIRED';
+    if (expiryFilter === 'low_stock') return isLow;
+    return true;
+  });
+
+  const nearExpiryCount = inventoryItems.filter(i => getExpiryStatus(i.expiryDate) === 'NEAR_EXPIRY').length;
+  const expiredCount = inventoryItems.filter(i => getExpiryStatus(i.expiryDate) === 'EXPIRED').length;
+  const lowStockCount = inventoryItems.filter(i => i.currentStock <= i.minThreshold).length;
+
   return (
     <div className="space-y-4">
       {/* Sub-Tab Navigation Bar */}
-      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-200/70 border border-slate-300/50 w-fit">
+      <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-slate-200/70 border border-slate-300/50 overflow-x-auto">
         <button
           type="button"
           onClick={() => setInventorySubTab('catalog')}
-          className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+          className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
             inventorySubTab === 'catalog'
               ? 'bg-white text-slate-900 shadow-sm'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
           <Package className="w-4 h-4 text-blue-700" />
-          <span>{lang === 'hi' ? 'सामान व श्रेणी कैटलॉग' : 'Product Catalog'}</span>
+          <span>{isHi ? 'सामान व श्रेणी कैटलॉग' : 'Product Catalog'}</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => setInventorySubTab('expiry')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap relative ${
+            inventorySubTab === 'expiry'
+              ? 'bg-white text-rose-900 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Calendar className="w-4 h-4 text-rose-600" />
+          <span>{isHi ? 'बैच व एक्सपायरी ट्रैकिंग' : 'Batch & Expiry OS'}</span>
+          {nearExpiryCount > 0 && (
+            <span className="px-1.5 py-0.2 rounded-full bg-rose-600 text-white font-mono text-[9px] font-black">
+              {nearExpiryCount}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setInventorySubTab('logs')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+            inventorySubTab === 'logs'
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <History className="w-4 h-4 text-purple-600" />
+          <span>{isHi ? 'स्टॉक मूवमेंट व वेस्टेज लॉग' : 'Stock Movement & Wastage'}</span>
+        </button>
+
         <button
           type="button"
           onClick={() => setInventorySubTab('suppliers')}
-          className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+          className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
             inventorySubTab === 'suppliers'
               ? 'bg-white text-slate-900 shadow-sm'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
           <Truck className="w-4 h-4 text-indigo-600" />
-          <span>{lang === 'hi' ? 'सप्लायर व री-स्टॉक PO (WhatsApp)' : 'Suppliers & Restock PO'}</span>
+          <span>{isHi ? 'सप्लायर व री-स्टॉक PO' : 'Suppliers & PO'}</span>
         </button>
       </div>
 
+      {/* RENDER ACTIVE SUB-TAB */}
       {inventorySubTab === 'suppliers' ? (
         <SupplierManagementView lang={lang} />
+      ) : inventorySubTab === 'logs' ? (
+        /* ================= STOCK MOVEMENT & WASTAGE LOGS TAB ================= */
+        <div className="space-y-4">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex items-center justify-between">
+            <div>
+              <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
+                <History className="w-5 h-5 text-purple-600" />
+                <span>{isHi ? 'स्टॉक मूवमेंट, डैमेज व वेस्टेज ऑडिट लॉग' : 'Stock Movement & Wastage Audit Trail'}</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {isHi ? 'पीओएस बिलिंग, सप्लायर डिलीवरी और डैमेज वेस्टेज का पूरा टाइम-स्टैम्प्ड रिकॉर्ड' : 'Time-stamped audit logs for sales, restock, damages and audits'}
+              </p>
+            </div>
+            <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-900 font-bold text-xs">
+              {stockLogs.length} {isHi ? 'प्रविष्टियां' : 'Logs'}
+            </span>
+          </div>
+
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
+                  <tr>
+                    <th className="py-3 px-4">{isHi ? 'समय व दिनांक' : 'Date & Time'}</th>
+                    <th className="py-3 px-4">{isHi ? 'सामान का नाम' : 'Item Name'}</th>
+                    <th className="py-3 px-4">{isHi ? 'प्रकार (Type)' : 'Action Type'}</th>
+                    <th className="py-3 px-4">{isHi ? 'मात्रा बदलाव' : 'Qty Delta'}</th>
+                    <th className="py-3 px-4">{isHi ? 'अंतिम स्टॉक' : 'Final Stock'}</th>
+                    <th className="py-3 px-4">{isHi ? 'कारण / विवरण' : 'Reason'}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium text-slate-900">
+                  {stockLogs.map((log) => {
+                    const isPositive = log.quantityDelta > 0;
+                    return (
+                      <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3 px-4 font-mono text-slate-500 text-[11px]">
+                          {log.date} at {log.time}
+                        </td>
+                        <td className="py-3 px-4 font-bold text-slate-900">
+                          {log.itemName}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                            log.type === 'RESTOCK'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : log.type === 'SALE'
+                              ? 'bg-blue-100 text-blue-800'
+                              : log.type === 'DAMAGE'
+                              ? 'bg-rose-100 text-rose-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {log.type}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 font-mono font-black">
+                          <span className={isPositive ? 'text-emerald-600' : 'text-rose-600'}>
+                            {isPositive ? `+${log.quantityDelta}` : log.quantityDelta}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 font-mono font-bold text-slate-800">
+                          {log.finalStock}
+                        </td>
+                        <td className="py-3 px-4 text-slate-600 text-xs">
+                          {log.reason}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      ) : inventorySubTab === 'expiry' ? (
+        /* ================= BATCH & EXPIRY OS TRACKING TAB ================= */
+        <div className="space-y-4">
+          {/* Expiry KPI Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-rose-800">{isHi ? 'एक्सपायरी अलर्ट (<7 दिन)' : 'Near Expiry (<7d)'}</span>
+                <AlertTriangle className="w-4 h-4 text-rose-600" />
+              </div>
+              <span className="text-2xl font-black font-mono text-rose-900 mt-2 block">{nearExpiryCount} {isHi ? 'सामान' : 'items'}</span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-amber-800">{isHi ? 'कम स्टॉक अलर्ट' : 'Low Stock'}</span>
+                <Package className="w-4 h-4 text-amber-600" />
+              </div>
+              <span className="text-2xl font-black font-mono text-amber-900 mt-2 block">{lowStockCount} {isHi ? 'सामान' : 'items'}</span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-emerald-800">{isHi ? 'सुरक्षित स्टॉक' : 'Safe Stock'}</span>
+                <Check className="w-4 h-4 text-emerald-600" />
+              </div>
+              <span className="text-2xl font-black font-mono text-emerald-900 mt-2 block">
+                {inventoryItems.length - nearExpiryCount - expiredCount} {isHi ? 'सामान' : 'items'}
+              </span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-blue-800">{isHi ? 'कुल SKU ट्रैकिंग' : 'Tracked SKUs'}</span>
+                <Barcode className="w-4 h-4 text-blue-600" />
+              </div>
+              <span className="text-2xl font-black font-mono text-blue-900 mt-2 block">{inventoryItems.length} {isHi ? 'प्रॉडक्ट्स' : 'products'}</span>
+            </div>
+          </div>
+
+          {/* Near Expiry Urgent Banner */}
+          {nearExpiryCount > 0 && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-900 via-red-800 to-amber-900 text-white shadow-md flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-500/30 border border-rose-300/40 flex items-center justify-center shrink-0">
+                  <Clock className="w-5 h-5 text-rose-200 animate-pulse" />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-sm">
+                    {isHi ? 'चेतावनी: कुछ डेयरी व बेकरी सामानों की एक्सपायरी नजदीक है!' : 'Warning: Items nearing expiry within 7 days!'}
+                  </h4>
+                  <p className="text-xs text-rose-100">
+                    {isHi ? 'इन्हें पहले बेचें (FIFO) या सप्लायर को रिटर्न/रिप्लेसमेंट के लिए मार्क करें' : 'Prioritize sales (FIFO) or mark for supplier return'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setExpiryFilter('near_expiry')}
+                className="px-3.5 py-1.5 rounded-full bg-white text-rose-950 font-black text-xs shadow-md cursor-pointer hover:bg-rose-50 shrink-0"
+              >
+                {isHi ? 'अलर्ट सामान देखें' : 'View Near Expiry'}
+              </button>
+            </div>
+          )}
+
+          {/* Expiry Quick Filter Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            <button
+              type="button"
+              onClick={() => setExpiryFilter('all')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                expiryFilter === 'all'
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <span>{isHi ? 'सभी सामान' : 'All Items'} ({inventoryItems.length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setExpiryFilter('near_expiry')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1 cursor-pointer ${
+                expiryFilter === 'near_expiry'
+                  ? 'bg-rose-600 text-white shadow-sm'
+                  : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
+              }`}
+            >
+              <Clock className="w-3 h-3" />
+              <span>{isHi ? 'एक्सपायरी अलर्ट (<7 दिन)' : 'Near Expiry (<7d)'} ({nearExpiryCount})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setExpiryFilter('low_stock')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1 cursor-pointer ${
+                expiryFilter === 'low_stock'
+                  ? 'bg-amber-600 text-white shadow-sm'
+                  : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200'
+              }`}
+            >
+              <AlertTriangle className="w-3 h-3" />
+              <span>{isHi ? 'कम स्टॉक' : 'Low Stock'} ({lowStockCount})</span>
+            </button>
+          </div>
+
+          {/* Batch & Expiry Items Table */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
+                  <tr>
+                    <th className="py-3 px-4">{isHi ? 'सामान व श्रेणी' : 'Item & Category'}</th>
+                    <th className="py-3 px-4">{isHi ? 'बैच नंबर' : 'Batch No'}</th>
+                    <th className="py-3 px-4">{isHi ? 'रैक / स्थान' : 'Shelf Rack'}</th>
+                    <th className="py-3 px-4">{isHi ? 'स्टॉक' : 'Stock'}</th>
+                    <th className="py-3 px-4">{isHi ? 'एक्सपायरी दिनांक' : 'Expiry Date'}</th>
+                    <th className="py-3 px-4">{isHi ? 'स्थिति' : 'Status'}</th>
+                    <th className="py-3 px-4 text-right">{isHi ? 'एडजस्ट' : 'Adjust'}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium text-slate-900">
+                  {filteredExpiryItems.map((item) => {
+                    const days = getDaysUntilExpiry(item.expiryDate);
+                    const status = getExpiryStatus(item.expiryDate);
+                    const isLow = item.currentStock <= item.minThreshold;
+
+                    return (
+                      <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-slate-900">{item.hindi || item.name}</div>
+                          <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                            {item.supplierName} {item.barcode && `• ${item.barcode}`}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 font-mono font-bold text-slate-700">
+                          {item.batchNo}
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-600 text-xs">
+                          {item.shelfLocation || 'Rack A'}
+                        </td>
+                        <td className="py-3.5 px-4 font-mono font-bold">
+                          <span className={isLow ? 'text-rose-600' : 'text-slate-900'}>
+                            {item.currentStock} {item.unit}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 font-mono font-bold">
+                          {item.expiryDate}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {status === 'NEAR_EXPIRY' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-100 border border-rose-300 text-rose-800 text-[10px] font-extrabold animate-pulse">
+                              <Clock className="w-3 h-3 text-rose-600" />
+                              <span>{days} {isHi ? 'दिन शेष' : 'days left'}</span>
+                            </span>
+                          ) : status === 'EXPIRED' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-extrabold">
+                              <span>{isHi ? 'एक्सपायर्ड' : 'Expired'}</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
+                              <Check className="w-3 h-3 text-emerald-600" />
+                              <span>{isHi ? 'सुरक्षित' : 'Safe'} ({days}d)</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAdjustingItem(item);
+                              setAdjustDelta('5');
+                              setAdjustType('RESTOCK');
+                            }}
+                            className="px-2.5 py-1 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] cursor-pointer shadow-sm"
+                          >
+                            {isHi ? 'स्टॉक बदलें' : 'Adjust'}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       ) : (
+        /* ================= STANDARD PRODUCT CATALOG TAB ================= */
         <>
           {/* Header with Search & Top Capsule Buttons */}
           <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm space-y-4">
@@ -274,249 +663,254 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
               <div>
                 <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
                   <Package className="w-5 h-5 text-blue-700" />
-                  <span>{lang === 'hi' ? 'सामान व श्रेणी कस्टमाइजेशन' : 'Product & Category OS'}</span>
+                  <span>{isHi ? 'सामान व श्रेणी कस्टमाइजेशन' : 'Product & Category OS'}</span>
                 </h2>
                 <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  {lang === 'hi' ? 'दुकानदार नया सामान जोड़ सकते हैं, हटा सकते हैं और नई श्रेणियां बना सकते हैं' : 'Add, edit, remove products and create custom categories'}
+                  {isHi ? 'दुकानदार नया सामान जोड़ सकते हैं, हटा सकते हैं और नई श्रेणियां बना सकते हैं' : 'Add, edit, remove products and create custom categories'}
                 </p>
               </div>
 
-          {/* Transparent Capsule Action Pills */}
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => {
-                setEditingItem(null);
-                setFormData({
-                  name: '',
-                  nameHindi: '',
-                  categoryId: categories[0]?.id || 'cat_atta',
-                  unit: 'packet',
-                  sellingPrice: '',
-                  costPrice: '',
-                  mrp: '',
-                  currentStock: '10',
-                  minThreshold: '5',
-                  barcode: '',
-                  brand: ''
-                });
-                setIsAddProductOpen(true);
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-slate-900/85 hover:bg-slate-900 text-white backdrop-blur-xl border border-white/20 shadow-md transition-all active:scale-95 cursor-pointer"
-            >
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-              <Plus className="w-3.5 h-3.5 text-emerald-300" />
-              <span>{lang === 'hi' ? '+ नया सामान जोड़ें' : '+ Add Product'}</span>
-            </button>
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => {
+                    setEditingItem(null);
+                    setFormData({
+                      name: '',
+                      nameHindi: '',
+                      categoryId: categories[0]?.id || 'cat_atta',
+                      unit: 'packet',
+                      sellingPrice: '',
+                      costPrice: '',
+                      mrp: '',
+                      currentStock: '10',
+                      minThreshold: '5',
+                      barcode: '',
+                      brand: '',
+                      batchNo: 'B2609X',
+                      expiryDate: '2027-03-31',
+                      shelfLocation: 'Shelf A1'
+                    });
+                    setIsAddProductOpen(true);
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold bg-slate-900/85 hover:bg-slate-900 text-white backdrop-blur-xl border border-white/20 shadow-md transition-all active:scale-95 cursor-pointer"
+                >
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                  <Plus className="w-3.5 h-3.5 text-emerald-300" />
+                  <span>{isHi ? '+ नया सामान जोड़ें' : '+ Add Product'}</span>
+                </button>
 
-            <button
-              onClick={() => setIsAddCategoryOpen(true)}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold bg-slate-900/85 hover:bg-slate-900 text-white backdrop-blur-xl border border-white/20 shadow-md transition-all active:scale-95 cursor-pointer"
-            >
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
-              <FolderPlus className="w-3.5 h-3.5 text-blue-300" />
-              <span>{lang === 'hi' ? '+ नई श्रेणी' : '+ Category'}</span>
-            </button>
+                <button
+                  onClick={() => setIsAddCategoryOpen(true)}
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold bg-slate-900/85 hover:bg-slate-900 text-white backdrop-blur-xl border border-white/20 shadow-md transition-all active:scale-95 cursor-pointer"
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                  <FolderPlus className="w-3.5 h-3.5 text-blue-300" />
+                  <span>{isHi ? '+ नई श्रेणी' : '+ Category'}</span>
+                </button>
 
-            <button
-              onClick={() => loadCatalog()}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold bg-slate-900/80 hover:bg-slate-900 text-white backdrop-blur-xl border border-white/15 transition-all shadow-sm cursor-pointer"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 text-slate-300 ${loading ? 'animate-spin text-emerald-400' : ''}`} />
-              <span>{lang === 'hi' ? 'रिफ्रेश' : 'Refresh'}</span>
-            </button>
+                <button
+                  onClick={() => loadCatalog()}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold bg-slate-900/80 hover:bg-slate-900 text-white backdrop-blur-xl border border-white/15 transition-all shadow-sm cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-slate-300 ${loading ? 'animate-spin text-emerald-400' : ''}`} />
+                  <span>{isHi ? 'रिफ्रेश' : 'Refresh'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Search Bar & Categories Horizontal Slider */}
+            <div className="space-y-3 pt-1">
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={isHi ? 'सामान का नाम, हिंदी नाम या बारकोड से खोजें...' : 'Search by item name, hindi or barcode...'}
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all font-medium"
+                />
+              </div>
+
+              {/* Category Capsule Pills */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                <button
+                  onClick={() => setSelectedCategory('All')}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
+                    selectedCategory === 'All'
+                      ? 'bg-slate-900 text-white shadow-md border border-white/20'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/60'
+                  }`}
+                >
+                  {selectedCategory === 'All' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
+                  <span>{isHi ? 'सभी सामान' : 'All Items'}</span>
+                </button>
+
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
+                      selectedCategory === cat.id
+                        ? 'bg-slate-900 text-white shadow-md border border-white/20'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/60'
+                    }`}
+                  >
+                    {selectedCategory === cat.id && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
+                    <span>{isHi && cat.nameHindi ? cat.nameHindi : cat.name}</span>
+                  </button>
+                ))}
+
+                <button
+                  onClick={() => setIsAddCategoryOpen(true)}
+                  className="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300/80 transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3 h-3 text-emerald-600" />
+                  <span>{isHi ? '+ श्रेणी बनाएं' : '+ Add Category'}</span>
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Search Bar & Categories Horizontal Slider */}
-        <div className="space-y-3 pt-1">
-          <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={lang === 'hi' ? 'सामान का नाम, हिंदी नाम या बारकोड से खोजें...' : 'Search by item name, hindi or barcode...'}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all font-medium"
-            />
-          </div>
+          {/* Notifications */}
+          {successMsg && (
+            <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2 shadow-sm animate-in fade-in">
+              <Check className="w-4 h-4 text-emerald-600" />
+              <span>{successMsg}</span>
+            </div>
+          )}
+          {errorMsg && (
+            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2 shadow-sm animate-in fade-in">
+              <AlertTriangle className="w-4 h-4 text-rose-600" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
 
-          {/* Category Capsule Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-            <button
-              onClick={() => setSelectedCategory('All')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
-                selectedCategory === 'All'
-                  ? 'bg-slate-900 text-white shadow-md border border-white/20'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/60'
-              }`}
-            >
-              {selectedCategory === 'All' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
-              <span>{lang === 'hi' ? 'सभी सामान' : 'All Items'}</span>
-            </button>
-
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
-                  selectedCategory === cat.id
-                    ? 'bg-slate-900 text-white shadow-md border border-white/20'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/60'
-                }`}
-              >
-                {selectedCategory === cat.id && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
-                <span>{lang === 'hi' && cat.nameHindi ? cat.nameHindi : cat.name}</span>
-              </button>
-            ))}
-
-            <button
-              onClick={() => setIsAddCategoryOpen(true)}
-              className="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300/80 transition-all flex items-center gap-1 cursor-pointer"
-            >
-              <Plus className="w-3 h-3 text-emerald-600" />
-              <span>{lang === 'hi' ? '+ श्रेणी बनाएं' : '+ Add Category'}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Notifications */}
-      {successMsg && (
-        <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2 shadow-sm animate-in fade-in">
-          <Check className="w-4 h-4 text-emerald-600" />
-          <span>{successMsg}</span>
-        </div>
-      )}
-      {errorMsg && (
-        <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2 shadow-sm animate-in fade-in">
-          <AlertTriangle className="w-4 h-4 text-rose-600" />
-          <span>{errorMsg}</span>
-        </div>
-      )}
-
-      {/* Products Catalog Table */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
-              <tr>
-                <th className="py-3 px-4">{lang === 'hi' ? 'सामान (Product)' : 'Product'}</th>
-                <th className="py-3 px-4">{lang === 'hi' ? 'श्रेणी (Category)' : 'Category'}</th>
-                <th className="py-3 px-4">{lang === 'hi' ? 'सेलिंग प्राइस' : 'Selling Price'}</th>
-                <th className="py-3 px-4">{lang === 'hi' ? 'लागत (Cost)' : 'Cost Price'}</th>
-                <th className="py-3 px-4">{lang === 'hi' ? 'स्टॉक (Stock)' : 'Stock'}</th>
-                <th className="py-3 px-4">{lang === 'hi' ? 'स्थिति' : 'Status'}</th>
-                <th className="py-3 px-4 text-right">{lang === 'hi' ? 'कार्रवाई (Actions)' : 'Actions'}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-medium text-slate-900">
-              {products.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-10 text-center text-slate-400">
-                    {loading ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <RefreshCw className="w-4 h-4 animate-spin text-blue-600" />
-                        <span>{lang === 'hi' ? 'सामान लोड हो रहे हैं...' : 'Loading catalog...'}</span>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <Package className="w-8 h-8 text-slate-300 mx-auto" />
-                        <p>{lang === 'hi' ? 'कोई सामान नहीं मिला' : 'No products found'}</p>
-                        <button
-                          onClick={() => setIsAddProductOpen(true)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-slate-900 text-white shadow-sm"
-                        >
-                          <Plus className="w-3 h-3 text-emerald-400" />
-                          <span>{lang === 'hi' ? '+ पहला सामान जोड़ें' : '+ Add First Item'}</span>
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ) : (
-                products.map((item) => {
-                  const isLow = item.currentStock <= item.minThreshold;
-                  const catObj = categories.find(c => c.id === item.categoryId);
-                  const categoryDisplay = catObj 
-                    ? (lang === 'hi' && catObj.nameHindi ? catObj.nameHindi : catObj.name)
-                    : (item.categoryName || 'General');
-
-                  return (
-                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900">
-                          {formatProductTitle(item, lang)}
-                        </div>
-                        <div className="text-[10px] text-slate-400 font-mono mt-0.5 flex items-center gap-2">
-                          <span>SKU: {item.sku || 'N/A'}</span>
-                          {item.barcode && <span>&bull; {item.barcode}</span>}
-                          {item.brand && <span className="text-blue-600 font-semibold">&bull; {item.brand}</span>}
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-semibold">
-                          {categoryDisplay}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 font-bold font-mono text-blue-900">₹{item.sellingPrice}</td>
-                      <td className="py-3.5 px-4 font-mono text-slate-500">₹{item.costPrice || 0}</td>
-                      <td className="py-3.5 px-4 font-bold font-mono">
-                        <span className={isLow ? 'text-rose-600' : 'text-slate-900'}>
-                          {item.currentStock} {item.unit}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        {isLow ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-[10px] font-extrabold">
-                            <AlertTriangle className="w-3 h-3" />
-                            {lang === 'hi' ? 'कम स्टॉक' : 'Low Stock'}
-                          </span>
+          {/* Products Catalog Table */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
+                  <tr>
+                    <th className="py-3 px-4">{isHi ? 'सामान (Product)' : 'Product'}</th>
+                    <th className="py-3 px-4">{isHi ? 'श्रेणी (Category)' : 'Category'}</th>
+                    <th className="py-3 px-4">{isHi ? 'सेलिंग प्राइस' : 'Selling Price'}</th>
+                    <th className="py-3 px-4">{isHi ? 'लागत (Cost)' : 'Cost Price'}</th>
+                    <th className="py-3 px-4">{isHi ? 'स्टॉक (Stock)' : 'Stock'}</th>
+                    <th className="py-3 px-4">{isHi ? 'स्थिति' : 'Status'}</th>
+                    <th className="py-3 px-4 text-right">{isHi ? 'कार्रवाई (Actions)' : 'Actions'}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium text-slate-900">
+                  {products.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-10 text-center text-slate-400">
+                        {loading ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <RefreshCw className="w-4 h-4 animate-spin text-blue-600" />
+                            <span>{isHi ? 'सामान लोड हो रहे हैं...' : 'Loading catalog...'}</span>
+                          </div>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-extrabold">
-                            <Check className="w-3 h-3" />
-                            {lang === 'hi' ? 'पर्याप्त' : 'In Stock'}
-                          </span>
+                          <div className="space-y-2">
+                            <Package className="w-8 h-8 text-slate-300 mx-auto" />
+                            <p>{isHi ? 'कोई सामान नहीं मिला' : 'No products found'}</p>
+                            <button
+                              onClick={() => setIsAddProductOpen(true)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-slate-900 text-white shadow-sm"
+                            >
+                              <Plus className="w-3 h-3 text-emerald-400" />
+                              <span>{isHi ? '+ पहला सामान जोड़ें' : '+ Add First Item'}</span>
+                            </button>
+                          </div>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="inline-flex items-center gap-1.5">
-                          {/* Stock adjust pill */}
-                          <button
-                            onClick={() => setAdjustingItem(item)}
-                            title={lang === 'hi' ? 'स्टॉक बदलें' : 'Adjust Stock'}
-                            className="h-7 px-2.5 rounded-full bg-slate-900/85 hover:bg-slate-900 text-white text-[11px] font-bold border border-white/15 shadow-sm transition-all flex items-center gap-1 cursor-pointer"
-                          >
-                            <Truck className="w-3 h-3 text-blue-300" />
-                            <span>{lang === 'hi' ? 'स्टॉक' : 'Stock'}</span>
-                          </button>
-
-                          {/* Edit product */}
-                          <button
-                            onClick={() => openEditModal(item)}
-                            title={lang === 'hi' ? 'संपादित करें' : 'Edit Product'}
-                            className="h-7 w-7 rounded-full bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-700 border border-slate-200 flex items-center justify-center transition-colors cursor-pointer"
-                          >
-                            <Edit3 className="w-3 h-3" />
-                          </button>
-
-                          {/* Delete product */}
-                          <button
-                            onClick={() => setDeletingItem(item)}
-                            title={lang === 'hi' ? 'सामान हटाएं' : 'Delete Product'}
-                            className="h-7 w-7 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200 flex items-center justify-center transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                  ) : (
+                    products.map((item) => {
+                      const isLow = item.currentStock <= item.minThreshold;
+                      const catObj = categories.find(c => c.id === item.categoryId);
+                      const categoryDisplay = catObj 
+                        ? (isHi && catObj.nameHindi ? catObj.nameHindi : catObj.name)
+                        : (item.categoryName || 'General');
+
+                      return (
+                        <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3.5 px-4">
+                            <div className="font-bold text-slate-900">
+                              {formatProductTitle(item, lang)}
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-mono mt-0.5 flex items-center gap-2">
+                              <span>SKU: {item.sku || 'N/A'}</span>
+                              {item.barcode && <span>&bull; {item.barcode}</span>}
+                              {item.brand && <span className="text-blue-600 font-semibold">&bull; {item.brand}</span>}
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-semibold">
+                              {categoryDisplay}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 font-bold font-mono text-blue-900">₹{item.sellingPrice}</td>
+                          <td className="py-3.5 px-4 font-mono text-slate-500">₹{item.costPrice || 0}</td>
+                          <td className="py-3.5 px-4 font-bold font-mono">
+                            <span className={isLow ? 'text-rose-600' : 'text-slate-900'}>
+                              {item.currentStock} {item.unit}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            {isLow ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-[10px] font-extrabold">
+                                <AlertTriangle className="w-3 h-3" />
+                                {isHi ? 'कम स्टॉक' : 'Low Stock'}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-extrabold">
+                                <Check className="w-3 h-3" />
+                                {isHi ? 'पर्याप्त' : 'In Stock'}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="inline-flex items-center gap-1.5">
+                              {/* Stock adjust pill */}
+                              <button
+                                onClick={() => setAdjustingItem(item)}
+                                title={isHi ? 'स्टॉक बदलें' : 'Adjust Stock'}
+                                className="h-7 px-2.5 rounded-full bg-slate-900/85 hover:bg-slate-900 text-white text-[11px] font-bold border border-white/15 shadow-sm transition-all flex items-center gap-1 cursor-pointer"
+                              >
+                                <Truck className="w-3 h-3 text-blue-300" />
+                                <span>{isHi ? 'स्टॉक' : 'Stock'}</span>
+                              </button>
+
+                              {/* Edit product */}
+                              <button
+                                onClick={() => openEditModal(item)}
+                                title={isHi ? 'संपादित करें' : 'Edit Product'}
+                                className="h-7 w-7 rounded-full bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-700 border border-slate-200 flex items-center justify-center transition-colors cursor-pointer"
+                              >
+                                <Edit3 className="w-3 h-3" />
+                              </button>
+
+                              {/* Delete product */}
+                              <button
+                                onClick={() => setDeletingItem(item)}
+                                title={isHi ? 'सामान हटाएं' : 'Delete Product'}
+                                className="h-7 w-7 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200 flex items-center justify-center transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* 1. Add / Edit Product Modal */}
       {isAddProductOpen && (
@@ -530,11 +924,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
                 <div>
                   <h3 className="font-bold text-slate-900 text-base">
                     {editingItem
-                      ? (lang === 'hi' ? 'सामान संपादित करें (Edit Product)' : 'Edit Product')
-                      : (lang === 'hi' ? 'नया सामान जोड़ें (Add Product)' : 'Add New Product')}
+                      ? (isHi ? 'सामान संपादित करें' : 'Edit Product')
+                      : (isHi ? 'नया सामान जोड़ें' : 'Add New Product')}
                   </h3>
                   <p className="text-[11px] text-slate-500 font-medium">
-                    {lang === 'hi' ? 'किराना इन्वेंटरी व पीओएस कैटलॉग में शामिल होगा' : 'Will be visible in POS and inventory'}
+                    {isHi ? 'किराना इन्वेंटरी व पीओएस कैटलॉग में शामिल होगा' : 'Will be visible in POS and inventory'}
                   </p>
                 </div>
               </div>
@@ -553,7 +947,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    {lang === 'hi' ? 'सामान का नाम (English) *' : 'Product Name (English) *'}
+                    {isHi ? 'सामान का नाम (English) *' : 'Product Name (English) *'}
                   </label>
                   <input
                     type="text"
@@ -567,7 +961,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    {lang === 'hi' ? 'हिंदी नाम (Hindi Name)' : 'Hindi Name'}
+                    {isHi ? 'हिंदी नाम (Hindi Name)' : 'Hindi Name'}
                   </label>
                   <input
                     type="text"
@@ -584,7 +978,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-xs font-bold text-slate-700">
-                      {lang === 'hi' ? 'श्रेणी (Category) *' : 'Category *'}
+                      {isHi ? 'श्रेणी (Category) *' : 'Category *'}
                     </label>
                     <button
                       type="button"
@@ -592,7 +986,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
                       className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-0.5 cursor-pointer"
                     >
                       <Plus className="w-2.5 h-2.5" />
-                      <span>{lang === 'hi' ? 'नई श्रेणी' : 'New'}</span>
+                      <span>{isHi ? 'नई श्रेणी' : 'New'}</span>
                     </button>
                   </div>
                   <select
@@ -602,7 +996,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
                   >
                     {categories.map((cat) => (
                       <option key={cat.id} value={cat.id}>
-                        {lang === 'hi' && cat.nameHindi ? cat.nameHindi : cat.name}
+                        {isHi && cat.nameHindi ? cat.nameHindi : cat.name}
                       </option>
                     ))}
                   </select>
@@ -610,7 +1004,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    {lang === 'hi' ? 'यूनिट (Unit)' : 'Unit'}
+                    {isHi ? 'यूनिट (Unit)' : 'Unit'}
                   </label>
                   <select
                     value={formData.unit}
@@ -635,7 +1029,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
               <div className="grid grid-cols-3 gap-2.5">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    {lang === 'hi' ? 'बिक्री मूल्य (₹) *' : 'Selling Price *'}
+                    {isHi ? 'बिक्री मूल्य (₹) *' : 'Selling Price *'}
                   </label>
                   <input
                     type="number"
@@ -650,7 +1044,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    {lang === 'hi' ? 'खरीद मूल्य (₹)' : 'Cost Price'}
+                    {isHi ? 'खरीद मूल्य (₹)' : 'Cost Price'}
                   </label>
                   <input
                     type="number"
@@ -664,7 +1058,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    {lang === 'hi' ? 'MRP (₹)' : 'MRP'}
+                    {isHi ? 'MRP (₹)' : 'MRP'}
                   </label>
                   <input
                     type="number"
@@ -681,7 +1075,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    {lang === 'hi' ? 'आरंभिक स्टॉक (Stock)' : 'Current Stock'}
+                    {isHi ? 'आरंभिक स्टॉक (Stock)' : 'Current Stock'}
                   </label>
                   <input
                     type="number"
@@ -693,7 +1087,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    {lang === 'hi' ? 'कम स्टॉक अलर्ट सीमा' : 'Min Alert Threshold'}
+                    {isHi ? 'कम स्टॉक अलर्ट सीमा' : 'Min Alert Threshold'}
                   </label>
                   <input
                     type="number"
@@ -704,19 +1098,59 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
                 </div>
               </div>
 
+              {/* Batch No & Expiry Date */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {isHi ? 'बैच नंबर (Batch No)' : 'Batch No'}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.batchNo}
+                    onChange={(e) => setFormData({ ...formData, batchNo: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {isHi ? 'एक्सपायरी दिनांक' : 'Expiry Date'}
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.expiryDate}
+                    onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    {isHi ? 'रैक / शेल्फ' : 'Shelf Rack'}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.shelfLocation}
+                    onChange={(e) => setFormData({ ...formData, shelfLocation: e.target.value })}
+                    placeholder="Rack A1"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+              </div>
+
               {/* Barcode & Brand */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-xs font-bold text-slate-700">
-                      {lang === 'hi' ? 'बारकोड (Barcode)' : 'Barcode'}
+                      {isHi ? 'बारकोड (Barcode)' : 'Barcode'}
                     </label>
                     <button
                       type="button"
                       onClick={generateBarcode}
                       className="text-[11px] font-bold text-blue-600 hover:text-blue-800 cursor-pointer"
                     >
-                      {lang === 'hi' ? 'ऑटो बनाएं' : 'Auto Generate'}
+                      {isHi ? 'ऑटो बनाएं' : 'Auto Generate'}
                     </button>
                   </div>
                   <input
@@ -730,7 +1164,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    {lang === 'hi' ? 'ब्रांड (Brand)' : 'Brand'}
+                    {isHi ? 'ब्रांड (Brand)' : 'Brand'}
                   </label>
                   <input
                     type="text"
@@ -752,14 +1186,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
                   }}
                   className="flex-1 h-11 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
                 >
-                  {lang === 'hi' ? 'रद्द करें' : 'Cancel'}
+                  {isHi ? 'रद्द करें' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 h-11 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                  <span>{editingItem ? (lang === 'hi' ? 'अपडेट करें' : 'Update Item') : (lang === 'hi' ? 'सामान सेव करें' : 'Save Product')}</span>
+                  <span>{editingItem ? (isHi ? 'अपडेट करें' : 'Update Item') : (isHi ? 'सामान सेव करें' : 'Save Product')}</span>
                 </button>
               </div>
             </form>
@@ -778,10 +1212,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-base">
-                    {lang === 'hi' ? 'नई श्रेणी बनाएं' : 'Create New Category'}
+                    {isHi ? 'नई श्रेणी बनाएं' : 'Create New Category'}
                   </h3>
                   <p className="text-[11px] text-slate-500 font-medium">
-                    {lang === 'hi' ? 'कैटलॉग और पीओएस में दिखाई देगी' : 'Visible across POS & Catalog'}
+                    {isHi ? 'कैटलॉग और पीओएस में दिखाई देगी' : 'Visible across POS & Catalog'}
                   </p>
                 </div>
               </div>
@@ -796,7 +1230,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
             <form onSubmit={handleCreateCategory} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  {lang === 'hi' ? 'श्रेणी का नाम (English) *' : 'Category Name (English) *'}
+                  {isHi ? 'श्रेणी का नाम (English) *' : 'Category Name (English) *'}
                 </label>
                 <input
                   type="text"
@@ -810,7 +1244,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  {lang === 'hi' ? 'हिंदी नाम (Hindi Name)' : 'Hindi Name'}
+                  {isHi ? 'हिंदी नाम (Hindi Name)' : 'Hindi Name'}
                 </label>
                 <input
                   type="text"
@@ -827,14 +1261,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
                   onClick={() => setIsAddCategoryOpen(false)}
                   className="flex-1 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
                 >
-                  {lang === 'hi' ? 'रद्द करें' : 'Cancel'}
+                  {isHi ? 'रद्द करें' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 h-10 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
-                  <span>{lang === 'hi' ? 'श्रेणी बनाएं' : 'Create'}</span>
+                  <span>{isHi ? 'श्रेणी बनाएं' : 'Create'}</span>
                 </button>
               </div>
             </form>
@@ -851,10 +1285,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
             </div>
             <div className="text-center space-y-1">
               <h3 className="font-bold text-slate-900 text-base">
-                {lang === 'hi' ? 'सामान हटाएं?' : 'Delete Product?'}
+                {isHi ? 'सामान हटाएं?' : 'Delete Product?'}
               </h3>
               <p className="text-xs text-slate-500">
-                {lang === 'hi' 
+                {isHi 
                   ? `क्या आप "${deletingItem.name}" को कैटलॉग से स्थायी रूप से हटाना चाहते हैं?` 
                   : `Are you sure you want to remove "${deletingItem.name}" from the catalog?`}
               </p>
@@ -864,29 +1298,31 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
                 onClick={() => setDeletingItem(null)}
                 className="flex-1 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
               >
-                {lang === 'hi' ? 'रद्द करें' : 'Cancel'}
+                {isHi ? 'रद्द करें' : 'Cancel'}
               </button>
               <button
                 onClick={handleDeleteProduct}
                 className="flex-1 h-10 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md transition-all cursor-pointer"
               >
-                {lang === 'hi' ? 'हां, हटाएं' : 'Yes, Delete'}
+                {isHi ? 'हां, हटाएं' : 'Yes, Delete'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 4. Stock Adjustment Modal */}
+      {/* 4. Smart Stock Adjustment Modal with Wastage / Restock Type */}
       {adjustingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in">
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <div>
                 <h3 className="font-bold text-slate-900 text-base">
-                  {lang === 'hi' ? 'स्टॉक स्तर बदलें' : 'Adjust Stock Level'}
+                  {isHi ? 'स्टॉक स्तर बदलें' : 'Adjust Stock Level'}
                 </h3>
-                <span className="text-xs text-slate-500 font-medium">{adjustingItem.name} (वर्तमान: {adjustingItem.currentStock} {adjustingItem.unit})</span>
+                <span className="text-xs text-slate-500 font-medium">
+                  {adjustingItem.hindi || adjustingItem.name} ({isHi ? 'वर्तमान' : 'Current'}: {adjustingItem.currentStock} {adjustingItem.unit})
+                </span>
               </div>
               <button
                 onClick={() => setAdjustingItem(null)}
@@ -899,7 +1335,44 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
             <form onSubmit={handleAdjustSubmit} className="space-y-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  {lang === 'hi' ? 'मात्रा (Quantity Delta e.g. +10 or -5):' : 'Quantity (+/-):'}
+                  {isHi ? 'एडजस्टमेंट प्रकार:' : 'Adjustment Type:'}
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAdjustType('RESTOCK');
+                      setAdjustReason(isHi ? 'नया सप्लायर माल आया' : 'Supplier Restock');
+                    }}
+                    className={`p-2 rounded-xl text-xs font-bold border transition-all ${
+                      adjustType === 'RESTOCK'
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-900 ring-2 ring-emerald-200'
+                        : 'bg-slate-50 border-slate-200 text-slate-700'
+                    }`}
+                  >
+                    + {isHi ? 'री-स्टॉक (+)' : 'Restock (+)'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAdjustType('DAMAGE');
+                      setAdjustReason(isHi ? 'टूटा/खराब सामान वेस्टेज' : 'Damaged / Wastage');
+                    }}
+                    className={`p-2 rounded-xl text-xs font-bold border transition-all ${
+                      adjustType === 'DAMAGE'
+                        ? 'bg-rose-50 border-rose-500 text-rose-900 ring-2 ring-rose-200'
+                        : 'bg-slate-50 border-slate-200 text-slate-700'
+                    }`}
+                  >
+                    - {isHi ? 'डैमेज / वेस्टेज (-)' : 'Damage (-)'}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  {isHi ? 'मात्रा (Quantity):' : 'Quantity:'}
                 </label>
                 <input
                   type="number"
@@ -912,18 +1385,14 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  {lang === 'hi' ? 'कारण (Reason):' : 'Reason:'}
+                  {isHi ? 'कारण / टिप्पणी:' : 'Reason / Note:'}
                 </label>
-                <select
+                <input
+                  type="text"
                   value={adjustReason}
                   onChange={(e) => setAdjustReason(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-600"
-                >
-                  <option value="Fresh Delivery Restock">Fresh Delivery Restock (नई डिलीवरी)</option>
-                  <option value="Physical Audit Correction">Physical Audit (स्टॉक मिलान)</option>
-                  <option value="Damaged / Expired">Damaged / Expired (खराब/एक्सपायर्ड)</option>
-                  <option value="Customer Return">Customer Return (ग्राहक वापसी)</option>
-                </select>
+                />
               </div>
 
               <div className="flex items-center gap-2 pt-2">
@@ -932,21 +1401,19 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ lang = 'hi' }) => 
                   onClick={() => setAdjustingItem(null)}
                   className="flex-1 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
                 >
-                  {lang === 'hi' ? 'रद्द करें' : 'Cancel'}
+                  {isHi ? 'रद्द करें' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 h-10 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
-                  <span>{lang === 'hi' ? 'सेव करें' : 'Save Stock'}</span>
+                  <span>{isHi ? 'सेव करें' : 'Save Stock'}</span>
                 </button>
               </div>
             </form>
           </div>
         </div>
-      )}
-        </>
       )}
     </div>
   );

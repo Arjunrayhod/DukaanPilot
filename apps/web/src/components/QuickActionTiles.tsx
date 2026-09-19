@@ -9,6 +9,7 @@ interface QuickActionTilesProps {
   onShowQr: () => void;
   onAddProduct: () => void;
   onDailyReport: () => void;
+  onPromotions?: () => void;
 }
 
 export function QuickActionTiles({
@@ -18,6 +19,7 @@ export function QuickActionTiles({
   onShowQr,
   onAddProduct,
   onDailyReport,
+  onPromotions,
 }: QuickActionTilesProps) {
   const t = translations[lang];
 
@@ -98,6 +100,18 @@ export function QuickActionTiles({
           <FileSpreadsheet className="w-4 h-4 text-indigo-300" />
           <span>{t.dailyReport}</span>
         </button>
+
+        {onPromotions && (
+          <button
+            onClick={onPromotions}
+            className="h-10 px-4 rounded-full bg-purple-900/90 hover:bg-purple-900 text-white backdrop-blur-xl border border-purple-400/30 text-xs font-bold flex items-center gap-2 shrink-0 shadow-md transition-all active:scale-95 cursor-pointer"
+            type="button"
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></div>
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            <span>{lang === 'hi' ? 'त्योहारी ऑफर्स & कूपन' : 'Festive Offers'}</span>
+          </button>
+        )}
       </div>
     </section>
   );

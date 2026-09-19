@@ -21,6 +21,8 @@ import {
   HelpCircle,
   Tag,
   Camera,
+  Gift,
+  Award,
 } from 'lucide-react';
 import { fetchProducts, fetchCategories } from '../services/api';
 import { Lang, translations } from '../i18n/translations';
@@ -32,8 +34,11 @@ import { ReceiptModal } from './ReceiptModal';
 import { ReceiptData } from '../utils/receiptGenerator';
 import { BarcodeScannerModal } from './BarcodeScannerModal';
 import { BarcodeGeneratorModal } from './BarcodeGeneratorModal';
+import { PromotionsModal } from './PromotionsModal';
 import { useBarcodeScanner } from '../hooks/useBarcodeScanner';
 import { findProductByBarcode, playScannerBeep, BarcodeProduct } from '../utils/barcodeService';
+import { INITIAL_INVENTORY_ITEMS, decrementStockOnSale, InventoryItem } from '../utils/inventoryService';
+import { INITIAL_LOYALTY_ACCOUNTS, calculateEarnedPoints, LoyaltyAccount } from '../utils/loyaltyService';
 
 interface CartItem {
   id: string | number;
@@ -75,6 +80,10 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
   const [lastVoiceResult, setLastVoiceResult] = useState('');
   const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
   const [isBarcodeGeneratorOpen, setIsBarcodeGeneratorOpen] = useState(false);
+  const [isPromotionsModalOpen, setIsPromotionsModalOpen] = useState(false);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(INITIAL_INVENTORY_ITEMS);
+  const [loyaltyAccounts, setLoyaltyAccounts] = useState<Record<string, LoyaltyAccount>>(INITIAL_LOYALTY_ACCOUNTS);
+  const [redeemedPoints, setRedeemedPoints] = useState<number>(0);
 
   // Handle Barcode Scanned (Camera or USB Scanner)
   const handleProductBarcodeScanned = (product: BarcodeProduct) => {
@@ -276,14 +285,48 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
     });
   };
 
+  const cleanPhone = customerPhone.replace(/[^\d]/g, '');
+  const customerLoyalty = loyaltyAccounts[cleanPhone];
+  const availablePoints = customerLoyalty?.points || 0;
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const gstAmount = Math.round(subtotal * 0.05);
-  const grandTotal = subtotal + gstAmount;
+  const discountFromPoints = Math.min(redeemedPoints, availablePoints, subtotal + gstAmount);
+  const grandTotal = Math.max(0, subtotal + gstAmount - discountFromPoints);
 
   const handleCompleteBill = () => {
     if (cart.length === 0) {
       alert(lang === 'hi' ? 'कृपया पहले कार्ट में सामान जोड़ें!' : 'Please add items to cart first!');
       return;
+    }
+
+    // 1. Real-time Automatic Stock Decrement
+    const { updatedInventory } = decrementStockOnSale(inventoryItems, cart);
+    setInventoryItems(updatedInventory);
+
+    // 2. Customer Loyalty Points Calculation & Ledger update
+    const earned = calculateEarnedPoints(grandTotal);
+    if (cleanPhone) {
+      setLoyaltyAccounts((prev) => {
+        const existing = prev[cleanPhone] || {
+          phone: cleanPhone,
+          customerName,
+          points: 0,
+          totalEarned: 0,
+          totalRedeemed: 0,
+          lastActive: new Date().toLocaleDateString('en-IN')
+        };
+        return {
+          ...prev,
+          [cleanPhone]: {
+            ...existing,
+            customerName: customerName || existing.customerName,
+            points: Math.max(0, existing.points - discountFromPoints + earned),
+            totalEarned: existing.totalEarned + earned,
+            totalRedeemed: existing.totalRedeemed + discountFromPoints,
+            lastActive: new Date().toLocaleDateString('en-IN')
+          }
+        };
+      });
     }
 
     const receipt: ReceiptData = {
@@ -322,6 +365,12 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
 
     setCurrentReceipt(receipt);
     setIsReceiptModalOpen(true);
+    setRedeemedPoints(0);
+
+    const voiceAnnounce = lang === 'hi'
+      ? `बिल पूरा हुआ, कुल ₹${grandTotal}${earned > 0 ? `। ${earned} लॉयल्टी पॉइंट्स जुड़े` : ''}`
+      : `Bill completed, total ₹${grandTotal}`;
+    speakHindi(voiceAnnounce, lang);
   };
 
   return (
@@ -603,7 +652,61 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
 
           {/* Bill Calculation & Checkout Triggers */}
           <div className="space-y-2.5 pt-2 border-t border-slate-100">
-            {/* Subtotal & GST rows */}
+            {/* Festive Promotions & Loyalty Points Strip */}
+            <div className="flex items-center justify-between gap-2 p-2.5 rounded-2xl bg-purple-50/80 border border-purple-200">
+              <div className="flex items-center gap-2 min-w-0">
+                <Gift className="w-4 h-4 text-purple-700 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-[11px] font-extrabold text-purple-950 truncate">
+                    {availablePoints > 0
+                      ? (lang === 'hi' ? `${availablePoints} लॉयल्टी पॉइंट्स उपलब्ध` : `${availablePoints} Loyalty Pts Available`)
+                      : (lang === 'hi' ? 'त्योहारी कूपन व डिस्काउंट' : 'Festive Offers & Coupons')}
+                  </div>
+                  <div className="text-[10px] text-purple-700">
+                    {availablePoints > 0
+                      ? (lang === 'hi' ? `1 pt = ₹1 छूट (कुल ₹${availablePoints} तक)` : `1 pt = ₹1 discount`)
+                      : (lang === 'hi' ? '10% व ₹50 कूपन लागू करें' : 'Apply 10% or flat ₹50')}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                {availablePoints > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (redeemedPoints > 0) {
+                        setRedeemedPoints(0);
+                        speakHindi(lang === 'hi' ? 'पॉइंट्स छूट हटाई गई' : 'Points removed');
+                      } else {
+                        const toRedeem = Math.min(availablePoints, subtotal + gstAmount);
+                        setRedeemedPoints(toRedeem);
+                        speakHindi(lang === 'hi' ? `₹${toRedeem} की लॉयल्टी छूट लागू हुई` : `₹${toRedeem} discount applied`);
+                      }
+                    }}
+                    className={`px-2.5 py-1 rounded-xl text-[11px] font-black transition-all cursor-pointer ${
+                      redeemedPoints > 0
+                        ? 'bg-purple-700 text-white shadow-sm'
+                        : 'bg-white text-purple-900 border border-purple-300 hover:bg-purple-100'
+                    }`}
+                  >
+                    {redeemedPoints > 0 ? (lang === 'hi' ? 'हटाएं (₹' + redeemedPoints + ')' : 'Remove') : (lang === 'hi' ? 'रिडीम करें' : 'Redeem')}
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setIsPromotionsModalOpen(true)}
+                  className="px-2.5 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-[11px] font-black shadow-sm transition-all flex items-center gap-1 cursor-pointer"
+                  title={lang === 'hi' ? 'त्योहारी ऑफर्स व कूपन' : 'Festive Offers'}
+                >
+                  <Tag className="w-3 h-3 text-slate-950" />
+                  <span>{lang === 'hi' ? 'कूपन' : 'Offers'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Subtotal, Discount & GST rows */}
             <div className="space-y-1.5 text-xs text-slate-600">
               <div className="flex justify-between items-center py-0.5">
                 <span>{lang === 'hi' ? 'उप-कुल:' : 'Subtotal:'}</span>
@@ -613,6 +716,12 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
                 <span>{lang === 'hi' ? 'जीएसटी (5%):' : 'GST (5%):'}</span>
                 <span className="font-bold font-mono text-slate-800">₹{gstAmount}</span>
               </div>
+              {discountFromPoints > 0 && (
+                <div className="flex justify-between items-center py-0.5 text-purple-700 font-bold">
+                  <span>{lang === 'hi' ? 'लॉयल्टी डिस्काउंट:' : 'Loyalty Discount:'}</span>
+                  <span className="font-mono">- ₹{discountFromPoints}</span>
+                </div>
+              )}
               <div className="flex justify-between items-center pt-2 border-t border-slate-200">
                 <span className="text-xs font-black text-slate-900 uppercase">
                   {lang === 'hi' ? 'कुल देय राशि:' : 'Grand Total:'}
@@ -809,6 +918,13 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
         isOpen={isBarcodeGeneratorOpen}
         onClose={() => setIsBarcodeGeneratorOpen(false)}
         onBarcodeCreated={handleProductBarcodeScanned}
+        lang={lang}
+      />
+
+      {/* Festive Offers & Loyalty Promotions Modal */}
+      <PromotionsModal
+        isOpen={isPromotionsModalOpen}
+        onClose={() => setIsPromotionsModalOpen(false)}
         lang={lang}
       />
     </div>

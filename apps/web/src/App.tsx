@@ -17,6 +17,7 @@ import { AnalyticsView } from './components/AnalyticsView';
 import { DailyZReportModal } from './components/DailyZReportModal';
 import { CustomerPortal } from './components/CustomerPortal';
 import { AuthModal } from './components/AuthModal';
+import { PromotionsModal } from './components/PromotionsModal';
 import { checkHealth } from './services/api';
 import { Lang } from './i18n/translations';
 
@@ -28,6 +29,7 @@ export function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isZReportOpen, setIsZReportOpen] = useState(false);
+  const [isPromotionsOpen, setIsPromotionsOpen] = useState(false);
   const [posVoiceTrigger, setPosVoiceTrigger] = useState('');
   
   // Dual User State: Shopkeeper vs Customer
@@ -156,6 +158,7 @@ export function App() {
                 onShowQr={() => setIsQrOpen(true)}
                 onAddProduct={() => setActiveTab('inventory')}
                 onDailyReport={() => setIsZReportOpen(true)}
+                onPromotions={() => setIsPromotionsOpen(true)}
               />
 
               {/* 3. Live Incoming Online Customer Orders */}
@@ -238,6 +241,17 @@ export function App() {
         lang={lang}
         shopName={currentUser?.shopName || 'Shree Ganesh Kirana'}
         shopPhone={currentUser?.phone || '+91 98765 43210'}
+      />
+
+      {/* Festive Offers & Customer Loyalty Modal */}
+      <PromotionsModal
+        isOpen={isPromotionsOpen}
+        onClose={() => setIsPromotionsOpen(false)}
+        lang={lang}
+        shopInfo={{
+          name: currentUser?.shopName || 'श्री गणेश किराना स्टोर',
+          phone: currentUser?.phone || '+91 98765 43210'
+        }}
       />
     </div>
   );
