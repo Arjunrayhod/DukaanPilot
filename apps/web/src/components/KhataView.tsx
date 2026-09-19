@@ -19,7 +19,10 @@ import {
   Sparkles,
   ChevronRight,
   TrendingDown,
-  Filter
+  Filter,
+  Mic,
+  Volume2,
+  Zap
 } from 'lucide-react';
 import { Lang, translations } from '../i18n/translations';
 import {
@@ -30,6 +33,7 @@ import {
   formatKhataReminderMessage
 } from '../utils/khataService';
 import { speakHindi } from '../utils/voiceFeedback';
+import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
 
 interface KhataViewProps {
   lang: Lang;
@@ -56,6 +60,7 @@ export function KhataView({ lang }: KhataViewProps) {
   const [newCustAddress, setNewCustAddress] = useState('');
   const [newCustLimit, setNewCustLimit] = useState('5000');
   const [notificationMsg, setNotificationMsg] = useState('');
+  const [lastVoiceResult, setLastVoiceResult] = useState('');
 
   const selectedCustomer = customers.find((c) => c.id === selectedCustomerId) || customers[0];
 
@@ -79,8 +84,152 @@ export function KhataView({ lang }: KhataViewProps) {
 
   const showNotification = (msg: string) => {
     setNotificationMsg(msg);
-    setTimeout(() => setNotificationMsg(''), 3500);
+    setTimeout(() => setNotificationMsg(''), 4000);
   };
+
+  // Process Natural Voice Khata Command (Speak to Entry)
+  const handleProcessVoiceKhata = (rawSpoken: string) => {
+    if (!rawSpoken.trim()) return;
+    setLastVoiceResult(rawSpoken);
+
+    const lower = rawSpoken.toLowerCase().replace(/[,\.।\?!:;\-\+]/g, ' ').replace(/\s+/g, ' ').trim();
+    const isJama = lower.includes('jama') || lower.includes('जमा') || lower.includes('paid') || lower.includes('payment') || lower.includes('mila');
+    
+    // Extract numbers
+    const numMatch = lower.match(/(\d+)/);
+    const amount = numMatch ? parseInt(numMatch[1], 10) : 0;
+    
+    if (amount <= 0) {
+      const err = isHi ? 'कृपया राशि बोलें (जैसे: रमेश 500 रुपये उधार)' : 'Please specify an amount (e.g. Ramesh 500 credit)';
+      speakHindi(err, lang);
+      showNotification(err);
+      return;
+    }
+
+    // Clean spoken text to identify customer name
+    const cleanedWords = lower
+      .replace(/(?:jama|udhaar|karo|rupay|rupee|rs|ka|ki|ke|ko|se|₹|\d+|likho|jodo|de do|mila|khatabook|khata|entry|credit|payment|bhi|gaya|diya)/gi, '')
+      .trim();
+
+    // Match customer from existing customers list
+    let targetCustomer = customers.find(c => {
+      const cLower = c.name.toLowerCase();
+      const firstWord = cLower.split(' ')[0];
+      return (cleanedWords && (cLower.includes(cleanedWords) || cleanedWords.includes(firstWord))) ||
+             (cleanedWords && c.phone.includes(cleanedWords));
+    });
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-IN');
+    const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    const type: 'DEBIT' | 'CREDIT' = isJama ? 'CREDIT' : 'DEBIT';
+
+    if (!targetCustomer) {
+      // If customer is not found by name, create new customer if name was spoken
+      if (cleanedWords.length >= 2) {
+        const capitalized = cleanedWords.charAt(0).toUpperCase() + cleanedWords.slice(1);
+        const newCust: KhataCustomer = {
+          id: `khata_cust_${Date.now()}`,
+          name: capitalized,
+          phone: `98${Math.floor(10000000 + Math.random() * 90000000)}`,
+          currentDue: isJama ? 0 : amount,
+          creditLimit: 5000,
+          overdueDays: 0,
+          transactions: []
+        };
+
+        const newTx: KhataTransaction = {
+          id: `tx_${Date.now()}`,
+          date: dateStr,
+          time: timeStr,
+          type: type,
+          amount: amount,
+          balanceAfter: isJama ? 0 : amount,
+          notes: isJama ? 'वॉइस जमा एंट्री' : 'वॉइस उधार एंट्री',
+          paymentMode: isJama ? 'cash' : undefined,
+          billNo: type === 'DEBIT' ? `Bill #${Math.floor(2000 + Math.random() * 900)}` : undefined
+        };
+        newCust.transactions = [newTx];
+
+        setCustomers(prev => [newCust, ...prev]);
+        setSelectedCustomerId(newCust.id);
+
+        const speech = isHi 
+          ? `नया खाता ${capitalized} बना दिया गया और ₹${amount} ${isJama ? 'जमा' : 'उधार'} दर्ज हुआ`
+          : `New Khata ${capitalized} created with ₹${amount} ${isJama ? 'payment' : 'credit'}`;
+        speakHindi(speech, lang);
+        showNotification(speech);
+        return;
+      } else {
+        targetCustomer = selectedCustomer;
+      }
+    }
+
+    if (!targetCustomer) return;
+
+    // Record transaction for targetCustomer
+    setSelectedCustomerId(targetCustomer.id);
+
+    let newDue = targetCustomer.currentDue;
+    if (type === 'DEBIT') {
+      newDue += amount;
+    } else {
+      newDue = Math.max(0, newDue - amount);
+    }
+
+    const newTx: KhataTransaction = {
+      id: `tx_${Date.now()}`,
+      date: dateStr,
+      time: timeStr,
+      type: type,
+      amount: amount,
+      balanceAfter: newDue,
+      notes: isJama ? 'वॉइस जमा एंट्री' : 'वॉइस सामान उधारी',
+      paymentMode: isJama ? 'cash' : undefined,
+      billNo: type === 'DEBIT' ? `Bill #${Math.floor(2000 + Math.random() * 900)}` : undefined
+    };
+
+    setCustomers(prev =>
+      prev.map(c => {
+        if (c.id === targetCustomer!.id) {
+          return {
+            ...c,
+            currentDue: newDue,
+            overdueDays: type === 'DEBIT' ? c.overdueDays : (newDue === 0 ? 0 : c.overdueDays),
+            lastDebitDate: type === 'DEBIT' ? dateStr : c.lastDebitDate,
+            lastPaymentDate: type === 'CREDIT' ? dateStr : c.lastPaymentDate,
+            transactions: [newTx, ...c.transactions]
+          };
+        }
+        return c;
+      })
+    );
+
+    const confirmationMsg = isHi
+      ? (type === 'DEBIT'
+          ? `${targetCustomer.name} का ₹${amount} उधार दर्ज हो गया। नया बकाया ₹${newDue} है।`
+          : `${targetCustomer.name} से ₹${amount} जमा प्राप्त हुआ। नया बकाया ₹${newDue} है।`)
+      : `Recorded ₹${amount} ${type === 'DEBIT' ? 'credit' : 'payment'} for ${targetCustomer.name}. New Balance: ₹${newDue}`;
+
+    speakHindi(confirmationMsg, lang);
+    showNotification(confirmationMsg);
+  };
+
+  const {
+    isListening,
+    transcript,
+    interimTranscript,
+    isSupported,
+    toggleListening,
+    setTranscript
+  } = useVoiceRecognition({
+    lang: 'hi-IN',
+    onResult: (res, isFinal) => {
+      if (isFinal) {
+        handleProcessVoiceKhata(res);
+      }
+    }
+  });
 
   // 1. Add Udhaar / Jama Transaction
   const handleSaveTransaction = (e: React.FormEvent) => {
@@ -209,6 +358,22 @@ export function KhataView({ lang }: KhataViewProps) {
             <span className="text-lg font-black text-amber-400 font-mono">₹{totalReceivable.toLocaleString('en-IN')}</span>
           </div>
 
+          {isSupported && (
+            <button
+              type="button"
+              onClick={toggleListening}
+              className={`h-11 px-4 rounded-full text-xs font-black shadow-lg transition-all active:scale-95 flex items-center gap-2 cursor-pointer ${
+                isListening
+                  ? 'bg-red-500 text-white ring-4 ring-red-400/50 animate-pulse'
+                  : 'bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 border border-amber-300'
+              }`}
+              title={isHi ? 'बोलकर खाता एंट्री करें' : 'Speak to record Khata entry'}
+            >
+              <Mic className={`w-4 h-4 ${isListening ? 'animate-bounce text-white' : 'text-slate-950'}`} />
+              <span>{isListening ? (isHi ? 'सुन रहा हूं... बोलें' : 'Listening...') : (isHi ? '🎙️ बोलकर खाता एंट्री' : '🎙️ Speak Entry')}</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => setIsAddCustomerOpen(true)}
@@ -219,6 +384,66 @@ export function KhataView({ lang }: KhataViewProps) {
           </button>
         </div>
       </div>
+
+      {/* AI Voice Assistant Bar */}
+      {isSupported && (
+        <div className={`p-4 rounded-3xl border transition-all duration-300 ${
+          isListening 
+            ? 'bg-amber-500/10 border-amber-400/50 shadow-md ring-2 ring-amber-400/20' 
+            : 'bg-white border-slate-200/90 shadow-sm'
+        }`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className={`w-9 h-9 rounded-2xl flex items-center justify-center ${
+                isListening ? 'bg-amber-500 text-slate-950 animate-pulse' : 'bg-slate-100 text-slate-700'
+              }`}>
+                {isListening ? <Mic className="w-5 h-5 animate-bounce" /> : <Zap className="w-5 h-5 text-amber-500" />}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-slate-900">
+                    {isHi ? 'AI बोलकर खाता एंट्री (Speak to Entry)' : 'AI Voice Khata Ledger Entry'}
+                  </span>
+                  {isListening && (
+                    <span className="px-2 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-black animate-pulse">
+                      LIVE
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  {isListening
+                    ? (interimTranscript || transcript || (isHi ? 'बोलिए... जैसे: "रमेश 500 रुपये उधार" या "सुनीता 300 रुपये जमा"' : 'Say: "Ramesh 500 udhaar" or "Sunita 300 jama"'))
+                    : (lastVoiceResult 
+                        ? (isHi ? `पिछली वॉइस कमांड: "${lastVoiceResult}"` : `Last voice input: "${lastVoiceResult}"`)
+                        : (isHi ? 'माइक दबाकर बोलें: "[ग्राहक नाम] [रुपये] उधार/जमा"' : 'Click mic & speak: "[Customer Name] [Amount] credit/payment"'))
+                  }
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Voice Demo Chips */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden sm:inline">
+                {isHi ? 'उदाहरण:' : 'Try:'}
+              </span>
+              {[
+                { label: isHi ? 'रमेश 500 उधार' : 'Ramesh 500 udhaar', text: 'रमेश 500 उधार' },
+                { label: isHi ? 'सुनीता 300 जमा' : 'Sunita 300 jama', text: 'सुनीता 300 जमा' },
+                { label: isHi ? 'महेंद्र 1000 जमा' : 'Mahendra 1000 jama', text: 'महेंद्र 1000 जमा' },
+              ].map((chip, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleProcessVoiceKhata(chip.text)}
+                  className="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 border border-slate-200 text-[11px] font-semibold transition-all active:scale-95 cursor-pointer"
+                >
+                  ⚡ {chip.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main 2-Panel Layout: Left = Customer List, Right = Customer Ledger Statement */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
