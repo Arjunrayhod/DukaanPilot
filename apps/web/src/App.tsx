@@ -22,6 +22,7 @@ export function App() {
   const [systemHealth, setSystemHealth] = useState('Checking...');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
+  const [posVoiceTrigger, setPosVoiceTrigger] = useState('');
   
   // Dual User State: Shopkeeper vs Customer
   const [currentUser, setCurrentUser] = useState<any>({
@@ -117,11 +118,17 @@ export function App() {
               <KhataSummaryCard lang={lang} />
             </div>
           ) : activeView === 'pos' ? (
-            <PosBillingView lang={lang} />
+            <PosBillingView lang={lang} initialVoiceText={posVoiceTrigger} />
           ) : (
             <div className="max-w-4xl mx-auto space-y-4">
               {/* 1. Voice AI POS Hero Banner */}
-              <VoiceHeroBanner lang={lang} onCommandTrigger={(cmd) => console.log('Voice Command:', cmd)} />
+              <VoiceHeroBanner
+                lang={lang}
+                onCommandTrigger={(cmd) => {
+                  setPosVoiceTrigger(cmd);
+                  setActiveView('pos');
+                }}
+              />
 
               {/* 2. Dual Primary Fast Counter POS Actions & Shortcuts */}
               <QuickActionTiles

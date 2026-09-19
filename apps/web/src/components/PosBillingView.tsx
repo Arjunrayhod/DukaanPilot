@@ -23,6 +23,9 @@ import {
 import { fetchProducts, fetchCategories } from '../services/api';
 import { Lang, translations } from '../i18n/translations';
 import { getCleanHindiName } from '../utils/productFormat';
+import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
+import { parseVoiceInput, ParsedVoiceCommand } from '../utils/nlpParser';
+import { speakHindi } from '../utils/voiceFeedback';
 
 interface CartItem {
   id: string | number;
@@ -35,9 +38,10 @@ interface CartItem {
 
 interface PosBillingViewProps {
   lang?: Lang;
+  initialVoiceText?: string;
 }
 
-export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) => {
+export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', initialVoiceText = '' }) => {
   const t = translations[lang];
 
   const [cart, setCart] = useState<CartItem[]>([
@@ -49,11 +53,11 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedPayment, setSelectedPayment] = useState<'cash' | 'upi' | 'khata'>('upi');
   const [voiceInput, setVoiceInput] = useState('3 packet doodh, 2 kg cheeni, 1 bread add karo');
-  const [isListening, setIsListening] = useState(false);
   const [barcodeQuery, setBarcodeQuery] = useState('');
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [lastVoiceResult, setLastVoiceResult] = useState('');
 
   const defaultCategories = [
     { id: 'All', name: 'All Items', nameHindi: 'सभी सामान (All)' },
@@ -63,6 +67,70 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
     { id: 'cat_dairy', name: 'Dairy & Bakery', nameHindi: 'डेयरी व दूध (Dairy)' },
     { id: 'cat_snacks', name: 'Snacks & Namkeen', nameHindi: 'नमकीन व बिस्कुट (Snacks)' },
   ];
+
+  const handleProcessVoiceInput = (rawSpoken: string) => {
+    if (!rawSpoken.trim()) return;
+    setLastVoiceResult(rawSpoken);
+    const parsed = parseVoiceInput(rawSpoken, products);
+
+    if (parsed.intent === 'CLEAR_CART') {
+      setCart([]);
+      speakHindi(lang === 'hi' ? 'बिल खाली कर दिया गया है' : 'Bill cleared');
+      return;
+    }
+
+    if (parsed.intent === 'ADD_ITEMS' && parsed.items.length > 0) {
+      const addedNames: string[] = [];
+      setCart((prev) => {
+        let updated = [...prev];
+        for (const item of parsed.items) {
+          const prod = item.matchedProduct;
+          const prodId = prod ? prod.id : `voice_${Date.now()}_${Math.random()}`;
+          const prodName = prod ? prod.name : item.productQuery;
+          const prodHindi = prod ? getCleanHindiName(prod) : item.productQuery;
+          const prodPrice = prod ? (prod.sellingPrice || prod.price || 40) : 40;
+          const prodUnit = prod ? (prod.unit || 'packet') : item.unit;
+
+          const existingIdx = updated.findIndex((p) => String(p.id) === String(prodId));
+          if (existingIdx >= 0) {
+            updated[existingIdx] = {
+              ...updated[existingIdx],
+              qty: updated[existingIdx].qty + item.quantity
+            };
+          } else {
+            updated.push({
+              id: prodId,
+              name: prodName,
+              hindi: prodHindi,
+              price: prodPrice,
+              qty: item.quantity,
+              unit: prodUnit,
+            });
+          }
+          addedNames.push(`${item.quantity} ${prodUnit} ${prodHindi || prodName}`);
+        }
+        return updated;
+      });
+
+      const speechMsg = `${addedNames.join(', ')} बिल में जोड़े गए`;
+      speakHindi(speechMsg);
+    }
+  };
+
+  const {
+    isListening,
+    transcript,
+    interimTranscript,
+    toggleListening,
+    setTranscript
+  } = useVoiceRecognition({
+    lang: 'hi-IN',
+    onResult: (res, isFinal) => {
+      if (isFinal) {
+        handleProcessVoiceInput(res);
+      }
+    }
+  });
 
   useEffect(() => {
     async function initData() {
@@ -80,11 +148,14 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
 
       if (pRes.success && pRes.data?.items) {
         setProducts(pRes.data.items);
+        if (initialVoiceText) {
+          handleProcessVoiceInput(initialVoiceText);
+        }
       }
       setLoading(false);
     }
     initData();
-  }, [barcodeQuery, selectedCategory]);
+  }, [barcodeQuery, selectedCategory, initialVoiceText]);
 
   const updateQty = (id: string | number, delta: number) => {
     setCart((prev) =>
@@ -172,10 +243,11 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
         <div className="lg:col-span-8 space-y-4">
           {/* AI Voice Billing Action Banner */}
           <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-2xl p-4 shadow-md border border-white/10 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <button
-                onClick={() => setIsListening(!isListening)}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-md active:scale-95 shrink-0 ${
+                type="button"
+                onClick={toggleListening}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-md active:scale-95 shrink-0 cursor-pointer ${
                   isListening
                     ? 'bg-emerald-400 text-slate-950 ring-4 ring-emerald-300 animate-bounce'
                     : 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-md border border-white/20'
@@ -183,34 +255,32 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi' }) =
               >
                 <Mic className="w-6 h-6" />
               </button>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[10px] uppercase font-extrabold tracking-wider text-amber-300 flex items-center gap-1">
                     <Zap className="w-3 h-3 fill-amber-300" />
-                    {lang === 'hi' ? 'AI वॉइस बिलिंग (बोलकर तुरंत जोड़ें)' : 'AI Voice POS (Spacebar to Speak)'}
+                    {lang === 'hi' ? 'AI लाइव वॉइस बिलिंग' : 'AI Live Voice POS'}
                   </span>
-                  <span className="bg-white/15 text-blue-100 text-[10px] px-2.5 py-0.5 rounded-full font-bold">
-                    {lang === 'hi' ? '3 सामान डिटेक्टेड' : '3 Items Auto-Detected'}
-                  </span>
+                  {isListening && (
+                    <span className="bg-red-500/30 text-red-200 border border-red-400/40 text-[10px] px-2.5 py-0.5 rounded-full font-bold animate-pulse">
+                      {lang === 'hi' ? 'बोलें... (Listening)' : 'Speak now...'}
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm font-semibold text-blue-100 truncate mt-0.5">
                   {isListening
-                    ? (lang === 'hi' ? 'सुन रहा हूं... "5kg आटा, 2L तेल और 1 bread जोड़ो"' : 'Listening... "5kg Atta, 2L Oil and 1 Bread"')
-                    : `"${voiceInput}"`}
+                    ? (interimTranscript || transcript || (lang === 'hi' ? 'सुन रहा हूं... "2 पैकेट दूध और 1 चीनी"' : 'Listening live...'))
+                    : (lastVoiceResult ? `"${lastVoiceResult}"` : `"${voiceInput}"`)}
                 </p>
               </div>
             </div>
             <button
-              onClick={() => {
-                if (products.length > 0) {
-                  addItemToCart(products[0]);
-                  if (products[1]) addItemToCart(products[1]);
-                }
-              }}
+              type="button"
+              onClick={() => handleProcessVoiceInput(voiceInput)}
               className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 px-4 py-2 rounded-full text-xs font-black shadow-md shrink-0 transition-transform active:scale-95 flex items-center gap-1.5 cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5 text-slate-950" />
-              <span>{lang === 'hi' ? 'वॉइस जोड़ें' : 'Process Voice'}</span>
+              <span>{lang === 'hi' ? 'वॉइस प्रोसेस' : 'Process Voice'}</span>
             </button>
           </div>
 

@@ -1,32 +1,96 @@
-import React, { useState } from 'react';
-import { Zap, Globe, Mic, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Zap, Globe, Mic, Sparkles, CheckCircle2, Volume2 } from 'lucide-react';
 import { Lang, translations } from '../i18n/translations';
+import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
+import { parseVoiceInput, ParsedVoiceCommand } from '../utils/nlpParser';
+import { speakHindi } from '../utils/voiceFeedback';
+import { fetchProducts } from '../services/api';
 
 interface VoiceHeroBannerProps {
   lang: Lang;
-  onCommandTrigger?: (cmd: string) => void;
+  onCommandTrigger?: (cmd: string, parsed?: ParsedVoiceCommand) => void;
 }
 
 export function VoiceHeroBanner({ lang, onCommandTrigger }: VoiceHeroBannerProps) {
   const t = translations[lang];
-  const [isListening, setIsListening] = useState(false);
-  const [transcribedText, setTranscribedText] = useState('');
+  const [catalog, setCatalog] = useState<any[]>([]);
+  const [lastParsedFeedback, setLastParsedFeedback] = useState<string>('');
 
-  const quickPrompts = [t.promptAtta, t.promptCash, t.promptSales];
+  // Fetch catalog for NLP fuzzy matching
+  useEffect(() => {
+    async function loadCatalog() {
+      const res = await fetchProducts();
+      if (res.success && res.data?.items) {
+        setCatalog(res.data.items);
+      }
+    }
+    loadCatalog();
+  }, []);
 
-  const handleMicClick = () => {
-    setIsListening(!isListening);
-    if (!isListening) {
-      setTranscribedText(t.listening);
-    } else {
-      setTranscribedText('');
+  const handleVoiceResult = (spokenText: string, isFinal: boolean) => {
+    if (!spokenText) return;
+
+    if (isFinal) {
+      const parsed = parseVoiceInput(spokenText, catalog);
+      
+      if (parsed.intent === 'ADD_ITEMS' && parsed.items.length > 0) {
+        const itemNames = parsed.items
+          .map(i => `${i.quantity} ${i.unit} ${i.matchedProduct?.name || i.productQuery}`)
+          .join(', ');
+        
+        const feedback = lang === 'hi'
+          ? `बिल में जोड़ा गया: ${itemNames}`
+          : `Added to bill: ${itemNames}`;
+        
+        setLastParsedFeedback(feedback);
+        speakHindi(`${itemNames} बिल में जोड़ा गया`);
+        
+        if (onCommandTrigger) {
+          onCommandTrigger(spokenText, parsed);
+        }
+      } else if (parsed.intent === 'CLEAR_CART') {
+        const msg = lang === 'hi' ? 'बिल खाली कर दिया गया है' : 'Bill cleared';
+        setLastParsedFeedback(msg);
+        speakHindi(msg);
+        if (onCommandTrigger) onCommandTrigger(spokenText, parsed);
+      } else if (parsed.intent === 'RECORD_KHATA' && parsed.khataPayload) {
+        const msg = lang === 'hi' 
+          ? `${parsed.khataPayload.customerName} का ₹${parsed.khataPayload.amount} ${parsed.khataPayload.type === 'JAMA' ? 'जमा' : 'उधार'} दर्ज हुआ`
+          : `Khata recorded for ${parsed.khataPayload.customerName}: ₹${parsed.khataPayload.amount}`;
+        setLastParsedFeedback(msg);
+        speakHindi(msg);
+        if (onCommandTrigger) onCommandTrigger(spokenText, parsed);
+      } else {
+        if (onCommandTrigger) onCommandTrigger(spokenText, parsed);
+      }
     }
   };
 
+  const {
+    isListening,
+    transcript,
+    interimTranscript,
+    isSupported,
+    toggleListening,
+    setTranscript
+  } = useVoiceRecognition({
+    lang: 'hi-IN',
+    onResult: handleVoiceResult
+  });
+
+  const quickPrompts = [
+    '2 पैकेट दूध और 1 किलो चीनी',
+    '1 फॉर्च्यून तेल और 500 ग्राम बेसन',
+    'रमेश का 500 रुपये जमा करो',
+    'बिल खाली करो'
+  ];
+
   const handleChipClick = (prompt: string) => {
-    setTranscribedText(prompt);
-    if (onCommandTrigger) onCommandTrigger(prompt);
+    setTranscript(prompt);
+    handleVoiceResult(prompt, true);
   };
+
+  const currentDisplay = interimTranscript || transcript || lastParsedFeedback;
 
   return (
     <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white p-6 sm:p-7 shadow-xl border border-white/10 transition-all">
@@ -41,10 +105,16 @@ export function VoiceHeroBanner({ lang, onCommandTrigger }: VoiceHeroBannerProps
             <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
             <span>{t.instantVoicePos}</span>
           </span>
-          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-sm text-slate-300 text-xs font-medium border border-white/10">
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 backdrop-blur-sm text-slate-300 text-xs font-medium border border-white/10">
             <Globe className="w-3.5 h-3.5 text-emerald-400" />
             <span>{t.languagesSupported}</span>
           </span>
+          {isListening && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-bold border border-red-500/30 animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-red-400 animate-ping"></span>
+              <span>{lang === 'hi' ? 'माइक चालू है (सुन रहे हैं...)' : 'Listening live...'}</span>
+            </span>
+          )}
         </div>
 
         {/* Main Trigger & Mic Area */}
@@ -55,17 +125,20 @@ export function VoiceHeroBanner({ lang, onCommandTrigger }: VoiceHeroBannerProps
               <span className="text-emerald-400 text-lg font-bold">{t.voiceBillSub}</span>
             </h2>
             <p className="text-xs sm:text-sm text-slate-300/90 mt-1.5 font-medium leading-relaxed max-w-xl">
-              {transcribedText ? (
-                <span className="text-amber-300 font-bold animate-pulse">{transcribedText}</span>
+              {currentDisplay ? (
+                <span className="text-amber-300 font-bold flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>"{currentDisplay}"</span>
+                </span>
               ) : (
-                t.voicePlaceholder
+                lang === 'hi' ? 'माइक बटन दबाएं और बोलें: "2 पैकेट दूध और 1 किलो आटा बिल करो"' : 'Tap mic and say: "2 packets milk and 1 kg atta add to bill"'
               )}
             </p>
           </div>
 
           {/* Voice Mic Button */}
           <button
-            onClick={handleMicClick}
+            onClick={toggleListening}
             aria-label="Activate Voice Assistant"
             className={`relative group shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-all cursor-pointer ${
               isListening
@@ -88,18 +161,23 @@ export function VoiceHeroBanner({ lang, onCommandTrigger }: VoiceHeroBannerProps
         </div>
 
         {/* Quick Suggestion Chips - Dark Translucent Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pt-1 pb-0.5 no-scrollbar">
-          {quickPrompts.map((chip, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleChipClick(chip)}
-              className="shrink-0 px-4 py-2 rounded-full bg-slate-900/80 hover:bg-slate-900 border border-white/15 text-slate-200 hover:text-white text-xs font-semibold backdrop-blur-xl transition-all active:scale-95 shadow-sm flex items-center gap-2 cursor-pointer"
-              type="button"
-            >
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
-              <span>{chip}</span>
-            </button>
-          ))}
+        <div className="space-y-1.5">
+          <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">
+            {lang === 'hi' ? 'बोलने के उदाहरण (Tap to try):' : 'Voice Examples (Tap to try):'}
+          </span>
+          <div className="flex items-center gap-2 overflow-x-auto pt-1 pb-0.5 no-scrollbar">
+            {quickPrompts.map((chip, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleChipClick(chip)}
+                className="shrink-0 px-4 py-2 rounded-full bg-slate-900/80 hover:bg-slate-900 border border-white/15 text-slate-200 hover:text-white text-xs font-semibold backdrop-blur-xl transition-all active:scale-95 shadow-sm flex items-center gap-2 cursor-pointer"
+                type="button"
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                <span>"{chip}"</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </section>
