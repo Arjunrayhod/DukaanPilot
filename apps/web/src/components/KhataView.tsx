@@ -22,7 +22,8 @@ import {
   Filter,
   Mic,
   Volume2,
-  Zap
+  Zap,
+  Trash2
 } from 'lucide-react';
 import { Lang, translations } from '../i18n/translations';
 import {
@@ -30,7 +31,8 @@ import {
   KhataTransaction,
   INITIAL_KHATA_CUSTOMERS,
   generateKhataWhatsAppUrl,
-  formatKhataReminderMessage
+  formatKhataReminderMessage,
+  parseVoiceKhataCommand
 } from '../utils/khataService';
 import { speakHindi } from '../utils/voiceFeedback';
 import { useVoiceRecognition } from '../hooks/useVoiceRecognition';
@@ -87,52 +89,47 @@ export function KhataView({ lang }: KhataViewProps) {
     setTimeout(() => setNotificationMsg(''), 4000);
   };
 
+  const handleDeleteCustomer = (customerId: string) => {
+    const cust = customers.find(c => c.id === customerId);
+    if (!cust) return;
+    if (window.confirm(isHi ? `क्या आप सचमुच "${cust.name}" का खाता हटाना चाहते हैं?` : `Are you sure you want to delete khata for "${cust.name}"?`)) {
+      const remaining = customers.filter(c => c.id !== customerId);
+      setCustomers(remaining);
+      if (remaining.length > 0) {
+        setSelectedCustomerId(remaining[0].id);
+      }
+      showNotification(isHi ? `${cust.name} का खाता हटा दिया गया` : `Deleted khata for ${cust.name}`);
+    }
+  };
+
   // Process Natural Voice Khata Command (Speak to Entry)
   const handleProcessVoiceKhata = (rawSpoken: string) => {
     if (!rawSpoken.trim()) return;
     setLastVoiceResult(rawSpoken);
 
-    const lower = rawSpoken.toLowerCase().replace(/[,\.।\?!:;\-\+]/g, ' ').replace(/\s+/g, ' ').trim();
-    const isJama = lower.includes('jama') || lower.includes('जमा') || lower.includes('paid') || lower.includes('payment') || lower.includes('mila');
-    
-    // Extract numbers
-    const numMatch = lower.match(/(\d+)/);
-    const amount = numMatch ? parseInt(numMatch[1], 10) : 0;
-    
-    if (amount <= 0) {
-      const err = isHi ? 'कृपया राशि बोलें (जैसे: रमेश 500 रुपये उधार)' : 'Please specify an amount (e.g. Ramesh 500 credit)';
+    const parsed = parseVoiceKhataCommand(rawSpoken, customers);
+
+    if (parsed.amount <= 0) {
+      const err = isHi ? 'कृपया राशि बोलें (जैसे: अर्जुन 500 रुपये जमा)' : 'Please specify an amount (e.g. Arjun 500 payment)';
       speakHindi(err, lang);
       showNotification(err);
       return;
     }
 
-    // Clean spoken text to identify customer name
-    const cleanedWords = lower
-      .replace(/(?:jama|udhaar|karo|rupay|rupee|rs|ka|ki|ke|ko|se|₹|\d+|likho|jodo|de do|mila|khatabook|khata|entry|credit|payment|bhi|gaya|diya)/gi, '')
-      .trim();
-
-    // Match customer from existing customers list
-    let targetCustomer = customers.find(c => {
-      const cLower = c.name.toLowerCase();
-      const firstWord = cLower.split(' ')[0];
-      return (cleanedWords && (cLower.includes(cleanedWords) || cleanedWords.includes(firstWord))) ||
-             (cleanedWords && c.phone.includes(cleanedWords));
-    });
-
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-IN');
     const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-    const type: 'DEBIT' | 'CREDIT' = isJama ? 'CREDIT' : 'DEBIT';
+
+    let targetCustomer = parsed.matchedCustomer;
 
     if (!targetCustomer) {
-      // If customer is not found by name, create new customer if name was spoken
-      if (cleanedWords.length >= 2) {
-        const capitalized = cleanedWords.charAt(0).toUpperCase() + cleanedWords.slice(1);
+      // If customer is not found by name, create clean new customer if name was spoken
+      if (parsed.extractedNewCustomerName && parsed.extractedNewCustomerName.length >= 2) {
         const newCust: KhataCustomer = {
           id: `khata_cust_${Date.now()}`,
-          name: capitalized,
+          name: parsed.extractedNewCustomerName,
           phone: `98${Math.floor(10000000 + Math.random() * 90000000)}`,
-          currentDue: isJama ? 0 : amount,
+          currentDue: parsed.type === 'DEBIT' ? parsed.amount : 0,
           creditLimit: 5000,
           overdueDays: 0,
           transactions: []
@@ -142,12 +139,12 @@ export function KhataView({ lang }: KhataViewProps) {
           id: `tx_${Date.now()}`,
           date: dateStr,
           time: timeStr,
-          type: type,
-          amount: amount,
-          balanceAfter: isJama ? 0 : amount,
-          notes: isJama ? 'वॉइस जमा एंट्री' : 'वॉइस उधार एंट्री',
-          paymentMode: isJama ? 'cash' : undefined,
-          billNo: type === 'DEBIT' ? `Bill #${Math.floor(2000 + Math.random() * 900)}` : undefined
+          type: parsed.type,
+          amount: parsed.amount,
+          balanceAfter: parsed.type === 'DEBIT' ? parsed.amount : 0,
+          notes: parsed.notes,
+          paymentMode: parsed.type === 'CREDIT' ? 'cash' : undefined,
+          billNo: parsed.type === 'DEBIT' ? `Bill #${Math.floor(2000 + Math.random() * 900)}` : undefined
         };
         newCust.transactions = [newTx];
 
@@ -155,8 +152,8 @@ export function KhataView({ lang }: KhataViewProps) {
         setSelectedCustomerId(newCust.id);
 
         const speech = isHi 
-          ? `नया खाता ${capitalized} बना दिया गया और ₹${amount} ${isJama ? 'जमा' : 'उधार'} दर्ज हुआ`
-          : `New Khata ${capitalized} created with ₹${amount} ${isJama ? 'payment' : 'credit'}`;
+          ? `नया खाता ${parsed.extractedNewCustomerName} बना दिया गया और ₹${parsed.amount} ${parsed.type === 'CREDIT' ? 'जमा' : 'उधार'} दर्ज हुआ`
+          : `New Khata ${parsed.extractedNewCustomerName} created with ₹${parsed.amount} ${parsed.type === 'CREDIT' ? 'payment' : 'credit'}`;
         speakHindi(speech, lang);
         showNotification(speech);
         return;
@@ -171,22 +168,22 @@ export function KhataView({ lang }: KhataViewProps) {
     setSelectedCustomerId(targetCustomer.id);
 
     let newDue = targetCustomer.currentDue;
-    if (type === 'DEBIT') {
-      newDue += amount;
+    if (parsed.type === 'DEBIT') {
+      newDue += parsed.amount;
     } else {
-      newDue = Math.max(0, newDue - amount);
+      newDue = Math.max(0, newDue - parsed.amount);
     }
 
     const newTx: KhataTransaction = {
       id: `tx_${Date.now()}`,
       date: dateStr,
       time: timeStr,
-      type: type,
-      amount: amount,
+      type: parsed.type,
+      amount: parsed.amount,
       balanceAfter: newDue,
-      notes: isJama ? 'वॉइस जमा एंट्री' : 'वॉइस सामान उधारी',
-      paymentMode: isJama ? 'cash' : undefined,
-      billNo: type === 'DEBIT' ? `Bill #${Math.floor(2000 + Math.random() * 900)}` : undefined
+      notes: parsed.notes,
+      paymentMode: parsed.type === 'CREDIT' ? 'cash' : undefined,
+      billNo: parsed.type === 'DEBIT' ? `Bill #${Math.floor(2000 + Math.random() * 900)}` : undefined
     };
 
     setCustomers(prev =>
@@ -195,9 +192,9 @@ export function KhataView({ lang }: KhataViewProps) {
           return {
             ...c,
             currentDue: newDue,
-            overdueDays: type === 'DEBIT' ? c.overdueDays : (newDue === 0 ? 0 : c.overdueDays),
-            lastDebitDate: type === 'DEBIT' ? dateStr : c.lastDebitDate,
-            lastPaymentDate: type === 'CREDIT' ? dateStr : c.lastPaymentDate,
+            overdueDays: parsed.type === 'DEBIT' ? c.overdueDays : (newDue === 0 ? 0 : c.overdueDays),
+            lastDebitDate: parsed.type === 'DEBIT' ? dateStr : c.lastDebitDate,
+            lastPaymentDate: parsed.type === 'CREDIT' ? dateStr : c.lastPaymentDate,
             transactions: [newTx, ...c.transactions]
           };
         }
@@ -206,10 +203,10 @@ export function KhataView({ lang }: KhataViewProps) {
     );
 
     const confirmationMsg = isHi
-      ? (type === 'DEBIT'
-          ? `${targetCustomer.name} का ₹${amount} उधार दर्ज हो गया। नया बकाया ₹${newDue} है।`
-          : `${targetCustomer.name} से ₹${amount} जमा प्राप्त हुआ। नया बकाया ₹${newDue} है।`)
-      : `Recorded ₹${amount} ${type === 'DEBIT' ? 'credit' : 'payment'} for ${targetCustomer.name}. New Balance: ₹${newDue}`;
+      ? (parsed.type === 'DEBIT'
+          ? `${targetCustomer.name} का ₹${parsed.amount} उधार दर्ज हो गया। नया बकाया ₹${newDue} है।`
+          : `${targetCustomer.name} से ₹${parsed.amount} जमा प्राप्त हुआ। नया बकाया ₹${newDue} है।`)
+      : `Recorded ₹${parsed.amount} ${parsed.type === 'DEBIT' ? 'credit' : 'payment'} for ${targetCustomer.name}. New Balance: ₹${newDue}`;
 
     speakHindi(confirmationMsg, lang);
     showNotification(confirmationMsg);
@@ -601,9 +598,19 @@ export function KhataView({ lang }: KhataViewProps) {
                     {selectedCustomer.name.substring(0, 2).toUpperCase()}
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
-                      <span>{selectedCustomer.name}</span>
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-extrabold text-slate-900 text-base">
+                        {selectedCustomer.name}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCustomer(selectedCustomer.id)}
+                        className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                        title={isHi ? 'खाता हटाएं' : 'Delete Customer Khata'}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                     <div className="text-xs text-slate-500 font-mono flex items-center gap-2 mt-0.5">
                       <span className="flex items-center gap-1">
                         <Phone className="w-3 h-3 text-slate-400" />

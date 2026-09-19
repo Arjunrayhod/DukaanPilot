@@ -1,6 +1,12 @@
-﻿import { describe, it } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { formatKhataReminderMessage, generateKhataWhatsAppUrl, INITIAL_KHATA_CUSTOMERS } from '../utils/khataService.ts';
+import {
+  formatKhataReminderMessage,
+  generateKhataWhatsAppUrl,
+  INITIAL_KHATA_CUSTOMERS,
+  parseVoiceKhataCommand
+} from '../utils/khataService.ts';
+import type { KhataCustomer } from '../utils/khataService.ts';
 
 describe('Khata Ledger & WhatsApp Reminder Tests', () => {
   it('should format polite Hindi WhatsApp reminder with UPI paylink', () => {
@@ -74,5 +80,44 @@ describe('Khata Ledger & WhatsApp Reminder Tests', () => {
     const ramesh = INITIAL_KHATA_CUSTOMERS[0];
     assert.strictEqual(ramesh.currentDue, 1450);
     assert.ok(ramesh.transactions.length > 0);
+  });
+
+  it('should smartly match customer and transaction type from Hindi sentences', () => {
+    const customCustomer: KhataCustomer = {
+      id: 'cust_arjun',
+      name: 'अर्जुन राठौड़',
+      phone: '9841029862',
+      currentDue: 0,
+      creditLimit: 5000,
+      overdueDays: 0,
+      transactions: []
+    };
+    const list = [customCustomer, ...INITIAL_KHATA_CUSTOMERS];
+
+    // Case 1: Payment sentence with name
+    const res1 = parseVoiceKhataCommand('अर्जुन राठौड़ ने 500 रुपए जमा करवाए', list);
+    assert.strictEqual(res1.type, 'CREDIT');
+    assert.strictEqual(res1.amount, 500);
+    assert.strictEqual(res1.matchedCustomer?.id, 'cust_arjun');
+
+    // Case 2: Credit purchase sentence with item name
+    const res2 = parseVoiceKhataCommand('अर्जुन राठौड़ ने 50 रुपए का धनिया लिया', list);
+    assert.strictEqual(res2.type, 'DEBIT');
+    assert.strictEqual(res2.amount, 50);
+    assert.strictEqual(res2.matchedCustomer?.id, 'cust_arjun');
+    assert.strictEqual(res2.notes, 'धनिया');
+
+    // Case 3: Match Ramesh Kumar with "रमेश 500 उधार"
+    const res3 = parseVoiceKhataCommand('रमेश कुमार 500 रुपये उधार लिखो', list);
+    assert.strictEqual(res3.type, 'DEBIT');
+    assert.strictEqual(res3.amount, 500);
+    assert.strictEqual(res3.matchedCustomer?.name.includes('रमेश'), true);
+
+    // Case 4: Extract clean name when customer does not exist
+    const res4 = parseVoiceKhataCommand('राहुल शर्मा ने 300 रुपये उधार लिए', list);
+    assert.strictEqual(res4.type, 'DEBIT');
+    assert.strictEqual(res4.amount, 300);
+    assert.strictEqual(res4.matchedCustomer, undefined);
+    assert.strictEqual(res4.extractedNewCustomerName, 'राहुल शर्मा');
   });
 });
