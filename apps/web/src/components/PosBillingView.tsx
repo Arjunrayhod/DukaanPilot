@@ -12,6 +12,9 @@ import {
   QrCode,
   BookOpen,
   User,
+  UserPlus,
+  Check,
+  ChevronDown,
   Zap,
   RotateCcw,
   Sparkles,
@@ -24,6 +27,7 @@ import {
   Gift,
   Award,
   ArrowLeft,
+  X
 } from 'lucide-react';
 import { fetchProducts, fetchCategories } from '../services/api';
 import { Lang, translations } from '../i18n/translations';
@@ -44,7 +48,7 @@ import { recordCompletedBill } from '../utils/salesService';
 import { announceSoundboxPayment } from '../utils/soundboxService';
 import { enqueueOfflineAction } from '../utils/offlineSyncService';
 import { updateOrderStatus } from '../utils/orderService';
-import { recordKhataDebit } from '../utils/khataService';
+import { recordKhataDebit, getKhataCustomers, KhataCustomer } from '../utils/khataService';
 
 interface CartItem {
   id: string | number;
@@ -95,9 +99,14 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
   const [splitCash, setSplitCash] = useState<number>(0);
   const [splitUpi, setSplitUpi] = useState<number>(0);
   const [splitKhata, setSplitKhata] = useState<number>(0);
-  const [customerName, setCustomerName] = useState('रमेश कुमार');
-  const [customerPhone, setCustomerPhone] = useState('9823456789');
+  const [customerName, setCustomerName] = useState(lang === 'hi' ? 'नया ग्राहक (Walk-in)' : 'New Customer (Walk-in)');
+  const [customerPhone, setCustomerPhone] = useState('');
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
+  const [newCustNameInput, setNewCustNameInput] = useState('');
+  const [newCustPhoneInput, setNewCustPhoneInput] = useState('');
+  const [khataCustomersList, setKhataCustomersList] = useState<KhataCustomer[]>(() => getKhataCustomers());
   const [voiceInput, setVoiceInput] = useState('');
   const [barcodeQuery, setBarcodeQuery] = useState('');
   const [products, setProducts] = useState<any[]>([]);
@@ -116,9 +125,14 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
     const handleInvUpdate = () => {
       setInventoryItems(getInventoryItems());
     };
+    const handleKhataUpdate = () => {
+      setKhataCustomersList(getKhataCustomers());
+    };
     window.addEventListener('dukaanpilot_inventory_updated', handleInvUpdate);
+    window.addEventListener('dukaanpilot_khata_updated', handleKhataUpdate);
     return () => {
       window.removeEventListener('dukaanpilot_inventory_updated', handleInvUpdate);
+      window.removeEventListener('dukaanpilot_khata_updated', handleKhataUpdate);
     };
   }, []);
 
@@ -274,8 +288,8 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
     setVoiceInput('');
     setRedeemedPoints(0);
     setSelectedPayment('cash');
-    setCustomerName('रमेश कुमार');
-    setCustomerPhone('9823456789');
+    setCustomerName(lang === 'hi' ? 'नया ग्राहक (Walk-in)' : 'New Customer (Walk-in)');
+    setCustomerPhone('');
     speakHindi(lang === 'hi' ? 'नया खाली बिल तैयार है' : 'New empty bill ready', lang);
   };
 
@@ -801,31 +815,65 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
             </div>
 
             {/* Customer Pill Selector */}
-            <div className="bg-[#eff4ff] border border-blue-100 rounded-xl p-2.5 my-2.5 flex items-center justify-between">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-7 h-7 rounded-lg bg-blue-200 text-blue-900 flex items-center justify-center font-bold text-xs shrink-0">
-                  RK
+            {(() => {
+              const matchedCustomer = khataCustomersList.find(
+                (c) => c.phone.replace(/[^\d]/g, '') === cleanPhone || (c.name && c.name.toLowerCase().includes(customerName.toLowerCase()))
+              );
+              const initials = (customerName || 'NG')
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .substring(0, 2)
+                .toUpperCase() || 'NG';
+              const isWalkIn = !customerPhone && (customerName.includes('Walk-in') || customerName.includes('नया ग्राहक') || customerName === 'Walk-in Customer');
+
+              return (
+                <div className="bg-[#eff4ff] border border-blue-100 rounded-xl p-2.5 my-2.5 flex items-center justify-between shadow-xs">
+                  <div 
+                    onClick={() => setIsCustomerModalOpen(true)}
+                    className="flex items-center gap-2.5 min-w-0 cursor-pointer flex-1 group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                      {initials}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-slate-900 block truncate group-hover:text-blue-700 transition-colors">
+                          {customerName || (lang === 'hi' ? 'नया ग्राहक' : 'New Customer')}
+                        </span>
+                        {customerPhone && (
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            ({customerPhone})
+                          </span>
+                        )}
+                      </div>
+                      {matchedCustomer && matchedCustomer.currentDue > 0 ? (
+                        <span className="text-[10px] text-amber-700 font-bold block">
+                          {lang === 'hi' ? `खाता: ₹${matchedCustomer.currentDue.toLocaleString('en-IN')} बकाया` : `Khata: ₹${matchedCustomer.currentDue.toLocaleString('en-IN')} Due`}
+                        </span>
+                      ) : isWalkIn ? (
+                        <span className="text-[10px] text-slate-400 font-medium block">
+                          {lang === 'hi' ? 'दुकान का नया ग्राहक' : 'Counter Walk-in Customer'}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-emerald-700 font-semibold block">
+                          {lang === 'hi' ? 'खाता साफ़ (₹0 बकाया)' : 'Khata Clear (₹0 Due)'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <button 
+                    type="button"
+                    onClick={() => setIsCustomerModalOpen(true)}
+                    className="flex items-center gap-1 text-xs font-bold text-blue-700 hover:text-blue-900 bg-white hover:bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg shrink-0 cursor-pointer transition-all shadow-xs active:scale-95"
+                  >
+                    <UserPlus className="w-3 h-3 text-blue-600" />
+                    <span>{lang === 'hi' ? 'ग्राहक बदलें' : 'Change'}</span>
+                  </button>
                 </div>
-                <div className="min-w-0">
-                  <span className="text-xs font-bold text-slate-900 block truncate">
-                    {customerName || (lang === 'hi' ? 'रमेश कुमार (Ramesh)' : 'Ramesh Kumar')}
-                  </span>
-                  <span className="text-[10px] text-amber-700 font-semibold block">
-                    {lang === 'hi' ? 'खाता: ₹1,450 बकाया' : 'Khata: ₹1,450 Pending'}
-                  </span>
-                </div>
-              </div>
-              <button 
-                type="button"
-                onClick={() => {
-                  const newName = prompt(lang === 'hi' ? 'ग्राहक का नाम दर्ज करें:' : 'Enter customer name:', customerName);
-                  if (newName) setCustomerName(newName);
-                }}
-                className="text-xs font-bold text-blue-700 hover:underline shrink-0 cursor-pointer"
-              >
-                {lang === 'hi' ? 'बदलें' : 'Change'}
-              </button>
-            </div>
+              );
+            })()}
 
             {/* Cart Items Table */}
             <div className="space-y-1.5 max-h-36 sm:max-h-44 overflow-y-auto pr-1 no-scrollbar">
@@ -1135,9 +1183,8 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
         onClose={() => setIsReceiptModalOpen(false)}
         receiptData={currentReceipt}
         onNewBill={() => {
-          setCart([]);
+          handleResetToNewBill();
           setIsReceiptModalOpen(false);
-          speakHindi(lang === 'hi' ? 'नया बिल शुरू किया गया' : 'New bill started');
         }}
       />
 
@@ -1163,6 +1210,209 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
         onClose={() => setIsPromotionsModalOpen(false)}
         lang={lang}
       />
+
+      {/* Customer Selection & Quick Add Modal */}
+      {isCustomerModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 flex flex-col max-h-[85vh]">
+            {/* Modal Header */}
+            <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm">
+                    {lang === 'hi' ? 'ग्राहक चुनें या नया जोड़ें' : 'Select or Add Customer'}
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    {lang === 'hi' ? 'हर बिल के लिए अलग ग्राहक व उधारी खाता' : 'Separate customer & ledger for each bill'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCustomerModalOpen(false);
+                  setCustomerSearchQuery('');
+                  setNewCustNameInput('');
+                  setNewCustPhoneInput('');
+                }}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Action: Reset to Walk-in Customer */}
+            <div className="p-3 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-blue-200 text-blue-800 flex items-center justify-center text-xs font-bold">
+                  🛍️
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-blue-950">
+                    {lang === 'hi' ? 'नया वॉक-इन ग्राहक (Walk-in Counter)' : 'Walk-in Counter Customer'}
+                  </div>
+                  <div className="text-[10px] text-blue-700">
+                    {lang === 'hi' ? 'बिना नाम व फोन का तुरंत नकद बिल' : 'Direct cash/UPI bill without customer details'}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomerName(lang === 'hi' ? 'नया ग्राहक (Walk-in)' : 'New Customer (Walk-in)');
+                  setCustomerPhone('');
+                  setIsCustomerModalOpen(false);
+                  speakHindi(lang === 'hi' ? 'नया वॉक-इन ग्राहक चुना गया' : 'Walk-in customer selected', lang);
+                }}
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs active:scale-95 cursor-pointer transition-all"
+              >
+                {lang === 'hi' ? 'चुनें' : 'Select'}
+              </button>
+            </div>
+
+            {/* Search and Customer List */}
+            <div className="p-4 overflow-y-auto flex-1 space-y-4">
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder={lang === 'hi' ? 'खाता ग्राहक खोजें (नाम या 10-अंक फोन)...' : 'Search customers by name or phone...'}
+                  value={customerSearchQuery}
+                  onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+                />
+              </div>
+
+              {/* Existing Khata Customers List */}
+              <div className="space-y-1.5">
+                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-1">
+                  {lang === 'hi' ? 'दुकान के मौजूदा ग्राहक' : 'Existing Store Customers'}
+                </div>
+
+                {khataCustomersList
+                  .filter((c) => {
+                    if (!customerSearchQuery.trim()) return true;
+                    const q = customerSearchQuery.toLowerCase().trim();
+                    return c.name.toLowerCase().includes(q) || c.phone.includes(q);
+                  })
+                  .map((cust) => {
+                    const isSelected = cust.phone === customerPhone || (cust.name === customerName && cust.phone === customerPhone);
+                    return (
+                      <div
+                        key={cust.id}
+                        onClick={() => {
+                          setCustomerName(cust.name);
+                          setCustomerPhone(cust.phone);
+                          setIsCustomerModalOpen(false);
+                          speakHindi(lang === 'hi' ? `${cust.name} को बिल के लिए चुना गया` : `${cust.name} selected`, lang);
+                        }}
+                        className={`p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all hover:bg-blue-50/50 ${
+                          isSelected
+                            ? 'bg-blue-50 border-blue-400 ring-1 ring-blue-300'
+                            : 'bg-white border-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0">
+                            {cust.name.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-slate-900 truncate">
+                              {cust.name}
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-mono">
+                              📱 {cust.phone}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          {cust.currentDue > 0 ? (
+                            <div className="text-xs font-bold text-rose-600 font-mono">
+                              ₹{cust.currentDue.toLocaleString('en-IN')}
+                              <span className="text-[9px] text-rose-500 block font-sans">
+                                {lang === 'hi' ? 'उधार बकाया' : 'Due'}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+                              {lang === 'hi' ? '₹0 बकाया' : '₹0 Due'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+
+              {/* Form to Add Brand New Customer */}
+              <div className="pt-3 border-t border-slate-200 space-y-2.5 bg-slate-50 p-3 rounded-xl">
+                <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <UserPlus className="w-4 h-4 text-blue-600" />
+                  <span>{lang === 'hi' ? 'नया ग्राहक दर्ज करें' : 'Add New Customer'}</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-600 block mb-1">
+                      {lang === 'hi' ? 'ग्राहक का नाम *' : 'Customer Name *'}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={lang === 'hi' ? 'उदा: राहुल शर्मा' : 'e.g. Rahul Sharma'}
+                      value={newCustNameInput}
+                      onChange={(e) => setNewCustNameInput(e.target.value)}
+                      className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-600 block mb-1">
+                      {lang === 'hi' ? 'मोबाइल नंबर (वैकल्पिक)' : 'Mobile (Optional)'}
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="9876543210"
+                      value={newCustPhoneInput}
+                      onChange={(e) => setNewCustPhoneInput(e.target.value)}
+                      className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-mono font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={!newCustNameInput.trim()}
+                  onClick={() => {
+                    const cleanName = newCustNameInput.trim();
+                    const cleanPhoneVal = newCustPhoneInput.trim();
+                    if (!cleanName) return;
+
+                    setCustomerName(cleanName);
+                    setCustomerPhone(cleanPhoneVal);
+                    setIsCustomerModalOpen(false);
+                    setNewCustNameInput('');
+                    setNewCustPhoneInput('');
+                    speakHindi(lang === 'hi' ? `नया ग्राहक ${cleanName} बिल में जोड़ा गया` : `New customer ${cleanName} added to bill`, lang);
+                  }}
+                  className={`w-full py-2 rounded-lg text-xs font-bold shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    newCustNameInput.trim()
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white active:scale-95'
+                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>{lang === 'hi' ? 'इस ग्राहक के नाम से बिल बनाएं' : 'Create Bill for this Customer'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
