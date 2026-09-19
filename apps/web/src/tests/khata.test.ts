@@ -76,8 +76,9 @@ describe('Khata Ledger & WhatsApp Reminder Tests', () => {
   });
 
   it('should have initial mock customers with transaction histories', () => {
-    assert.ok(INITIAL_KHATA_CUSTOMERS.length >= 3);
-    const ramesh = INITIAL_KHATA_CUSTOMERS[0];
+    assert.ok(INITIAL_KHATA_CUSTOMERS.length >= 4);
+    const ramesh = INITIAL_KHATA_CUSTOMERS.find(c => c.name.includes('रमेश'))!;
+    assert.ok(ramesh);
     assert.strictEqual(ramesh.currentDue, 1450);
     assert.ok(ramesh.transactions.length > 0);
   });
@@ -119,5 +120,16 @@ describe('Khata Ledger & WhatsApp Reminder Tests', () => {
     assert.strictEqual(res4.amount, 300);
     assert.strictEqual(res4.matchedCustomer, undefined);
     assert.strictEqual(res4.extractedNewCustomerName, 'राहुल शर्मा');
+
+    // Case 5: Speech variations like "अर्जुन आईएस करवाए" or "अर्जुन राठौड़ आता"
+    const res5 = parseVoiceKhataCommand('अर्जुन आईएस करवाएं 1000', INITIAL_KHATA_CUSTOMERS);
+    assert.strictEqual(res5.matchedCustomer?.name.includes('अर्जुन'), true);
+    assert.strictEqual(res5.type, 'CREDIT');
+    assert.strictEqual(res5.amount, 1000);
+
+    const res6 = parseVoiceKhataCommand('अर्जुन राठौड़ आता 500', INITIAL_KHATA_CUSTOMERS);
+    assert.strictEqual(res6.matchedCustomer?.name.includes('अर्जुन'), true);
+    assert.strictEqual(res6.amount, 500);
+    assert.strictEqual(res6.notes, 'आटा');
   });
 });
