@@ -13,6 +13,8 @@ import { InventoryView } from './components/InventoryView';
 import { KhataView } from './components/KhataView';
 import { SupplierManagementView } from './components/SupplierManagementView';
 import { OnlineOrdersCard } from './components/OnlineOrdersCard';
+import { AnalyticsView } from './components/AnalyticsView';
+import { DailyZReportModal } from './components/DailyZReportModal';
 import { CustomerPortal } from './components/CustomerPortal';
 import { AuthModal } from './components/AuthModal';
 import { checkHealth } from './services/api';
@@ -25,6 +27,7 @@ export function App() {
   const [systemHealth, setSystemHealth] = useState('Checking...');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
+  const [isZReportOpen, setIsZReportOpen] = useState(false);
   const [posVoiceTrigger, setPosVoiceTrigger] = useState('');
   
   // Dual User State: Shopkeeper vs Customer
@@ -130,6 +133,8 @@ export function App() {
             <KhataView lang={lang} />
           ) : activeTab === 'suppliers' ? (
             <SupplierManagementView lang={lang} />
+          ) : activeTab === 'analytics' || activeTab === 'settings' ? (
+            <AnalyticsView lang={lang} shopName={currentUser?.shopName} shopPhone={currentUser?.phone} />
           ) : activeView === 'pos' ? (
             <PosBillingView lang={lang} initialVoiceText={posVoiceTrigger} />
           ) : (
@@ -150,7 +155,7 @@ export function App() {
                 onScanBarcode={() => alert(lang === 'hi' ? 'बारकोड कैमरा स्कैन शुरू किया गया' : 'Barcode scanner camera activated')}
                 onShowQr={() => setIsQrOpen(true)}
                 onAddProduct={() => setActiveTab('inventory')}
-                onDailyReport={() => alert(lang === 'hi' ? 'डेली Z-रिपोर्ट: आज की कुल सेल ₹8,450 | 60 ट्रांजैक्शन' : 'Daily Z-Report: Today\'s Total Sale ₹8,450 | 60 Transactions')}
+                onDailyReport={() => setIsZReportOpen(true)}
               />
 
               {/* 3. Live Incoming Online Customer Orders */}
@@ -223,6 +228,15 @@ export function App() {
             khataDue: data.user.khataDue || 0,
           });
         }}
+      />
+
+      {/* Daily Z-Report Modal */}
+      <DailyZReportModal
+        isOpen={isZReportOpen}
+        onClose={() => setIsZReportOpen(false)}
+        lang={lang}
+        shopName={currentUser?.shopName || 'Shree Ganesh Kirana'}
+        shopPhone={currentUser?.phone || '+91 98765 43210'}
       />
     </div>
   );
