@@ -19,15 +19,21 @@ import {
   Share2,
   Truck,
   MapPin,
+  Package,
+  PackageCheck,
+  RotateCcw,
+  Check
 } from 'lucide-react';
 import { fetchProducts, fetchCategories } from '../services/api';
 import { Lang, translations } from '../i18n/translations';
 import { getCleanHindiName } from '../utils/productFormat';
 import { 
   saveOnlineOrder, 
+  getOnlineOrders,
   formatWhatsAppOrderText, 
   generateShareStoreMessage,
-  OnlineCustomerOrder 
+  OnlineCustomerOrder,
+  OrderItem
 } from '../utils/orderService';
 import { speakHindi } from '../utils/voiceFeedback';
 
@@ -49,7 +55,8 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   onOpenQr,
 }) => {
   const t = translations[lang];
-  const [activeTab, setActiveTab] = useState<'overview' | 'catalog' | 'bills'>('overview');
+  const isHi = lang === 'hi';
+  const [activeTab, setActiveTab] = useState<'overview' | 'catalog' | 'orders' | 'bills'>('overview');
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -57,6 +64,19 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
   const [loading, setLoading] = useState(false);
   const [deliveryType, setDeliveryType] = useState<'DELIVERY' | 'PICKUP'>('DELIVERY');
   const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [customerOrders, setCustomerOrders] = useState<OnlineCustomerOrder[]>(() => getOnlineOrders());
+
+  useEffect(() => {
+    const handleOrdersUpdate = () => {
+      setCustomerOrders(getOnlineOrders());
+    };
+    window.addEventListener('dukaanpilot_orders_updated', handleOrdersUpdate);
+    window.addEventListener('dukaanpilot_new_order', handleOrdersUpdate);
+    return () => {
+      window.removeEventListener('dukaanpilot_orders_updated', handleOrdersUpdate);
+      window.removeEventListener('dukaanpilot_new_order', handleOrdersUpdate);
+    };
+  }, []);
 
   // Fallback catalog
   const defaultCatalog = [
@@ -113,9 +133,9 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     });
   };
 
-  const cartTotalCount = Object.values(cart).reduce((sum, count) => sum + count, 0);
-  const cartTotalPrice = Object.entries(cart).reduce((sum, [id, count]) => {
-    const item = products.find((c) => String(c.id) === String(id));
+  const cartTotalCount: number = Object.values(cart).reduce((sum: number, count: number) => sum + count, 0);
+  const cartTotalPrice: number = Object.entries(cart).reduce((sum: number, [id, count]: [string, number]) => {
+    const item = products.find((c: any) => String(c.id) === String(id));
     const price = item ? (item.sellingPrice || item.price || 0) : 0;
     return sum + price * count;
   }, 0);
@@ -129,8 +149,8 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
   const handleSendWhatsAppOrder = () => {
     const orderNumber = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
-    const orderItems = Object.entries(cart).map(([id, count]) => {
-      const item = products.find((c) => String(c.id) === String(id));
+    const orderItems: OrderItem[] = Object.entries(cart).map(([id, count]: [string, number]) => {
+      const item = products.find((c: any) => String(c.id) === String(id));
       const hindiTitle = item ? (item.hindi || item.nameHindi) : undefined;
       const name = item ? item.name : 'Item';
       const price = item ? (item.sellingPrice || item.price || 0) : 0;
@@ -167,6 +187,9 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     };
 
     saveOnlineOrder(newOrder);
+    setCustomerOrders(getOnlineOrders());
+    setCart({});
+    setActiveTab('orders'); // Auto navigate to My Orders for live tracking!
 
     const message = encodeURIComponent(
       formatWhatsAppOrderText(
@@ -185,9 +208,21 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
     );
 
     window.open(`https://api.whatsapp.com/send?phone=919876543210&text=${message}`, '_blank');
-    setCart({});
-    speakHindi(lang === 'hi' ? 'ऑर्डर व्हाट्सएप पर भेजा गया और दुकानदार डैशबोर्ड पर दर्ज हो गया है' : 'Order sent to WhatsApp and registered on merchant dashboard');
+    speakHindi(lang === 'hi' ? 'ऑर्डर सफलतापूर्वक दर्ज हो गया है' : 'Order successfully placed');
   };
+
+  const handleReorder = (order: OnlineCustomerOrder) => {
+    const newCart: Record<string, number> = {};
+    for (const it of order.items) {
+      newCart[it.id] = (newCart[it.id] || 0) + it.qty;
+    }
+    setCart(newCart);
+    setActiveTab('catalog');
+    speakHindi(lang === 'hi' ? 'सामान कार्ट में जोड़ दिए गए हैं' : 'Items added back to cart', lang);
+  };
+
+  const activeOrders = customerOrders.filter((o) => o.status !== 'DELIVERED' && o.status !== 'REJECTED');
+  const activeOrdersCount = activeOrders.length;
 
   // Previous bills
   const bills = [
@@ -266,10 +301,10 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
       </div>
 
       {/* 2. Customer Navigation Tabs - Dark Translucent Pill Container */}
-      <div className="flex items-center gap-2 bg-slate-900/85 backdrop-blur-xl p-1.5 rounded-full border border-white/15 shadow-md">
+      <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-900/85 backdrop-blur-xl p-1.5 rounded-full border border-white/15 shadow-md overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 py-2 px-2.5 sm:px-3 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'overview'
               ? 'bg-white/20 text-white shadow-sm border border-white/15'
               : 'text-slate-300 hover:text-white'
@@ -282,7 +317,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
 
         <button
           onClick={() => setActiveTab('catalog')}
-          className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 py-2 px-2.5 sm:px-3 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'catalog'
               ? 'bg-white/20 text-white shadow-sm border border-white/15'
               : 'text-slate-300 hover:text-white'
@@ -299,8 +334,26 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
         </button>
 
         <button
+          onClick={() => setActiveTab('orders')}
+          className={`flex-1 py-2 px-2.5 sm:px-3 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            activeTab === 'orders'
+              ? 'bg-white/20 text-white shadow-sm border border-white/15'
+              : 'text-slate-300 hover:text-white'
+          }`}
+        >
+          {activeTab === 'orders' && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>}
+          <Truck className="w-3.5 h-3.5 text-indigo-300" />
+          <span>{lang === 'hi' ? 'मेरे ऑर्डर्स' : 'My Orders'}</span>
+          {activeOrdersCount > 0 && (
+            <span className="bg-rose-500 text-white text-[10px] px-1.5 py-0.2 rounded-full flex items-center justify-center font-black animate-pulse">
+              {activeOrdersCount}
+            </span>
+          )}
+        </button>
+
+        <button
           onClick={() => setActiveTab('bills')}
-          className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 py-2 px-2.5 sm:px-3 rounded-full text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'bills'
               ? 'bg-white/20 text-white shadow-sm border border-white/15'
               : 'text-slate-300 hover:text-white'
@@ -315,6 +368,43 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
       {/* 3. TAB 1: Overview & Personal Khata Balance */}
       {activeTab === 'overview' && (
         <div className="space-y-4">
+          {/* Active Order Alert Banner if any running order exists */}
+          {activeOrdersCount > 0 && (
+            <div className="p-4 rounded-3xl bg-gradient-to-r from-blue-900 to-indigo-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md border border-white/15">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-white/20 text-white flex items-center justify-center shadow-inner shrink-0">
+                  <Truck className="w-5 h-5 animate-pulse text-emerald-300" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-black font-display text-white">
+                      {lang === 'hi' ? 'लाइव सक्रिय ऑनलाइन ऑर्डर' : 'Live Active Order'}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black uppercase tracking-wider animate-pulse">
+                      {activeOrders[0].status === 'NEW'
+                        ? (lang === 'hi' ? 'नया ऑर्डर' : 'NEW')
+                        : activeOrders[0].status === 'ACCEPTED'
+                        ? (lang === 'hi' ? 'स्वीकृत' : 'ACCEPTED')
+                        : (lang === 'hi' ? 'पैक हो रहा है' : 'PACKED')}
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-200 mt-0.5">
+                    #{activeOrders[0].orderNumber} &bull; ₹{activeOrders[0].totalAmount.toLocaleString('en-IN')} &bull; {activeOrders[0].items.length} {lang === 'hi' ? 'सामान' : 'items'} ({activeOrders[0].deliveryType === 'PICKUP' ? (lang === 'hi' ? 'दुकान पिकअप' : 'Pickup') : (lang === 'hi' ? 'होम डिलीवरी' : 'Home Delivery')})
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('orders')}
+                className="px-4 py-2 rounded-full bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs shadow-md transition-all active:scale-95 cursor-pointer self-start sm:self-auto flex items-center gap-1.5 shrink-0"
+              >
+                <span>{lang === 'hi' ? 'लाइव स्टेटस देखें' : 'Track Order'}</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           {/* Khata Balance Card */}
           <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
             <div className="flex items-start justify-between">
@@ -354,7 +444,7 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
               </div>
               <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
                 <span className="text-slate-500 block text-[11px]">{lang === 'hi' ? 'कुल बिल काउंट' : 'Total Orders'}</span>
-                <span className="font-bold text-slate-900 text-sm">8 {lang === 'hi' ? 'बिल' : 'bills'}</span>
+                <span className="font-bold text-slate-900 text-sm">{customerOrders.length + bills.length} {lang === 'hi' ? 'ऑर्डर्स' : 'orders'}</span>
               </div>
             </div>
           </div>
@@ -589,7 +679,261 @@ export const CustomerPortal: React.FC<CustomerPortalProps> = ({
         </div>
       )}
 
-      {/* 5. TAB 3: My Bills */}
+      {/* 5. TAB 3: My Orders & Realtime Live Status Tracker */}
+      {activeTab === 'orders' && (
+        <div className="space-y-4">
+          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-black text-slate-900 font-display">
+                    {lang === 'hi' ? 'मेरे ऑनलाइन ऑर्डर्स व लाइव ट्रैकिंग' : 'My Orders & Live Tracking'}
+                  </h3>
+                  {activeOrdersCount > 0 && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black uppercase tracking-wider animate-pulse">
+                      {activeOrdersCount} {lang === 'hi' ? 'सक्रिय' : 'Active'}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {lang === 'hi'
+                    ? 'दुकानदार द्वारा स्वीकार, पैकिंग व डिलीवरी की रियल-टाइम स्थिति देखें'
+                    : 'Realtime tracking of order acceptance, packing, and delivery status'}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('catalog')}
+                className="px-4 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-black flex items-center gap-1.5 shadow-sm transition-all cursor-pointer self-start sm:self-auto"
+              >
+                <Plus className="w-3.5 h-3.5 text-emerald-400" />
+                <span>{lang === 'hi' ? '+ नया ऑर्डर' : '+ New Order'}</span>
+              </button>
+            </div>
+
+            {customerOrders.length === 0 ? (
+              <div className="py-12 text-center space-y-3">
+                <div className="w-14 h-14 rounded-3xl bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center mx-auto shadow-sm">
+                  <ShoppingBag className="w-7 h-7" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm">{lang === 'hi' ? 'अभी कोई ऑनलाइन ऑर्डर नहीं है' : 'No online orders yet'}</h4>
+                  <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                    {lang === 'hi' ? 'कैटलॉग से अपनी पसंद का सामान चुनें और आसानी से व्हाट्सएप पर ऑर्डर भेजें।' : 'Browse catalog and place your first order easily via WhatsApp.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('catalog')}
+                  className="px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black shadow-md transition-all cursor-pointer"
+                >
+                  {lang === 'hi' ? 'कैटलॉग देखें' : 'Browse Catalog'}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {customerOrders.map((ord) => {
+                  const isNew = ord.status === 'NEW';
+                  const isAccepted = ord.status === 'ACCEPTED';
+                  const isPacked = ord.status === 'PACKED';
+                  const isDelivered = ord.status === 'DELIVERED';
+                  const isRejected = ord.status === 'REJECTED';
+
+                  // Step calculation: 1 (NEW), 2 (ACCEPTED), 3 (PACKED), 4 (DELIVERED)
+                  const currentStep = isDelivered ? 4 : isPacked ? 3 : isAccepted ? 2 : 1;
+
+                  return (
+                    <div
+                      key={ord.id}
+                      className={`p-5 rounded-3xl border transition-all space-y-4 ${
+                        isDelivered
+                          ? 'bg-slate-50/60 border-slate-200'
+                          : 'bg-gradient-to-br from-indigo-50/60 via-blue-50/30 to-white border-indigo-200 shadow-sm ring-1 ring-indigo-400/20'
+                      }`}
+                    >
+                      {/* Order Header */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200/70">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-2xl bg-blue-100 text-blue-900 font-black text-xs flex items-center justify-center font-mono shadow-xs">
+                            #{ord.orderNumber.replace('ORD-', '')}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-slate-900 text-sm font-display">
+                                #{ord.orderNumber}
+                              </span>
+                              <span
+                                className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                                  isNew
+                                    ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                                    : isAccepted
+                                    ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                    : isPacked
+                                    ? 'bg-purple-100 text-purple-800 border border-purple-300'
+                                    : isDelivered
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                    : 'bg-rose-100 text-rose-800 border border-rose-300'
+                                }`}
+                              >
+                                {isNew
+                                  ? (lang === 'hi' ? '1. नया ऑर्डर दर्ज' : '1. NEW ORDER')
+                                  : isAccepted
+                                  ? (lang === 'hi' ? '2. स्वीकृत हुआ' : '2. ACCEPTED')
+                                  : isPacked
+                                  ? (lang === 'hi' ? '3. पैक हो गया' : '3. PACKED & READY')
+                                  : isDelivered
+                                  ? (lang === 'hi' ? '✓ डिलीवर पूरा' : '✓ DELIVERED')
+                                  : (lang === 'hi' ? 'रद्द' : 'CANCELLED')}
+                              </span>
+                            </div>
+                            <div className="text-xs text-slate-500 font-mono flex items-center gap-2 mt-0.5">
+                              <span>🕒 {ord.createdAt}</span>
+                              <span>&bull;</span>
+                              <span className="font-sans font-bold text-indigo-700">
+                                {ord.deliveryType === 'PICKUP'
+                                  ? (lang === 'hi' ? '🏬 दुकान पिकअप' : '🏬 Self-Pickup')
+                                  : (lang === 'hi' ? '🏠 होम डिलीवरी' : '🏠 Home Delivery')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-left sm:text-right">
+                          <div className="text-xl font-black font-mono text-slate-950">
+                            ₹{ord.totalAmount.toLocaleString('en-IN')}
+                          </div>
+                          <span className="text-[11px] font-bold text-slate-500">
+                            {ord.paymentStatus === 'PAID_UPI' ? 'UPI द्वारा भुगतान' : 'कैश ऑन डिलीवरी (COD)'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 4-Step Visual Progress Stepper */}
+                      {!isRejected && (
+                        <div className="p-3.5 bg-white rounded-2xl border border-slate-200/80">
+                          <div className="grid grid-cols-4 gap-2 text-center text-[11px] font-bold">
+                            {/* Step 1 */}
+                            <div className="space-y-1">
+                              <div className={`w-7 h-7 rounded-full mx-auto flex items-center justify-center font-mono text-xs font-black ${
+                                currentStep >= 1 ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 text-slate-400'
+                              }`}>
+                                {currentStep > 1 ? '✓' : '1'}
+                              </div>
+                              <span className={currentStep >= 1 ? 'text-blue-950 font-black' : 'text-slate-400'}>
+                                {lang === 'hi' ? 'ऑर्डर दर्ज' : 'Placed'}
+                              </span>
+                            </div>
+
+                            {/* Step 2 */}
+                            <div className="space-y-1">
+                              <div className={`w-7 h-7 rounded-full mx-auto flex items-center justify-center font-mono text-xs font-black ${
+                                currentStep >= 2 ? 'bg-amber-600 text-white shadow-xs' : 'bg-slate-100 text-slate-400'
+                              }`}>
+                                {currentStep > 2 ? '✓' : '2'}
+                              </div>
+                              <span className={currentStep >= 2 ? 'text-amber-950 font-black' : 'text-slate-400'}>
+                                {lang === 'hi' ? 'स्वीकार' : 'Accepted'}
+                              </span>
+                            </div>
+
+                            {/* Step 3 */}
+                            <div className="space-y-1">
+                              <div className={`w-7 h-7 rounded-full mx-auto flex items-center justify-center font-mono text-xs font-black ${
+                                currentStep >= 3 ? 'bg-purple-600 text-white shadow-xs' : 'bg-slate-100 text-slate-400'
+                              }`}>
+                                {currentStep > 3 ? '✓' : '3'}
+                              </div>
+                              <span className={currentStep >= 3 ? 'text-purple-950 font-black' : 'text-slate-400'}>
+                                {lang === 'hi' ? 'पैक व तैयार' : 'Packed'}
+                              </span>
+                            </div>
+
+                            {/* Step 4 */}
+                            <div className="space-y-1">
+                              <div className={`w-7 h-7 rounded-full mx-auto flex items-center justify-center font-mono text-xs font-black ${
+                                currentStep >= 4 ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-400'
+                              }`}>
+                                {currentStep >= 4 ? '✓' : '4'}
+                              </div>
+                              <span className={currentStep >= 4 ? 'text-emerald-950 font-black' : 'text-slate-400'}>
+                                {lang === 'hi' ? 'डिलीवर' : 'Delivered'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Delivery Address if Home Delivery */}
+                      {ord.deliveryAddress && (
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70 text-xs flex items-start gap-2 text-slate-700">
+                          <MapPin className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                          <div>
+                            <span className="font-bold text-slate-900 block">{lang === 'hi' ? 'डिलीवरी का पता:' : 'Delivery Address:'}</span>
+                            <span>{ord.deliveryAddress}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Items Breakdown Table / Chips */}
+                      <div className="space-y-2">
+                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                          {lang === 'hi' ? 'ऑर्डर किए गए सामान' : 'Ordered Items'} ({ord.items.length}):
+                        </span>
+                        <div className="divide-y divide-slate-100 bg-white rounded-2xl p-3 border border-slate-200/80">
+                          {ord.items.map((it, idx) => (
+                            <div key={idx} className="py-2 flex items-center justify-between text-xs font-medium">
+                              <div>
+                                <span className="font-bold text-slate-900">{it.hindiName || it.name}</span>
+                                <span className="text-slate-400 font-mono text-[11px] ml-2">({it.qty} {it.unit} x ₹{it.price})</span>
+                              </div>
+                              <span className="font-mono font-bold text-slate-900">₹{it.total}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Order Footer Actions */}
+                      <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/70">
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={`https://api.whatsapp.com/send?phone=919876543210&text=${encodeURIComponent(`नमस्ते, मैं ऑर्डर #${ord.orderNumber} की स्थिति के बारे में जानना चाहता हूँ।`)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="h-8 px-3 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>{lang === 'hi' ? 'WhatsApp पर पूछें' : 'Chat on WhatsApp'}</span>
+                          </a>
+
+                          <a
+                            href="tel:9876543210"
+                            className="h-8 px-3 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                          >
+                            <Phone className="w-3.5 h-3.5 text-slate-600" />
+                            <span>{lang === 'hi' ? 'कॉल करें' : 'Call Shop'}</span>
+                          </a>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleReorder(ord)}
+                          className="h-8 px-4 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-black flex items-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
+                        >
+                          <RotateCcw className="w-3 h-3 text-emerald-400" />
+                          <span>{lang === 'hi' ? '🔄 दोबारा ऑर्डर करें' : 'Reorder'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 6. TAB 4: My Bills */}
       {activeTab === 'bills' && (
         <div className="space-y-3">
           <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">

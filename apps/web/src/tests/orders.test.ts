@@ -136,6 +136,12 @@ describe('Online Customer Orders & WhatsApp Integration Tests', () => {
     const updatedOrders = updateOrderStatus('ord_test_999', 'ACCEPTED');
     const accepted = updatedOrders.find(o => o.id === 'ord_test_999');
     assert.strictEqual(accepted?.status, 'ACCEPTED');
+
+    // Test status transition to DELIVERED and automated billing
+    const deliveredOrders = updateOrderStatus('ord_test_999', 'DELIVERED');
+    const delivered = deliveredOrders.find(o => o.id === 'ord_test_999');
+    assert.strictEqual(delivered?.status, 'DELIVERED');
+    assert.strictEqual(delivered?.isBilled, true);
   });
 
   it('should have initial mock online customer orders', () => {

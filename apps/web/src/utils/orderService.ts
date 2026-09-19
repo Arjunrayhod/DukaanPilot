@@ -1,3 +1,12 @@
+import { recordCompletedBill } from './salesService.ts';
+import { 
+  getInventoryItems, 
+  saveInventoryItems, 
+  decrementStockOnSale, 
+  getStockLogs, 
+  saveStockLogs 
+} from './inventoryService.ts';
+
 export interface OrderItem {
   id: string;
   name: string;
@@ -23,6 +32,8 @@ export interface OnlineCustomerOrder {
   createdAt: string;
   timestamp: number;
   notes?: string;
+  isBilled?: boolean;
+  billId?: string;
 }
 
 const STORAGE_KEY = 'dukaanpilot_online_orders';
@@ -62,7 +73,8 @@ export const INITIAL_ONLINE_ORDERS: OnlineCustomerOrder[] = [
     paymentStatus: 'COD',
     createdAt: 'आज, 08:45 AM',
     timestamp: Date.now() - 1000 * 60 * 5,
-    notes: 'कृपया शाम 5 बजे से पहले भेजें'
+    notes: 'कृपया शाम 5 बजे से पहले भेजें',
+    isBilled: false
   }
 ];
 
@@ -102,7 +114,67 @@ export function saveOnlineOrder(order: OnlineCustomerOrder): OnlineCustomerOrder
 export function updateOrderStatus(orderId: string, status: OnlineCustomerOrder['status']): OnlineCustomerOrder[] {
   try {
     const existing = getOnlineOrders();
-    const updated = existing.map((o) => (o.id === orderId ? { ...o, status } : o));
+    let generatedBillId: string | undefined;
+
+    // When status is DELIVERED and not yet billed, record the bill into salesService and decrement inventory
+    if (status === 'DELIVERED') {
+      const target = existing.find((o) => o.id === orderId);
+      if (target && !target.isBilled) {
+        const inventory = getInventoryItems();
+        const billedItems = target.items.map((it) => {
+          const inv = inventory.find((i) => i.id === it.id || i.name === it.name || i.barcode === it.id);
+          return {
+            id: it.id,
+            name: it.name,
+            hindi: it.hindiName,
+            qty: it.qty,
+            unit: it.unit || 'packet',
+            price: it.price,
+            costPrice: inv?.costPrice ?? Math.round(it.price * 0.78),
+            category: inv?.category || 'Online Order',
+            categoryHindi: 'ऑनलाइन ऑर्डर'
+          };
+        });
+
+        const bill = recordCompletedBill({
+          invoiceNo: `ORD-${target.orderNumber.replace('ORD-', '')}`,
+          customerName: target.customerName,
+          customerPhone: target.customerPhone,
+          items: billedItems,
+          subtotal: target.totalAmount,
+          gstAmount: 0,
+          grandTotal: target.totalAmount,
+          paymentMode: target.paymentStatus === 'PAID_UPI' ? 'upi' : target.paymentStatus === 'KHATA_PENDING' ? 'khata' : 'cash'
+        });
+        generatedBillId = bill.id;
+
+        // Decrement stock in inventory
+        const { updatedInventory, logs } = decrementStockOnSale(
+          inventory,
+          target.items.map((it) => ({
+            id: it.id,
+            name: it.name,
+            qty: it.qty
+          }))
+        );
+        saveInventoryItems(updatedInventory);
+        const existingLogs = getStockLogs();
+        saveStockLogs([...logs, ...existingLogs]);
+      }
+    }
+
+    const updated = existing.map((o) => {
+      if (o.id === orderId) {
+        return {
+          ...o,
+          status,
+          isBilled: status === 'DELIVERED' ? true : o.isBilled,
+          billId: generatedBillId || o.billId
+        };
+      }
+      return o;
+    });
+
     if (typeof window !== 'undefined' && window.localStorage) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       window.dispatchEvent(new CustomEvent('dukaanpilot_orders_updated', { detail: updated }));

@@ -33,6 +33,7 @@ export function App() {
   const [isZReportOpen, setIsZReportOpen] = useState(false);
   const [isPromotionsOpen, setIsPromotionsOpen] = useState(false);
   const [posVoiceTrigger, setPosVoiceTrigger] = useState('');
+  const [pendingOrderToBill, setPendingOrderToBill] = useState<any>(null);
   const { isOnline, pendingCount, isSyncing, syncNow } = useOfflineSync();
   
   // Dual User State: Shopkeeper vs Customer
@@ -183,6 +184,8 @@ export function App() {
             <PosBillingView
               lang={lang}
               initialVoiceText={posVoiceTrigger}
+              pendingOrderToBill={pendingOrderToBill}
+              onClearPendingOrder={() => setPendingOrderToBill(null)}
               onBackToDashboard={() => setActiveTab('home')}
             />
           ) : activeTab === 'inventory' ? (
@@ -222,8 +225,7 @@ export function App() {
               <OnlineOrdersCard
                 lang={lang}
                 onConvertToPosBill={(order) => {
-                  const billCmd = `${order.customerName} ${order.items.map(i => `${i.qty} ${i.hindiName || i.name}`).join(' ')}`;
-                  setPosVoiceTrigger(billCmd);
+                  setPendingOrderToBill(order);
                   setActiveTab('pos');
                 }}
               />

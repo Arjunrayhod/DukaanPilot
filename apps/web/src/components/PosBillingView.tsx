@@ -43,6 +43,7 @@ import { INITIAL_LOYALTY_ACCOUNTS, calculateEarnedPoints, LoyaltyAccount } from 
 import { recordCompletedBill } from '../utils/salesService';
 import { announceSoundboxPayment } from '../utils/soundboxService';
 import { enqueueOfflineAction } from '../utils/offlineSyncService';
+import { updateOrderStatus } from '../utils/orderService';
 
 interface CartItem {
   id: string | number;
@@ -262,6 +263,33 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
     }
   }, [initialVoiceText, products]);
 
+  useEffect(() => {
+    if (pendingOrderToBill) {
+      if (pendingOrderToBill.customerName) setCustomerName(pendingOrderToBill.customerName);
+      if (pendingOrderToBill.customerPhone) setCustomerPhone(pendingOrderToBill.customerPhone);
+      if (pendingOrderToBill.items && pendingOrderToBill.items.length > 0) {
+        setCart(
+          pendingOrderToBill.items.map((it: any) => ({
+            id: it.id,
+            name: it.name,
+            hindi: it.hindiName || it.name,
+            price: it.price,
+            qty: it.qty,
+            unit: it.unit || 'packet',
+          }))
+        );
+      }
+      if (pendingOrderToBill.paymentStatus === 'PAID_UPI') {
+        setSelectedPayment('upi');
+      } else if (pendingOrderToBill.paymentStatus === 'KHATA_PENDING') {
+        setSelectedPayment('khata');
+      } else {
+        setSelectedPayment('cash');
+      }
+      speakHindi(lang === 'hi' ? `${pendingOrderToBill.customerName} का ऑनलाइन ऑर्डर बिलिंग में लोड किया गया` : `Online order loaded for ${pendingOrderToBill.customerName}`, lang);
+    }
+  }, [pendingOrderToBill, lang]);
+
   const updateQty = (id: string | number, delta: number) => {
     setCart((prev) =>
       prev
@@ -428,8 +456,12 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({
           : undefined,
     });
 
-    // 4. Clear cart for next sale
+    // 4. Clear cart for next sale & mark pending online order delivered if any
     setCart([]);
+    if (pendingOrderToBill) {
+      updateOrderStatus(pendingOrderToBill.id, 'DELIVERED');
+      onClearPendingOrder?.();
+    }
 
     // 5. Offline Cloud Sync Enqueue
     enqueueOfflineAction('BILL_CREATED', {
