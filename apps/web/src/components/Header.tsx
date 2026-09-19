@@ -1,5 +1,5 @@
 import React from 'react';
-import { Store, ShieldCheck, Languages, User, ArrowLeftRight, Sparkles } from 'lucide-react';
+import { Store, ShieldCheck, Languages, User, ArrowLeftRight, Zap, BookOpen, Package, BarChart3 } from 'lucide-react';
 import { Lang, translations } from '../i18n/translations';
 
 interface HeaderProps {
@@ -8,8 +8,8 @@ interface HeaderProps {
   lang: Lang;
   onToggleLang: () => void;
   systemHealth: string;
-  activeView: 'mobile' | 'pos';
-  onToggleView: (view: 'mobile' | 'pos') => void;
+  activeTab: string;
+  onSelectTab: (tab: string) => void;
   onOpenAuth: () => void;
   userRole?: 'OWNER' | 'CUSTOMER';
   userName?: string;
@@ -22,14 +22,22 @@ export function Header({
   lang,
   onToggleLang,
   systemHealth,
-  activeView,
-  onToggleView,
+  activeTab,
+  onSelectTab,
   onOpenAuth,
   userRole = 'OWNER',
   userName = 'Ramesh Ganesh',
   onQuickToggleRole,
 }: HeaderProps) {
   const t = translations[lang];
+
+  const desktopNavTabs = [
+    { id: 'home', label: t.navHome, icon: Store },
+    { id: 'pos', label: t.navPos, icon: Zap, isPrimary: true },
+    { id: 'khata', label: t.navKhata, icon: BookOpen },
+    { id: 'inventory', label: t.navInventory, icon: Package },
+    { id: 'analytics', label: t.navAnalytics, icon: BarChart3 },
+  ];
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200/80 shadow-[0_1px_10px_rgba(0,0,0,0.03)] transition-all">
@@ -57,11 +65,53 @@ export function Header({
               </div>
               <span className="text-slate-300">&bull;</span>
               <span className="font-bold text-slate-800 text-[11px] truncate">
-                {userRole === 'OWNER' ? '🏪 ' + (lang === 'hi' ? 'दुकानदार' : 'Shopkeeper') : '👤 ' + userName}
+                {userRole === 'OWNER' ? '🏪 ' + (lang === 'hi' ? 'दुकानदार OS' : 'Shopkeeper OS') : '👤 ' + userName}
               </span>
             </div>
           </div>
         </div>
+
+        {/* Center Desktop Navigation Tabs (Shopkeeper Only) */}
+        {userRole === 'OWNER' && (
+          <div className="hidden lg:flex items-center gap-1 bg-slate-100/90 p-1 rounded-full border border-slate-200/80 text-xs font-semibold">
+            {desktopNavTabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+
+              if (tab.isPrimary) {
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => onSelectTab(tab.id)}
+                    className={`px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 font-black cursor-pointer shadow-sm ${
+                      isActive
+                        ? 'bg-blue-600 text-white shadow-blue-500/20'
+                        : 'bg-slate-900 hover:bg-slate-800 text-white'
+                    }`}
+                  >
+                    <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              }
+
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => onSelectTab(tab.id)}
+                  className={`px-3.5 py-1.5 rounded-full transition-all flex items-center gap-1.5 font-bold cursor-pointer ${
+                    isActive
+                      ? 'bg-white text-slate-950 shadow-sm border border-slate-200/80'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Action Controls & Capsule Switchers */}
         <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
@@ -78,32 +128,6 @@ export function Header({
                 {userRole === 'OWNER' ? (lang === 'hi' ? 'ग्राहक दृश्य' : 'Customer Mode') : (lang === 'hi' ? 'दुकानदार OS' : 'Shopkeeper OS')}
               </span>
             </button>
-          )}
-
-          {/* Mobile / Counter POS Switcher (Shopkeeper Only) */}
-          {userRole === 'OWNER' && (
-            <div className="hidden md:flex bg-slate-100/90 p-1 rounded-full border border-slate-200/80 text-xs font-semibold">
-              <button
-                onClick={() => onToggleView('mobile')}
-                className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
-                  activeView === 'mobile'
-                    ? 'bg-white text-slate-900 shadow-sm font-bold border border-slate-200/60'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {t.mobileView}
-              </button>
-              <button
-                onClick={() => onToggleView('pos')}
-                className={`px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
-                  activeView === 'pos'
-                    ? 'bg-white text-slate-900 shadow-sm font-bold border border-slate-200/60'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {t.posView}
-              </button>
-            </div>
           )}
 
           {/* Language Toggle Pill */}

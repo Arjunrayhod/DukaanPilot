@@ -23,6 +23,7 @@ import {
   Camera,
   Gift,
   Award,
+  ArrowLeft,
 } from 'lucide-react';
 import { fetchProducts, fetchCategories } from '../services/api';
 import { Lang, translations } from '../i18n/translations';
@@ -52,9 +53,14 @@ interface CartItem {
 interface PosBillingViewProps {
   lang?: Lang;
   initialVoiceText?: string;
+  onBackToDashboard?: () => void;
 }
 
-export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', initialVoiceText = '' }) => {
+export const PosBillingView: React.FC<PosBillingViewProps> = ({
+  lang = 'hi',
+  initialVoiceText = '',
+  onBackToDashboard
+}) => {
   const t = translations[lang];
 
   const [cart, setCart] = useState<CartItem[]>([
@@ -378,6 +384,17 @@ export const PosBillingView: React.FC<PosBillingViewProps> = ({ lang = 'hi', ini
       {/* 1. Desktop POS Hotkeys & Function Header Strip */}
       <div className="bg-slate-900 text-white rounded-2xl p-3 shadow-md border border-white/10 flex items-center justify-between gap-2 overflow-x-auto text-xs">
         <div className="flex items-center gap-2 shrink-0">
+          {onBackToDashboard && (
+            <button
+              type="button"
+              onClick={onBackToDashboard}
+              className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-full border border-white/15 font-bold transition-all cursor-pointer mr-1"
+              title={lang === 'hi' ? 'डैशबोर्ड पर वापस जाएं' : 'Back to Dashboard'}
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-blue-300" />
+              <span>{lang === 'hi' ? 'डैशबोर्ड' : 'Dashboard'}</span>
+            </button>
+          )}
           <span className="flex items-center gap-1.5 bg-slate-800 text-white px-3 py-1.5 rounded-full border border-white/15 font-bold shadow-sm">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
             <Receipt className="w-3.5 h-3.5 text-blue-300" />

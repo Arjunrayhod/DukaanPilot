@@ -23,7 +23,6 @@ import { Lang } from './i18n/translations';
 
 export function App() {
   const [lang, setLang] = useState<Lang>('hi');
-  const [activeView, setActiveView] = useState<'mobile' | 'pos'>('mobile');
   const [activeTab, setActiveTab] = useState('home');
   const [systemHealth, setSystemHealth] = useState('Checking...');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -104,8 +103,8 @@ export function App() {
         lang={lang}
         onToggleLang={toggleLanguage}
         systemHealth={systemHealth}
-        activeView={activeView}
-        onToggleView={setActiveView}
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
         onOpenAuth={() => setIsAuthOpen(true)}
         userRole={currentUser.role}
         userName={currentUser.name}
@@ -128,8 +127,14 @@ export function App() {
             onOpenQr={() => setIsQrOpen(true)}
           />
         ) : (
-          /* ================= SHOPKEEPER MERCHANT OS ================= */
-          activeTab === 'inventory' ? (
+          /* ================= UNIFIED SHOPKEEPER MERCHANT OS ================= */
+          activeTab === 'pos' ? (
+            <PosBillingView
+              lang={lang}
+              initialVoiceText={posVoiceTrigger}
+              onBackToDashboard={() => setActiveTab('home')}
+            />
+          ) : activeTab === 'inventory' ? (
             <InventoryView lang={lang} />
           ) : activeTab === 'khata' ? (
             <KhataView lang={lang} />
@@ -137,24 +142,25 @@ export function App() {
             <SupplierManagementView lang={lang} />
           ) : activeTab === 'analytics' || activeTab === 'settings' ? (
             <AnalyticsView lang={lang} shopName={currentUser?.shopName} shopPhone={currentUser?.phone} />
-          ) : activeView === 'pos' ? (
-            <PosBillingView lang={lang} initialVoiceText={posVoiceTrigger} />
           ) : (
+            /* Home / Overview Dashboard */
             <div className="max-w-4xl mx-auto space-y-4">
               {/* 1. Voice AI POS Hero Banner */}
               <VoiceHeroBanner
                 lang={lang}
                 onCommandTrigger={(cmd) => {
                   setPosVoiceTrigger(cmd);
-                  setActiveView('pos');
+                  setActiveTab('pos');
                 }}
               />
 
-              {/* 2. Dual Primary Fast Counter POS Actions & Shortcuts */}
+              {/* 2. Fast Counter POS Actions & Shortcuts */}
               <QuickActionTiles
                 lang={lang}
-                onNewBill={() => setActiveView('pos')}
-                onScanBarcode={() => alert(lang === 'hi' ? 'बारकोड कैमरा स्कैन शुरू किया गया' : 'Barcode scanner camera activated')}
+                onNewBill={() => setActiveTab('pos')}
+                onScanBarcode={() => {
+                  setActiveTab('pos');
+                }}
                 onShowQr={() => setIsQrOpen(true)}
                 onAddProduct={() => setActiveTab('inventory')}
                 onDailyReport={() => setIsZReportOpen(true)}
@@ -167,7 +173,7 @@ export function App() {
                 onConvertToPosBill={(order) => {
                   const billCmd = `${order.customerName} ${order.items.map(i => `${i.qty} ${i.hindiName || i.name}`).join(' ')}`;
                   setPosVoiceTrigger(billCmd);
-                  setActiveView('pos');
+                  setActiveTab('pos');
                 }}
               />
 
@@ -192,10 +198,7 @@ export function App() {
         <BottomNavBar
           lang={lang}
           activeTab={activeTab}
-          onSelectTab={(tab) => {
-            setActiveTab(tab);
-            if (tab === 'home') setActiveView('mobile');
-          }}
+          onSelectTab={setActiveTab}
         />
       )}
 

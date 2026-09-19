@@ -79,10 +79,12 @@ export const translations = {
     voiceInput: 'बोलकर कहें',
     submit: 'सर्च करें',
 
-    // Bottom Nav
-    navHome: 'होम',
+    // Bottom & Desktop Nav
+    navHome: 'डैशबोर्ड',
+    navPos: 'बिलिंग',
     navKhata: 'खाता',
     navInventory: 'स्टॉक',
+    navAnalytics: 'रिपोर्ट',
     navSettings: 'सेटिंग्स',
 
     // QR Modal
@@ -189,10 +191,12 @@ export const translations = {
     voiceInput: 'Voice Input',
     submit: 'Submit',
 
-    // Bottom Nav
-    navHome: 'Home',
+    // Bottom & Desktop Nav
+    navHome: 'Dashboard',
+    navPos: 'Billing',
     navKhata: 'Khata',
     navInventory: 'Inventory',
+    navAnalytics: 'Analytics',
     navSettings: 'Settings',
 
     // QR Modal
